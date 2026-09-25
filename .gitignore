@@ -1,0 +1,10 @@
+# Downloaded third-party artifacts (fetch with scripts/fetch-deps.sh)
+third_party/webgpu-headers/
+third_party/wgpu-native/
+third_party/*.zip
+
+# Build outputs
+/examples/*/buffer
+/examples/*/*.exe
+*.test
+/dist/
