@@ -16,7 +16,7 @@ import (
 var (
 	webgpuDLL = syscall.NewLazyDLL("webgpu.dll")
 {{- range .Funcs }}
-	proc{{ .Name }} = webgpuDLL.NewProc("{{ .CName }}")
+	proc{{ .Ident }} = webgpuDLL.NewProc("{{ .CName }}")
 {{- end }}
 )
 
@@ -48,11 +48,7 @@ func syscallStringView(s string, pinner *runtime.Pinner) wgpuStringView {
 {{- range .Funcs }}
 
 // {{ .Name }} calls {{ .CName }} via syscall.
-func {{ .Name }}(
-	{{- range $i, $a := .GoArgs }}
-	{{- if $i }}, {{ end }}{{ $a.Name }} {{ $a.GoType }}
-	{{- end -}}
-){{ if .GoReturn }} {{ .GoReturn }}{{ end }} {
+{{ sig . }} {
 {{- $needsPinner := false }}
 {{- range .GoArgs }}{{ if or (isStruct .TypeRef) .IsSlice .IsStr }}{{ $needsPinner = true }}{{ end }}{{ end }}
 {{- if $needsPinner }}
@@ -177,7 +173,7 @@ func {{ .Name }}(
 	_cbInfo_v := uintptr(unsafe.Pointer(&_cbInfo))
 {{- end }}
 {{- if .GoReturn }}
-{{- $funcName := .Name }}
+{{- $funcName := .Ident }}
 {{- $isHandleRet := isHandle .ReturnRef }}
 {{- $goReturn := .GoReturn }}
 {{- $isFuture := eq $goReturn "Future" }}
@@ -194,7 +190,7 @@ func {{ .Name }}(
 	return ({{ $goReturn }})(r1)
 {{- end }}
 {{- else }}
-	proc{{ .Name }}.Call(
+	proc{{ .Ident }}.Call(
 		{{- range $i, $a := .GoArgs }}{{ if $i }}, {{ end }}{{ if $a.IsSlice }}{{ $a.Name }}_count, {{ $a.Name }}_ptr{{ else if isFuncPtr $a.TypeRef }}_cbInfo_v{{ else }}{{ $a.Name }}_v{{ end }}{{ end -}}
 	)
 {{- end }}

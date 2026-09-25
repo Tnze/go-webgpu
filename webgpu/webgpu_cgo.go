@@ -136,58 +136,58 @@ func HasInstanceFeature(feature InstanceFeatureName) bool {
 	return c_result != 0
 }
 
-// AdapterGetLimits calls C.wgpuAdapterGetLimits.
-func AdapterGetLimits(adapter *Adapter, limits Limits) Status {
+// GetLimits calls C.wgpuAdapterGetLimits.
+func (a *Adapter) GetLimits(limits Limits) Status {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&limits)
-	c_adapter := (C.WGPUAdapter)(unsafe.Pointer(adapter.inner))
+	c_a := (C.WGPUAdapter)(unsafe.Pointer(a.inner))
 	c_limits := (*C.WGPULimits)(unsafe.Pointer(&limits))
-	c_result := C.wgpuAdapterGetLimits(c_adapter, c_limits)
+	c_result := C.wgpuAdapterGetLimits(c_a, c_limits)
 	return (Status)(c_result)
 }
 
-// AdapterHasFeature calls C.wgpuAdapterHasFeature.
-func AdapterHasFeature(adapter *Adapter, feature FeatureName) bool {
-	c_adapter := (C.WGPUAdapter)(unsafe.Pointer(adapter.inner))
+// HasFeature calls C.wgpuAdapterHasFeature.
+func (a *Adapter) HasFeature(feature FeatureName) bool {
+	c_a := (C.WGPUAdapter)(unsafe.Pointer(a.inner))
 	c_feature := (C.WGPUFeatureName)(feature)
-	c_result := C.wgpuAdapterHasFeature(c_adapter, c_feature)
+	c_result := C.wgpuAdapterHasFeature(c_a, c_feature)
 	return c_result != 0
 }
 
-// AdapterGetFeatures calls C.wgpuAdapterGetFeatures.
-func AdapterGetFeatures(adapter *Adapter, features SupportedFeatures) {
+// GetFeatures calls C.wgpuAdapterGetFeatures.
+func (a *Adapter) GetFeatures(features SupportedFeatures) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&features)
 	if features.Features != nil {
 		pinner.Pin(features.Features)
 	}
-	c_adapter := (C.WGPUAdapter)(unsafe.Pointer(adapter.inner))
+	c_a := (C.WGPUAdapter)(unsafe.Pointer(a.inner))
 	c_features := (*C.WGPUSupportedFeatures)(unsafe.Pointer(&features))
-	C.wgpuAdapterGetFeatures(c_adapter, c_features)
+	C.wgpuAdapterGetFeatures(c_a, c_features)
 }
 
-// AdapterGetInfo calls C.wgpuAdapterGetInfo.
-func AdapterGetInfo(adapter *Adapter, info AdapterInfo) Status {
+// GetInfo calls C.wgpuAdapterGetInfo.
+func (a *Adapter) GetInfo(info AdapterInfo) Status {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&info)
-	c_adapter := (C.WGPUAdapter)(unsafe.Pointer(adapter.inner))
+	c_a := (C.WGPUAdapter)(unsafe.Pointer(a.inner))
 	c_info := (*C.WGPUAdapterInfo)(unsafe.Pointer(&info))
-	c_result := C.wgpuAdapterGetInfo(c_adapter, c_info)
+	c_result := C.wgpuAdapterGetInfo(c_a, c_info)
 	return (Status)(c_result)
 }
 
-// AdapterRequestDevice calls C.wgpuAdapterRequestDevice.
-func AdapterRequestDevice(adapter *Adapter, descriptor DeviceDescriptor, callback RequestDeviceFn) Future {
+// RequestDevice calls C.wgpuAdapterRequestDevice.
+func (a *Adapter) RequestDevice(descriptor DeviceDescriptor, callback RequestDeviceFn) Future {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
 	if descriptor.RequiredFeatures != nil {
 		pinner.Pin(descriptor.RequiredFeatures)
 	}
-	c_adapter := (C.WGPUAdapter)(unsafe.Pointer(adapter.inner))
+	c_a := (C.WGPUAdapter)(unsafe.Pointer(a.inner))
 	c_descriptor := (*C.WGPUDeviceDescriptor)(unsafe.Pointer(&descriptor))
 	_cbHandle := cgo.NewHandle(callback)
 	var _cbInfo C.WGPURequestDeviceCallbackInfo
@@ -195,31 +195,31 @@ func AdapterRequestDevice(adapter *Adapter, descriptor DeviceDescriptor, callbac
 	// cgo.Handle is an opaque uintptr key; cast through uintptr for userdata.
 	_cbInfo.userdata1 = *(*unsafe.Pointer)(unsafe.Pointer(&_cbHandle))
 	_cbInfo.callback = C.WGPURequestDeviceCallback(C.goRequestDeviceCB)
-	c_result := C.wgpuAdapterRequestDevice(c_adapter, c_descriptor, _cbInfo)
+	c_result := C.wgpuAdapterRequestDevice(c_a, c_descriptor, _cbInfo)
 	return Future{Id: uint64(c_result.id)}
 }
 
-// BindGroupSetLabel calls C.wgpuBindGroupSetLabel.
-func BindGroupSetLabel(bindGroup *BindGroup, label string) {
+// SetLabel calls C.wgpuBindGroupSetLabel.
+func (b *BindGroup) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_bindGroup := (C.WGPUBindGroup)(unsafe.Pointer(bindGroup.inner))
+	c_b := (C.WGPUBindGroup)(unsafe.Pointer(b.inner))
 	c_label := cgoStringView(label, &pinner)
-	C.wgpuBindGroupSetLabel(c_bindGroup, c_label)
+	C.wgpuBindGroupSetLabel(c_b, c_label)
 }
 
-// BindGroupLayoutSetLabel calls C.wgpuBindGroupLayoutSetLabel.
-func BindGroupLayoutSetLabel(bindGroupLayout *BindGroupLayout, label string) {
+// SetLabel calls C.wgpuBindGroupLayoutSetLabel.
+func (b *BindGroupLayout) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_bindGroupLayout := (C.WGPUBindGroupLayout)(unsafe.Pointer(bindGroupLayout.inner))
+	c_b := (C.WGPUBindGroupLayout)(unsafe.Pointer(b.inner))
 	c_label := cgoStringView(label, &pinner)
-	C.wgpuBindGroupLayoutSetLabel(c_bindGroupLayout, c_label)
+	C.wgpuBindGroupLayoutSetLabel(c_b, c_label)
 }
 
-// BufferMapAsync calls C.wgpuBufferMapAsync.
-func BufferMapAsync(buffer *Buffer, mode MapMode, offset uintptr, size uintptr, callback BufferMapFn) Future {
-	c_buffer := (C.WGPUBuffer)(unsafe.Pointer(buffer.inner))
+// MapAsync calls C.wgpuBufferMapAsync.
+func (b *Buffer) MapAsync(mode MapMode, offset uintptr, size uintptr, callback BufferMapFn) Future {
+	c_b := (C.WGPUBuffer)(unsafe.Pointer(b.inner))
 	c_mode := (C.WGPUMapMode)(mode)
 	c_offset := (C.size_t)(offset)
 	c_size := (C.size_t)(size)
@@ -229,288 +229,288 @@ func BufferMapAsync(buffer *Buffer, mode MapMode, offset uintptr, size uintptr, 
 	// cgo.Handle is an opaque uintptr key; cast through uintptr for userdata.
 	_cbInfo.userdata1 = *(*unsafe.Pointer)(unsafe.Pointer(&_cbHandle))
 	_cbInfo.callback = C.WGPUBufferMapCallback(C.goBufferMapCB)
-	c_result := C.wgpuBufferMapAsync(c_buffer, c_mode, c_offset, c_size, _cbInfo)
+	c_result := C.wgpuBufferMapAsync(c_b, c_mode, c_offset, c_size, _cbInfo)
 	return Future{Id: uint64(c_result.id)}
 }
 
-// BufferGetMappedRange calls C.wgpuBufferGetMappedRange.
-func BufferGetMappedRange(buffer *Buffer, offset uintptr, size uintptr) unsafe.Pointer {
-	c_buffer := (C.WGPUBuffer)(unsafe.Pointer(buffer.inner))
+// GetMappedRange calls C.wgpuBufferGetMappedRange.
+func (b *Buffer) GetMappedRange(offset uintptr, size uintptr) unsafe.Pointer {
+	c_b := (C.WGPUBuffer)(unsafe.Pointer(b.inner))
 	c_offset := (C.size_t)(offset)
 	c_size := (C.size_t)(size)
-	c_result := C.wgpuBufferGetMappedRange(c_buffer, c_offset, c_size)
+	c_result := C.wgpuBufferGetMappedRange(c_b, c_offset, c_size)
 	return (unsafe.Pointer)(c_result)
 }
 
-// BufferGetConstMappedRange calls C.wgpuBufferGetConstMappedRange.
-func BufferGetConstMappedRange(buffer *Buffer, offset uintptr, size uintptr) unsafe.Pointer {
-	c_buffer := (C.WGPUBuffer)(unsafe.Pointer(buffer.inner))
+// GetConstMappedRange calls C.wgpuBufferGetConstMappedRange.
+func (b *Buffer) GetConstMappedRange(offset uintptr, size uintptr) unsafe.Pointer {
+	c_b := (C.WGPUBuffer)(unsafe.Pointer(b.inner))
 	c_offset := (C.size_t)(offset)
 	c_size := (C.size_t)(size)
-	c_result := C.wgpuBufferGetConstMappedRange(c_buffer, c_offset, c_size)
+	c_result := C.wgpuBufferGetConstMappedRange(c_b, c_offset, c_size)
 	return (unsafe.Pointer)(c_result)
 }
 
-// BufferReadMappedRange calls C.wgpuBufferReadMappedRange.
-func BufferReadMappedRange(buffer *Buffer, offset uintptr, data unsafe.Pointer, size uintptr) Status {
-	c_buffer := (C.WGPUBuffer)(unsafe.Pointer(buffer.inner))
+// ReadMappedRange calls C.wgpuBufferReadMappedRange.
+func (b *Buffer) ReadMappedRange(offset uintptr, data unsafe.Pointer, size uintptr) Status {
+	c_b := (C.WGPUBuffer)(unsafe.Pointer(b.inner))
 	c_offset := (C.size_t)(offset)
 	c_data := (unsafe.Pointer)(data)
 	c_size := (C.size_t)(size)
-	c_result := C.wgpuBufferReadMappedRange(c_buffer, c_offset, c_data, c_size)
+	c_result := C.wgpuBufferReadMappedRange(c_b, c_offset, c_data, c_size)
 	return (Status)(c_result)
 }
 
-// BufferWriteMappedRange calls C.wgpuBufferWriteMappedRange.
-func BufferWriteMappedRange(buffer *Buffer, offset uintptr, data unsafe.Pointer, size uintptr) Status {
-	c_buffer := (C.WGPUBuffer)(unsafe.Pointer(buffer.inner))
+// WriteMappedRange calls C.wgpuBufferWriteMappedRange.
+func (b *Buffer) WriteMappedRange(offset uintptr, data unsafe.Pointer, size uintptr) Status {
+	c_b := (C.WGPUBuffer)(unsafe.Pointer(b.inner))
 	c_offset := (C.size_t)(offset)
 	c_data := (unsafe.Pointer)(data)
 	c_size := (C.size_t)(size)
-	c_result := C.wgpuBufferWriteMappedRange(c_buffer, c_offset, c_data, c_size)
+	c_result := C.wgpuBufferWriteMappedRange(c_b, c_offset, c_data, c_size)
 	return (Status)(c_result)
 }
 
-// BufferSetLabel calls C.wgpuBufferSetLabel.
-func BufferSetLabel(buffer *Buffer, label string) {
+// SetLabel calls C.wgpuBufferSetLabel.
+func (b *Buffer) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_buffer := (C.WGPUBuffer)(unsafe.Pointer(buffer.inner))
+	c_b := (C.WGPUBuffer)(unsafe.Pointer(b.inner))
 	c_label := cgoStringView(label, &pinner)
-	C.wgpuBufferSetLabel(c_buffer, c_label)
+	C.wgpuBufferSetLabel(c_b, c_label)
 }
 
-// BufferGetUsage calls C.wgpuBufferGetUsage.
-func BufferGetUsage(buffer *Buffer) BufferUsage {
-	c_buffer := (C.WGPUBuffer)(unsafe.Pointer(buffer.inner))
-	c_result := C.wgpuBufferGetUsage(c_buffer)
+// GetUsage calls C.wgpuBufferGetUsage.
+func (b *Buffer) GetUsage() BufferUsage {
+	c_b := (C.WGPUBuffer)(unsafe.Pointer(b.inner))
+	c_result := C.wgpuBufferGetUsage(c_b)
 	return (BufferUsage)(c_result)
 }
 
-// BufferGetSize calls C.wgpuBufferGetSize.
-func BufferGetSize(buffer *Buffer) uint64 {
-	c_buffer := (C.WGPUBuffer)(unsafe.Pointer(buffer.inner))
-	c_result := C.wgpuBufferGetSize(c_buffer)
+// GetSize calls C.wgpuBufferGetSize.
+func (b *Buffer) GetSize() uint64 {
+	c_b := (C.WGPUBuffer)(unsafe.Pointer(b.inner))
+	c_result := C.wgpuBufferGetSize(c_b)
 	return (uint64)(c_result)
 }
 
-// BufferGetMapState calls C.wgpuBufferGetMapState.
-func BufferGetMapState(buffer *Buffer) BufferMapState {
-	c_buffer := (C.WGPUBuffer)(unsafe.Pointer(buffer.inner))
-	c_result := C.wgpuBufferGetMapState(c_buffer)
+// GetMapState calls C.wgpuBufferGetMapState.
+func (b *Buffer) GetMapState() BufferMapState {
+	c_b := (C.WGPUBuffer)(unsafe.Pointer(b.inner))
+	c_result := C.wgpuBufferGetMapState(c_b)
 	return (BufferMapState)(c_result)
 }
 
-// BufferUnmap calls C.wgpuBufferUnmap.
-func BufferUnmap(buffer *Buffer) {
-	c_buffer := (C.WGPUBuffer)(unsafe.Pointer(buffer.inner))
-	C.wgpuBufferUnmap(c_buffer)
+// Unmap calls C.wgpuBufferUnmap.
+func (b *Buffer) Unmap() {
+	c_b := (C.WGPUBuffer)(unsafe.Pointer(b.inner))
+	C.wgpuBufferUnmap(c_b)
 }
 
-// BufferDestroy calls C.wgpuBufferDestroy.
-func BufferDestroy(buffer *Buffer) {
-	c_buffer := (C.WGPUBuffer)(unsafe.Pointer(buffer.inner))
-	C.wgpuBufferDestroy(c_buffer)
+// Destroy calls C.wgpuBufferDestroy.
+func (b *Buffer) Destroy() {
+	c_b := (C.WGPUBuffer)(unsafe.Pointer(b.inner))
+	C.wgpuBufferDestroy(c_b)
 }
 
-// CommandBufferSetLabel calls C.wgpuCommandBufferSetLabel.
-func CommandBufferSetLabel(commandBuffer *CommandBuffer, label string) {
+// SetLabel calls C.wgpuCommandBufferSetLabel.
+func (c *CommandBuffer) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_commandBuffer := (C.WGPUCommandBuffer)(unsafe.Pointer(commandBuffer.inner))
+	c_c := (C.WGPUCommandBuffer)(unsafe.Pointer(c.inner))
 	c_label := cgoStringView(label, &pinner)
-	C.wgpuCommandBufferSetLabel(c_commandBuffer, c_label)
+	C.wgpuCommandBufferSetLabel(c_c, c_label)
 }
 
-// CommandEncoderFinish calls C.wgpuCommandEncoderFinish.
-func CommandEncoderFinish(commandEncoder *CommandEncoder, descriptor CommandBufferDescriptor) *CommandBuffer {
+// Finish calls C.wgpuCommandEncoderFinish.
+func (c *CommandEncoder) Finish(descriptor CommandBufferDescriptor) *CommandBuffer {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
-	c_commandEncoder := (C.WGPUCommandEncoder)(unsafe.Pointer(commandEncoder.inner))
+	c_c := (C.WGPUCommandEncoder)(unsafe.Pointer(c.inner))
 	c_descriptor := (*C.WGPUCommandBufferDescriptor)(unsafe.Pointer(&descriptor))
-	c_result := C.wgpuCommandEncoderFinish(c_commandEncoder, c_descriptor)
+	c_result := C.wgpuCommandEncoderFinish(c_c, c_descriptor)
 	return &CommandBuffer{inner: uintptr(unsafe.Pointer(c_result))}
 }
 
-// CommandEncoderBeginComputePass calls C.wgpuCommandEncoderBeginComputePass.
-func CommandEncoderBeginComputePass(commandEncoder *CommandEncoder, descriptor ComputePassDescriptor) *ComputePassEncoder {
+// BeginComputePass calls C.wgpuCommandEncoderBeginComputePass.
+func (c *CommandEncoder) BeginComputePass(descriptor ComputePassDescriptor) *ComputePassEncoder {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
-	c_commandEncoder := (C.WGPUCommandEncoder)(unsafe.Pointer(commandEncoder.inner))
+	c_c := (C.WGPUCommandEncoder)(unsafe.Pointer(c.inner))
 	c_descriptor := (*C.WGPUComputePassDescriptor)(unsafe.Pointer(&descriptor))
-	c_result := C.wgpuCommandEncoderBeginComputePass(c_commandEncoder, c_descriptor)
+	c_result := C.wgpuCommandEncoderBeginComputePass(c_c, c_descriptor)
 	return &ComputePassEncoder{inner: uintptr(unsafe.Pointer(c_result))}
 }
 
-// CommandEncoderBeginRenderPass calls C.wgpuCommandEncoderBeginRenderPass.
-func CommandEncoderBeginRenderPass(commandEncoder *CommandEncoder, descriptor RenderPassDescriptor) *RenderPassEncoder {
+// BeginRenderPass calls C.wgpuCommandEncoderBeginRenderPass.
+func (c *CommandEncoder) BeginRenderPass(descriptor RenderPassDescriptor) *RenderPassEncoder {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
 	if descriptor.ColorAttachments != nil {
 		pinner.Pin(descriptor.ColorAttachments)
 	}
-	c_commandEncoder := (C.WGPUCommandEncoder)(unsafe.Pointer(commandEncoder.inner))
+	c_c := (C.WGPUCommandEncoder)(unsafe.Pointer(c.inner))
 	c_descriptor := (*C.WGPURenderPassDescriptor)(unsafe.Pointer(&descriptor))
-	c_result := C.wgpuCommandEncoderBeginRenderPass(c_commandEncoder, c_descriptor)
+	c_result := C.wgpuCommandEncoderBeginRenderPass(c_c, c_descriptor)
 	return &RenderPassEncoder{inner: uintptr(unsafe.Pointer(c_result))}
 }
 
-// CommandEncoderCopyBufferToBuffer calls C.wgpuCommandEncoderCopyBufferToBuffer.
-func CommandEncoderCopyBufferToBuffer(commandEncoder *CommandEncoder, source *Buffer, sourceOffset uint64, destination *Buffer, destinationOffset uint64, size uint64) {
-	c_commandEncoder := (C.WGPUCommandEncoder)(unsafe.Pointer(commandEncoder.inner))
+// CopyBufferToBuffer calls C.wgpuCommandEncoderCopyBufferToBuffer.
+func (c *CommandEncoder) CopyBufferToBuffer(source *Buffer, sourceOffset uint64, destination *Buffer, destinationOffset uint64, size uint64) {
+	c_c := (C.WGPUCommandEncoder)(unsafe.Pointer(c.inner))
 	c_source := (C.WGPUBuffer)(unsafe.Pointer(source.inner))
 	c_sourceOffset := (C.uint64_t)(sourceOffset)
 	c_destination := (C.WGPUBuffer)(unsafe.Pointer(destination.inner))
 	c_destinationOffset := (C.uint64_t)(destinationOffset)
 	c_size := (C.uint64_t)(size)
-	C.wgpuCommandEncoderCopyBufferToBuffer(c_commandEncoder, c_source, c_sourceOffset, c_destination, c_destinationOffset, c_size)
+	C.wgpuCommandEncoderCopyBufferToBuffer(c_c, c_source, c_sourceOffset, c_destination, c_destinationOffset, c_size)
 }
 
-// CommandEncoderCopyBufferToTexture calls C.wgpuCommandEncoderCopyBufferToTexture.
-func CommandEncoderCopyBufferToTexture(commandEncoder *CommandEncoder, source TexelCopyBufferInfo, destination TexelCopyTextureInfo, copySize Extent3D) {
+// CopyBufferToTexture calls C.wgpuCommandEncoderCopyBufferToTexture.
+func (c *CommandEncoder) CopyBufferToTexture(source TexelCopyBufferInfo, destination TexelCopyTextureInfo, copySize Extent3D) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&source)
 	pinner.Pin(&destination)
 	pinner.Pin(&copySize)
-	c_commandEncoder := (C.WGPUCommandEncoder)(unsafe.Pointer(commandEncoder.inner))
+	c_c := (C.WGPUCommandEncoder)(unsafe.Pointer(c.inner))
 	c_source := (*C.WGPUTexelCopyBufferInfo)(unsafe.Pointer(&source))
 	c_destination := (*C.WGPUTexelCopyTextureInfo)(unsafe.Pointer(&destination))
 	c_copySize := (*C.WGPUExtent3D)(unsafe.Pointer(&copySize))
-	C.wgpuCommandEncoderCopyBufferToTexture(c_commandEncoder, c_source, c_destination, c_copySize)
+	C.wgpuCommandEncoderCopyBufferToTexture(c_c, c_source, c_destination, c_copySize)
 }
 
-// CommandEncoderCopyTextureToBuffer calls C.wgpuCommandEncoderCopyTextureToBuffer.
-func CommandEncoderCopyTextureToBuffer(commandEncoder *CommandEncoder, source TexelCopyTextureInfo, destination TexelCopyBufferInfo, copySize Extent3D) {
+// CopyTextureToBuffer calls C.wgpuCommandEncoderCopyTextureToBuffer.
+func (c *CommandEncoder) CopyTextureToBuffer(source TexelCopyTextureInfo, destination TexelCopyBufferInfo, copySize Extent3D) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&source)
 	pinner.Pin(&destination)
 	pinner.Pin(&copySize)
-	c_commandEncoder := (C.WGPUCommandEncoder)(unsafe.Pointer(commandEncoder.inner))
+	c_c := (C.WGPUCommandEncoder)(unsafe.Pointer(c.inner))
 	c_source := (*C.WGPUTexelCopyTextureInfo)(unsafe.Pointer(&source))
 	c_destination := (*C.WGPUTexelCopyBufferInfo)(unsafe.Pointer(&destination))
 	c_copySize := (*C.WGPUExtent3D)(unsafe.Pointer(&copySize))
-	C.wgpuCommandEncoderCopyTextureToBuffer(c_commandEncoder, c_source, c_destination, c_copySize)
+	C.wgpuCommandEncoderCopyTextureToBuffer(c_c, c_source, c_destination, c_copySize)
 }
 
-// CommandEncoderCopyTextureToTexture calls C.wgpuCommandEncoderCopyTextureToTexture.
-func CommandEncoderCopyTextureToTexture(commandEncoder *CommandEncoder, source TexelCopyTextureInfo, destination TexelCopyTextureInfo, copySize Extent3D) {
+// CopyTextureToTexture calls C.wgpuCommandEncoderCopyTextureToTexture.
+func (c *CommandEncoder) CopyTextureToTexture(source TexelCopyTextureInfo, destination TexelCopyTextureInfo, copySize Extent3D) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&source)
 	pinner.Pin(&destination)
 	pinner.Pin(&copySize)
-	c_commandEncoder := (C.WGPUCommandEncoder)(unsafe.Pointer(commandEncoder.inner))
+	c_c := (C.WGPUCommandEncoder)(unsafe.Pointer(c.inner))
 	c_source := (*C.WGPUTexelCopyTextureInfo)(unsafe.Pointer(&source))
 	c_destination := (*C.WGPUTexelCopyTextureInfo)(unsafe.Pointer(&destination))
 	c_copySize := (*C.WGPUExtent3D)(unsafe.Pointer(&copySize))
-	C.wgpuCommandEncoderCopyTextureToTexture(c_commandEncoder, c_source, c_destination, c_copySize)
+	C.wgpuCommandEncoderCopyTextureToTexture(c_c, c_source, c_destination, c_copySize)
 }
 
-// CommandEncoderClearBuffer calls C.wgpuCommandEncoderClearBuffer.
-func CommandEncoderClearBuffer(commandEncoder *CommandEncoder, buffer *Buffer, offset uint64, size uint64) {
-	c_commandEncoder := (C.WGPUCommandEncoder)(unsafe.Pointer(commandEncoder.inner))
+// ClearBuffer calls C.wgpuCommandEncoderClearBuffer.
+func (c *CommandEncoder) ClearBuffer(buffer *Buffer, offset uint64, size uint64) {
+	c_c := (C.WGPUCommandEncoder)(unsafe.Pointer(c.inner))
 	c_buffer := (C.WGPUBuffer)(unsafe.Pointer(buffer.inner))
 	c_offset := (C.uint64_t)(offset)
 	c_size := (C.uint64_t)(size)
-	C.wgpuCommandEncoderClearBuffer(c_commandEncoder, c_buffer, c_offset, c_size)
+	C.wgpuCommandEncoderClearBuffer(c_c, c_buffer, c_offset, c_size)
 }
 
-// CommandEncoderInsertDebugMarker calls C.wgpuCommandEncoderInsertDebugMarker.
-func CommandEncoderInsertDebugMarker(commandEncoder *CommandEncoder, markerLabel string) {
+// InsertDebugMarker calls C.wgpuCommandEncoderInsertDebugMarker.
+func (c *CommandEncoder) InsertDebugMarker(markerLabel string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_commandEncoder := (C.WGPUCommandEncoder)(unsafe.Pointer(commandEncoder.inner))
+	c_c := (C.WGPUCommandEncoder)(unsafe.Pointer(c.inner))
 	c_markerLabel := cgoStringView(markerLabel, &pinner)
-	C.wgpuCommandEncoderInsertDebugMarker(c_commandEncoder, c_markerLabel)
+	C.wgpuCommandEncoderInsertDebugMarker(c_c, c_markerLabel)
 }
 
-// CommandEncoderPopDebugGroup calls C.wgpuCommandEncoderPopDebugGroup.
-func CommandEncoderPopDebugGroup(commandEncoder *CommandEncoder) {
-	c_commandEncoder := (C.WGPUCommandEncoder)(unsafe.Pointer(commandEncoder.inner))
-	C.wgpuCommandEncoderPopDebugGroup(c_commandEncoder)
+// PopDebugGroup calls C.wgpuCommandEncoderPopDebugGroup.
+func (c *CommandEncoder) PopDebugGroup() {
+	c_c := (C.WGPUCommandEncoder)(unsafe.Pointer(c.inner))
+	C.wgpuCommandEncoderPopDebugGroup(c_c)
 }
 
-// CommandEncoderPushDebugGroup calls C.wgpuCommandEncoderPushDebugGroup.
-func CommandEncoderPushDebugGroup(commandEncoder *CommandEncoder, groupLabel string) {
+// PushDebugGroup calls C.wgpuCommandEncoderPushDebugGroup.
+func (c *CommandEncoder) PushDebugGroup(groupLabel string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_commandEncoder := (C.WGPUCommandEncoder)(unsafe.Pointer(commandEncoder.inner))
+	c_c := (C.WGPUCommandEncoder)(unsafe.Pointer(c.inner))
 	c_groupLabel := cgoStringView(groupLabel, &pinner)
-	C.wgpuCommandEncoderPushDebugGroup(c_commandEncoder, c_groupLabel)
+	C.wgpuCommandEncoderPushDebugGroup(c_c, c_groupLabel)
 }
 
-// CommandEncoderResolveQuerySet calls C.wgpuCommandEncoderResolveQuerySet.
-func CommandEncoderResolveQuerySet(commandEncoder *CommandEncoder, querySet *QuerySet, firstQuery uint32, queryCount uint32, destination *Buffer, destinationOffset uint64) {
-	c_commandEncoder := (C.WGPUCommandEncoder)(unsafe.Pointer(commandEncoder.inner))
+// ResolveQuerySet calls C.wgpuCommandEncoderResolveQuerySet.
+func (c *CommandEncoder) ResolveQuerySet(querySet *QuerySet, firstQuery uint32, queryCount uint32, destination *Buffer, destinationOffset uint64) {
+	c_c := (C.WGPUCommandEncoder)(unsafe.Pointer(c.inner))
 	c_querySet := (C.WGPUQuerySet)(unsafe.Pointer(querySet.inner))
 	c_firstQuery := (C.uint32_t)(firstQuery)
 	c_queryCount := (C.uint32_t)(queryCount)
 	c_destination := (C.WGPUBuffer)(unsafe.Pointer(destination.inner))
 	c_destinationOffset := (C.uint64_t)(destinationOffset)
-	C.wgpuCommandEncoderResolveQuerySet(c_commandEncoder, c_querySet, c_firstQuery, c_queryCount, c_destination, c_destinationOffset)
+	C.wgpuCommandEncoderResolveQuerySet(c_c, c_querySet, c_firstQuery, c_queryCount, c_destination, c_destinationOffset)
 }
 
-// CommandEncoderWriteTimestamp calls C.wgpuCommandEncoderWriteTimestamp.
-func CommandEncoderWriteTimestamp(commandEncoder *CommandEncoder, querySet *QuerySet, queryIndex uint32) {
-	c_commandEncoder := (C.WGPUCommandEncoder)(unsafe.Pointer(commandEncoder.inner))
+// WriteTimestamp calls C.wgpuCommandEncoderWriteTimestamp.
+func (c *CommandEncoder) WriteTimestamp(querySet *QuerySet, queryIndex uint32) {
+	c_c := (C.WGPUCommandEncoder)(unsafe.Pointer(c.inner))
 	c_querySet := (C.WGPUQuerySet)(unsafe.Pointer(querySet.inner))
 	c_queryIndex := (C.uint32_t)(queryIndex)
-	C.wgpuCommandEncoderWriteTimestamp(c_commandEncoder, c_querySet, c_queryIndex)
+	C.wgpuCommandEncoderWriteTimestamp(c_c, c_querySet, c_queryIndex)
 }
 
-// CommandEncoderSetLabel calls C.wgpuCommandEncoderSetLabel.
-func CommandEncoderSetLabel(commandEncoder *CommandEncoder, label string) {
+// SetLabel calls C.wgpuCommandEncoderSetLabel.
+func (c *CommandEncoder) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_commandEncoder := (C.WGPUCommandEncoder)(unsafe.Pointer(commandEncoder.inner))
+	c_c := (C.WGPUCommandEncoder)(unsafe.Pointer(c.inner))
 	c_label := cgoStringView(label, &pinner)
-	C.wgpuCommandEncoderSetLabel(c_commandEncoder, c_label)
+	C.wgpuCommandEncoderSetLabel(c_c, c_label)
 }
 
-// ComputePassEncoderInsertDebugMarker calls C.wgpuComputePassEncoderInsertDebugMarker.
-func ComputePassEncoderInsertDebugMarker(computePassEncoder *ComputePassEncoder, markerLabel string) {
+// InsertDebugMarker calls C.wgpuComputePassEncoderInsertDebugMarker.
+func (c *ComputePassEncoder) InsertDebugMarker(markerLabel string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_computePassEncoder := (C.WGPUComputePassEncoder)(unsafe.Pointer(computePassEncoder.inner))
+	c_c := (C.WGPUComputePassEncoder)(unsafe.Pointer(c.inner))
 	c_markerLabel := cgoStringView(markerLabel, &pinner)
-	C.wgpuComputePassEncoderInsertDebugMarker(c_computePassEncoder, c_markerLabel)
+	C.wgpuComputePassEncoderInsertDebugMarker(c_c, c_markerLabel)
 }
 
-// ComputePassEncoderPopDebugGroup calls C.wgpuComputePassEncoderPopDebugGroup.
-func ComputePassEncoderPopDebugGroup(computePassEncoder *ComputePassEncoder) {
-	c_computePassEncoder := (C.WGPUComputePassEncoder)(unsafe.Pointer(computePassEncoder.inner))
-	C.wgpuComputePassEncoderPopDebugGroup(c_computePassEncoder)
+// PopDebugGroup calls C.wgpuComputePassEncoderPopDebugGroup.
+func (c *ComputePassEncoder) PopDebugGroup() {
+	c_c := (C.WGPUComputePassEncoder)(unsafe.Pointer(c.inner))
+	C.wgpuComputePassEncoderPopDebugGroup(c_c)
 }
 
-// ComputePassEncoderPushDebugGroup calls C.wgpuComputePassEncoderPushDebugGroup.
-func ComputePassEncoderPushDebugGroup(computePassEncoder *ComputePassEncoder, groupLabel string) {
+// PushDebugGroup calls C.wgpuComputePassEncoderPushDebugGroup.
+func (c *ComputePassEncoder) PushDebugGroup(groupLabel string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_computePassEncoder := (C.WGPUComputePassEncoder)(unsafe.Pointer(computePassEncoder.inner))
+	c_c := (C.WGPUComputePassEncoder)(unsafe.Pointer(c.inner))
 	c_groupLabel := cgoStringView(groupLabel, &pinner)
-	C.wgpuComputePassEncoderPushDebugGroup(c_computePassEncoder, c_groupLabel)
+	C.wgpuComputePassEncoderPushDebugGroup(c_c, c_groupLabel)
 }
 
-// ComputePassEncoderSetPipeline calls C.wgpuComputePassEncoderSetPipeline.
-func ComputePassEncoderSetPipeline(computePassEncoder *ComputePassEncoder, pipeline *ComputePipeline) {
-	c_computePassEncoder := (C.WGPUComputePassEncoder)(unsafe.Pointer(computePassEncoder.inner))
+// SetPipeline calls C.wgpuComputePassEncoderSetPipeline.
+func (c *ComputePassEncoder) SetPipeline(pipeline *ComputePipeline) {
+	c_c := (C.WGPUComputePassEncoder)(unsafe.Pointer(c.inner))
 	c_pipeline := (C.WGPUComputePipeline)(unsafe.Pointer(pipeline.inner))
-	C.wgpuComputePassEncoderSetPipeline(c_computePassEncoder, c_pipeline)
+	C.wgpuComputePassEncoderSetPipeline(c_c, c_pipeline)
 }
 
-// ComputePassEncoderSetBindGroup calls C.wgpuComputePassEncoderSetBindGroup.
-func ComputePassEncoderSetBindGroup(computePassEncoder *ComputePassEncoder, groupIndex uint32, group *BindGroup, dynamicOffsets []uint32) {
+// SetBindGroup calls C.wgpuComputePassEncoderSetBindGroup.
+func (c *ComputePassEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, dynamicOffsets []uint32) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	if len(dynamicOffsets) > 0 {
 		pinner.Pin(&dynamicOffsets[0])
 	}
-	c_computePassEncoder := (C.WGPUComputePassEncoder)(unsafe.Pointer(computePassEncoder.inner))
+	c_c := (C.WGPUComputePassEncoder)(unsafe.Pointer(c.inner))
 	c_groupIndex := (C.uint32_t)(groupIndex)
 	c_group := (C.WGPUBindGroup)(unsafe.Pointer(group.inner))
 	var c_dynamicOffsets_ptr *C.uint32_t
@@ -518,390 +518,390 @@ func ComputePassEncoderSetBindGroup(computePassEncoder *ComputePassEncoder, grou
 		c_dynamicOffsets_ptr = (*C.uint32_t)(unsafe.Pointer(&dynamicOffsets[0]))
 	}
 	c_dynamicOffsets_count := (C.size_t)(len(dynamicOffsets))
-	C.wgpuComputePassEncoderSetBindGroup(c_computePassEncoder, c_groupIndex, c_group, c_dynamicOffsets_count, c_dynamicOffsets_ptr)
+	C.wgpuComputePassEncoderSetBindGroup(c_c, c_groupIndex, c_group, c_dynamicOffsets_count, c_dynamicOffsets_ptr)
 }
 
-// ComputePassEncoderSetImmediates calls C.wgpuComputePassEncoderSetImmediates.
-func ComputePassEncoderSetImmediates(computePassEncoder *ComputePassEncoder, offset uint32, data unsafe.Pointer, size uintptr) {
-	c_computePassEncoder := (C.WGPUComputePassEncoder)(unsafe.Pointer(computePassEncoder.inner))
+// SetImmediates calls C.wgpuComputePassEncoderSetImmediates.
+func (c *ComputePassEncoder) SetImmediates(offset uint32, data unsafe.Pointer, size uintptr) {
+	c_c := (C.WGPUComputePassEncoder)(unsafe.Pointer(c.inner))
 	c_offset := (C.uint32_t)(offset)
 	c_data := (unsafe.Pointer)(data)
 	c_size := (C.size_t)(size)
-	C.wgpuComputePassEncoderSetImmediates(c_computePassEncoder, c_offset, c_data, c_size)
+	C.wgpuComputePassEncoderSetImmediates(c_c, c_offset, c_data, c_size)
 }
 
-// ComputePassEncoderDispatchWorkgroups calls C.wgpuComputePassEncoderDispatchWorkgroups.
-func ComputePassEncoderDispatchWorkgroups(computePassEncoder *ComputePassEncoder, workgroupCountX uint32, workgroupCountY uint32, workgroupCountZ uint32) {
-	c_computePassEncoder := (C.WGPUComputePassEncoder)(unsafe.Pointer(computePassEncoder.inner))
+// DispatchWorkgroups calls C.wgpuComputePassEncoderDispatchWorkgroups.
+func (c *ComputePassEncoder) DispatchWorkgroups(workgroupCountX uint32, workgroupCountY uint32, workgroupCountZ uint32) {
+	c_c := (C.WGPUComputePassEncoder)(unsafe.Pointer(c.inner))
 	c_workgroupCountX := (C.uint32_t)(workgroupCountX)
 	c_workgroupCountY := (C.uint32_t)(workgroupCountY)
 	c_workgroupCountZ := (C.uint32_t)(workgroupCountZ)
-	C.wgpuComputePassEncoderDispatchWorkgroups(c_computePassEncoder, c_workgroupCountX, c_workgroupCountY, c_workgroupCountZ)
+	C.wgpuComputePassEncoderDispatchWorkgroups(c_c, c_workgroupCountX, c_workgroupCountY, c_workgroupCountZ)
 }
 
-// ComputePassEncoderDispatchWorkgroupsIndirect calls C.wgpuComputePassEncoderDispatchWorkgroupsIndirect.
-func ComputePassEncoderDispatchWorkgroupsIndirect(computePassEncoder *ComputePassEncoder, indirectBuffer *Buffer, indirectOffset uint64) {
-	c_computePassEncoder := (C.WGPUComputePassEncoder)(unsafe.Pointer(computePassEncoder.inner))
+// DispatchWorkgroupsIndirect calls C.wgpuComputePassEncoderDispatchWorkgroupsIndirect.
+func (c *ComputePassEncoder) DispatchWorkgroupsIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
+	c_c := (C.WGPUComputePassEncoder)(unsafe.Pointer(c.inner))
 	c_indirectBuffer := (C.WGPUBuffer)(unsafe.Pointer(indirectBuffer.inner))
 	c_indirectOffset := (C.uint64_t)(indirectOffset)
-	C.wgpuComputePassEncoderDispatchWorkgroupsIndirect(c_computePassEncoder, c_indirectBuffer, c_indirectOffset)
+	C.wgpuComputePassEncoderDispatchWorkgroupsIndirect(c_c, c_indirectBuffer, c_indirectOffset)
 }
 
-// ComputePassEncoderEnd calls C.wgpuComputePassEncoderEnd.
-func ComputePassEncoderEnd(computePassEncoder *ComputePassEncoder) {
-	c_computePassEncoder := (C.WGPUComputePassEncoder)(unsafe.Pointer(computePassEncoder.inner))
-	C.wgpuComputePassEncoderEnd(c_computePassEncoder)
+// End calls C.wgpuComputePassEncoderEnd.
+func (c *ComputePassEncoder) End() {
+	c_c := (C.WGPUComputePassEncoder)(unsafe.Pointer(c.inner))
+	C.wgpuComputePassEncoderEnd(c_c)
 }
 
-// ComputePassEncoderSetLabel calls C.wgpuComputePassEncoderSetLabel.
-func ComputePassEncoderSetLabel(computePassEncoder *ComputePassEncoder, label string) {
+// SetLabel calls C.wgpuComputePassEncoderSetLabel.
+func (c *ComputePassEncoder) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_computePassEncoder := (C.WGPUComputePassEncoder)(unsafe.Pointer(computePassEncoder.inner))
+	c_c := (C.WGPUComputePassEncoder)(unsafe.Pointer(c.inner))
 	c_label := cgoStringView(label, &pinner)
-	C.wgpuComputePassEncoderSetLabel(c_computePassEncoder, c_label)
+	C.wgpuComputePassEncoderSetLabel(c_c, c_label)
 }
 
-// ComputePipelineGetBindGroupLayout calls C.wgpuComputePipelineGetBindGroupLayout.
-func ComputePipelineGetBindGroupLayout(computePipeline *ComputePipeline, groupIndex uint32) *BindGroupLayout {
-	c_computePipeline := (C.WGPUComputePipeline)(unsafe.Pointer(computePipeline.inner))
+// GetBindGroupLayout calls C.wgpuComputePipelineGetBindGroupLayout.
+func (c *ComputePipeline) GetBindGroupLayout(groupIndex uint32) *BindGroupLayout {
+	c_c := (C.WGPUComputePipeline)(unsafe.Pointer(c.inner))
 	c_groupIndex := (C.uint32_t)(groupIndex)
-	c_result := C.wgpuComputePipelineGetBindGroupLayout(c_computePipeline, c_groupIndex)
+	c_result := C.wgpuComputePipelineGetBindGroupLayout(c_c, c_groupIndex)
 	return &BindGroupLayout{inner: uintptr(unsafe.Pointer(c_result))}
 }
 
-// ComputePipelineSetLabel calls C.wgpuComputePipelineSetLabel.
-func ComputePipelineSetLabel(computePipeline *ComputePipeline, label string) {
+// SetLabel calls C.wgpuComputePipelineSetLabel.
+func (c *ComputePipeline) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_computePipeline := (C.WGPUComputePipeline)(unsafe.Pointer(computePipeline.inner))
+	c_c := (C.WGPUComputePipeline)(unsafe.Pointer(c.inner))
 	c_label := cgoStringView(label, &pinner)
-	C.wgpuComputePipelineSetLabel(c_computePipeline, c_label)
+	C.wgpuComputePipelineSetLabel(c_c, c_label)
 }
 
-// DeviceCreateBindGroup calls C.wgpuDeviceCreateBindGroup.
-func DeviceCreateBindGroup(device *Device, descriptor BindGroupDescriptor) *BindGroup {
+// CreateBindGroup calls C.wgpuDeviceCreateBindGroup.
+func (d *Device) CreateBindGroup(descriptor BindGroupDescriptor) *BindGroup {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
 	if descriptor.Entries != nil {
 		pinner.Pin(descriptor.Entries)
 	}
-	c_device := (C.WGPUDevice)(unsafe.Pointer(device.inner))
+	c_d := (C.WGPUDevice)(unsafe.Pointer(d.inner))
 	c_descriptor := (*C.WGPUBindGroupDescriptor)(unsafe.Pointer(&descriptor))
-	c_result := C.wgpuDeviceCreateBindGroup(c_device, c_descriptor)
+	c_result := C.wgpuDeviceCreateBindGroup(c_d, c_descriptor)
 	return &BindGroup{inner: uintptr(unsafe.Pointer(c_result))}
 }
 
-// DeviceCreateBindGroupLayout calls C.wgpuDeviceCreateBindGroupLayout.
-func DeviceCreateBindGroupLayout(device *Device, descriptor BindGroupLayoutDescriptor) *BindGroupLayout {
+// CreateBindGroupLayout calls C.wgpuDeviceCreateBindGroupLayout.
+func (d *Device) CreateBindGroupLayout(descriptor BindGroupLayoutDescriptor) *BindGroupLayout {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
 	if descriptor.Entries != nil {
 		pinner.Pin(descriptor.Entries)
 	}
-	c_device := (C.WGPUDevice)(unsafe.Pointer(device.inner))
+	c_d := (C.WGPUDevice)(unsafe.Pointer(d.inner))
 	c_descriptor := (*C.WGPUBindGroupLayoutDescriptor)(unsafe.Pointer(&descriptor))
-	c_result := C.wgpuDeviceCreateBindGroupLayout(c_device, c_descriptor)
+	c_result := C.wgpuDeviceCreateBindGroupLayout(c_d, c_descriptor)
 	return &BindGroupLayout{inner: uintptr(unsafe.Pointer(c_result))}
 }
 
-// DeviceCreateBuffer calls C.wgpuDeviceCreateBuffer.
-func DeviceCreateBuffer(device *Device, descriptor BufferDescriptor) *Buffer {
+// CreateBuffer calls C.wgpuDeviceCreateBuffer.
+func (d *Device) CreateBuffer(descriptor BufferDescriptor) *Buffer {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
-	c_device := (C.WGPUDevice)(unsafe.Pointer(device.inner))
+	c_d := (C.WGPUDevice)(unsafe.Pointer(d.inner))
 	c_descriptor := (*C.WGPUBufferDescriptor)(unsafe.Pointer(&descriptor))
-	c_result := C.wgpuDeviceCreateBuffer(c_device, c_descriptor)
+	c_result := C.wgpuDeviceCreateBuffer(c_d, c_descriptor)
 	return &Buffer{inner: uintptr(unsafe.Pointer(c_result))}
 }
 
-// DeviceCreateCommandEncoder calls C.wgpuDeviceCreateCommandEncoder.
-func DeviceCreateCommandEncoder(device *Device, descriptor CommandEncoderDescriptor) *CommandEncoder {
+// CreateCommandEncoder calls C.wgpuDeviceCreateCommandEncoder.
+func (d *Device) CreateCommandEncoder(descriptor CommandEncoderDescriptor) *CommandEncoder {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
-	c_device := (C.WGPUDevice)(unsafe.Pointer(device.inner))
+	c_d := (C.WGPUDevice)(unsafe.Pointer(d.inner))
 	c_descriptor := (*C.WGPUCommandEncoderDescriptor)(unsafe.Pointer(&descriptor))
-	c_result := C.wgpuDeviceCreateCommandEncoder(c_device, c_descriptor)
+	c_result := C.wgpuDeviceCreateCommandEncoder(c_d, c_descriptor)
 	return &CommandEncoder{inner: uintptr(unsafe.Pointer(c_result))}
 }
 
-// DeviceCreateComputePipeline calls C.wgpuDeviceCreateComputePipeline.
-func DeviceCreateComputePipeline(device *Device, descriptor ComputePipelineDescriptor) *ComputePipeline {
+// CreateComputePipeline calls C.wgpuDeviceCreateComputePipeline.
+func (d *Device) CreateComputePipeline(descriptor ComputePipelineDescriptor) *ComputePipeline {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
-	c_device := (C.WGPUDevice)(unsafe.Pointer(device.inner))
+	c_d := (C.WGPUDevice)(unsafe.Pointer(d.inner))
 	c_descriptor := (*C.WGPUComputePipelineDescriptor)(unsafe.Pointer(&descriptor))
-	c_result := C.wgpuDeviceCreateComputePipeline(c_device, c_descriptor)
+	c_result := C.wgpuDeviceCreateComputePipeline(c_d, c_descriptor)
 	return &ComputePipeline{inner: uintptr(unsafe.Pointer(c_result))}
 }
 
-// DeviceCreateComputePipelineAsync calls C.wgpuDeviceCreateComputePipelineAsync.
-func DeviceCreateComputePipelineAsync(device *Device, descriptor ComputePipelineDescriptor, callback CreateComputePipelineAsyncFn) Future {
+// CreateComputePipelineAsync calls C.wgpuDeviceCreateComputePipelineAsync.
+func (d *Device) CreateComputePipelineAsync(descriptor ComputePipelineDescriptor, callback CreateComputePipelineAsyncFn) Future {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
-	c_device := (C.WGPUDevice)(unsafe.Pointer(device.inner))
+	c_d := (C.WGPUDevice)(unsafe.Pointer(d.inner))
 	c_descriptor := (*C.WGPUComputePipelineDescriptor)(unsafe.Pointer(&descriptor))
 	_cbHandle := cgo.NewHandle(callback)
 	var _cbInfo C.WGPUCreateComputePipelineAsyncCallbackInfo
 	_cbInfo.mode = C.WGPUCallbackMode_AllowProcessEvents
 	// cgo.Handle is an opaque uintptr key; cast through uintptr for userdata.
 	_cbInfo.userdata1 = *(*unsafe.Pointer)(unsafe.Pointer(&_cbHandle))
-	c_result := C.wgpuDeviceCreateComputePipelineAsync(c_device, c_descriptor, _cbInfo)
+	c_result := C.wgpuDeviceCreateComputePipelineAsync(c_d, c_descriptor, _cbInfo)
 	return Future{Id: uint64(c_result.id)}
 }
 
-// DeviceCreatePipelineLayout calls C.wgpuDeviceCreatePipelineLayout.
-func DeviceCreatePipelineLayout(device *Device, descriptor PipelineLayoutDescriptor) *PipelineLayout {
+// CreatePipelineLayout calls C.wgpuDeviceCreatePipelineLayout.
+func (d *Device) CreatePipelineLayout(descriptor PipelineLayoutDescriptor) *PipelineLayout {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
 	if descriptor.BindGroupLayouts != nil {
 		pinner.Pin(descriptor.BindGroupLayouts)
 	}
-	c_device := (C.WGPUDevice)(unsafe.Pointer(device.inner))
+	c_d := (C.WGPUDevice)(unsafe.Pointer(d.inner))
 	c_descriptor := (*C.WGPUPipelineLayoutDescriptor)(unsafe.Pointer(&descriptor))
-	c_result := C.wgpuDeviceCreatePipelineLayout(c_device, c_descriptor)
+	c_result := C.wgpuDeviceCreatePipelineLayout(c_d, c_descriptor)
 	return &PipelineLayout{inner: uintptr(unsafe.Pointer(c_result))}
 }
 
-// DeviceCreateQuerySet calls C.wgpuDeviceCreateQuerySet.
-func DeviceCreateQuerySet(device *Device, descriptor QuerySetDescriptor) *QuerySet {
+// CreateQuerySet calls C.wgpuDeviceCreateQuerySet.
+func (d *Device) CreateQuerySet(descriptor QuerySetDescriptor) *QuerySet {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
-	c_device := (C.WGPUDevice)(unsafe.Pointer(device.inner))
+	c_d := (C.WGPUDevice)(unsafe.Pointer(d.inner))
 	c_descriptor := (*C.WGPUQuerySetDescriptor)(unsafe.Pointer(&descriptor))
-	c_result := C.wgpuDeviceCreateQuerySet(c_device, c_descriptor)
+	c_result := C.wgpuDeviceCreateQuerySet(c_d, c_descriptor)
 	return &QuerySet{inner: uintptr(unsafe.Pointer(c_result))}
 }
 
-// DeviceCreateRenderPipelineAsync calls C.wgpuDeviceCreateRenderPipelineAsync.
-func DeviceCreateRenderPipelineAsync(device *Device, descriptor RenderPipelineDescriptor, callback CreateRenderPipelineAsyncFn) Future {
+// CreateRenderPipelineAsync calls C.wgpuDeviceCreateRenderPipelineAsync.
+func (d *Device) CreateRenderPipelineAsync(descriptor RenderPipelineDescriptor, callback CreateRenderPipelineAsyncFn) Future {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
-	c_device := (C.WGPUDevice)(unsafe.Pointer(device.inner))
+	c_d := (C.WGPUDevice)(unsafe.Pointer(d.inner))
 	c_descriptor := (*C.WGPURenderPipelineDescriptor)(unsafe.Pointer(&descriptor))
 	_cbHandle := cgo.NewHandle(callback)
 	var _cbInfo C.WGPUCreateRenderPipelineAsyncCallbackInfo
 	_cbInfo.mode = C.WGPUCallbackMode_AllowProcessEvents
 	// cgo.Handle is an opaque uintptr key; cast through uintptr for userdata.
 	_cbInfo.userdata1 = *(*unsafe.Pointer)(unsafe.Pointer(&_cbHandle))
-	c_result := C.wgpuDeviceCreateRenderPipelineAsync(c_device, c_descriptor, _cbInfo)
+	c_result := C.wgpuDeviceCreateRenderPipelineAsync(c_d, c_descriptor, _cbInfo)
 	return Future{Id: uint64(c_result.id)}
 }
 
-// DeviceCreateRenderBundleEncoder calls C.wgpuDeviceCreateRenderBundleEncoder.
-func DeviceCreateRenderBundleEncoder(device *Device, descriptor RenderBundleEncoderDescriptor) *RenderBundleEncoder {
+// CreateRenderBundleEncoder calls C.wgpuDeviceCreateRenderBundleEncoder.
+func (d *Device) CreateRenderBundleEncoder(descriptor RenderBundleEncoderDescriptor) *RenderBundleEncoder {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
 	if descriptor.ColorFormats != nil {
 		pinner.Pin(descriptor.ColorFormats)
 	}
-	c_device := (C.WGPUDevice)(unsafe.Pointer(device.inner))
+	c_d := (C.WGPUDevice)(unsafe.Pointer(d.inner))
 	c_descriptor := (*C.WGPURenderBundleEncoderDescriptor)(unsafe.Pointer(&descriptor))
-	c_result := C.wgpuDeviceCreateRenderBundleEncoder(c_device, c_descriptor)
+	c_result := C.wgpuDeviceCreateRenderBundleEncoder(c_d, c_descriptor)
 	return &RenderBundleEncoder{inner: uintptr(unsafe.Pointer(c_result))}
 }
 
-// DeviceCreateRenderPipeline calls C.wgpuDeviceCreateRenderPipeline.
-func DeviceCreateRenderPipeline(device *Device, descriptor RenderPipelineDescriptor) *RenderPipeline {
+// CreateRenderPipeline calls C.wgpuDeviceCreateRenderPipeline.
+func (d *Device) CreateRenderPipeline(descriptor RenderPipelineDescriptor) *RenderPipeline {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
-	c_device := (C.WGPUDevice)(unsafe.Pointer(device.inner))
+	c_d := (C.WGPUDevice)(unsafe.Pointer(d.inner))
 	c_descriptor := (*C.WGPURenderPipelineDescriptor)(unsafe.Pointer(&descriptor))
-	c_result := C.wgpuDeviceCreateRenderPipeline(c_device, c_descriptor)
+	c_result := C.wgpuDeviceCreateRenderPipeline(c_d, c_descriptor)
 	return &RenderPipeline{inner: uintptr(unsafe.Pointer(c_result))}
 }
 
-// DeviceCreateSampler calls C.wgpuDeviceCreateSampler.
-func DeviceCreateSampler(device *Device, descriptor SamplerDescriptor) *Sampler {
+// CreateSampler calls C.wgpuDeviceCreateSampler.
+func (d *Device) CreateSampler(descriptor SamplerDescriptor) *Sampler {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
-	c_device := (C.WGPUDevice)(unsafe.Pointer(device.inner))
+	c_d := (C.WGPUDevice)(unsafe.Pointer(d.inner))
 	c_descriptor := (*C.WGPUSamplerDescriptor)(unsafe.Pointer(&descriptor))
-	c_result := C.wgpuDeviceCreateSampler(c_device, c_descriptor)
+	c_result := C.wgpuDeviceCreateSampler(c_d, c_descriptor)
 	return &Sampler{inner: uintptr(unsafe.Pointer(c_result))}
 }
 
-// DeviceCreateShaderModule calls C.wgpuDeviceCreateShaderModule.
-func DeviceCreateShaderModule(device *Device, descriptor ShaderModuleDescriptor) *ShaderModule {
+// CreateShaderModule calls C.wgpuDeviceCreateShaderModule.
+func (d *Device) CreateShaderModule(descriptor ShaderModuleDescriptor) *ShaderModule {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
-	c_device := (C.WGPUDevice)(unsafe.Pointer(device.inner))
+	c_d := (C.WGPUDevice)(unsafe.Pointer(d.inner))
 	c_descriptor := (*C.WGPUShaderModuleDescriptor)(unsafe.Pointer(&descriptor))
-	c_result := C.wgpuDeviceCreateShaderModule(c_device, c_descriptor)
+	c_result := C.wgpuDeviceCreateShaderModule(c_d, c_descriptor)
 	return &ShaderModule{inner: uintptr(unsafe.Pointer(c_result))}
 }
 
-// DeviceCreateTexture calls C.wgpuDeviceCreateTexture.
-func DeviceCreateTexture(device *Device, descriptor TextureDescriptor) *Texture {
+// CreateTexture calls C.wgpuDeviceCreateTexture.
+func (d *Device) CreateTexture(descriptor TextureDescriptor) *Texture {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
 	if descriptor.ViewFormats != nil {
 		pinner.Pin(descriptor.ViewFormats)
 	}
-	c_device := (C.WGPUDevice)(unsafe.Pointer(device.inner))
+	c_d := (C.WGPUDevice)(unsafe.Pointer(d.inner))
 	c_descriptor := (*C.WGPUTextureDescriptor)(unsafe.Pointer(&descriptor))
-	c_result := C.wgpuDeviceCreateTexture(c_device, c_descriptor)
+	c_result := C.wgpuDeviceCreateTexture(c_d, c_descriptor)
 	return &Texture{inner: uintptr(unsafe.Pointer(c_result))}
 }
 
-// DeviceDestroy calls C.wgpuDeviceDestroy.
-func DeviceDestroy(device *Device) {
-	c_device := (C.WGPUDevice)(unsafe.Pointer(device.inner))
-	C.wgpuDeviceDestroy(c_device)
+// Destroy calls C.wgpuDeviceDestroy.
+func (d *Device) Destroy() {
+	c_d := (C.WGPUDevice)(unsafe.Pointer(d.inner))
+	C.wgpuDeviceDestroy(c_d)
 }
 
-// DeviceGetLostFuture calls C.wgpuDeviceGetLostFuture.
-func DeviceGetLostFuture(device *Device) Future {
-	c_device := (C.WGPUDevice)(unsafe.Pointer(device.inner))
-	c_result := C.wgpuDeviceGetLostFuture(c_device)
+// GetLostFuture calls C.wgpuDeviceGetLostFuture.
+func (d *Device) GetLostFuture() Future {
+	c_d := (C.WGPUDevice)(unsafe.Pointer(d.inner))
+	c_result := C.wgpuDeviceGetLostFuture(c_d)
 	return Future{Id: uint64(c_result.id)}
 }
 
-// DeviceGetLimits calls C.wgpuDeviceGetLimits.
-func DeviceGetLimits(device *Device, limits Limits) Status {
+// GetLimits calls C.wgpuDeviceGetLimits.
+func (d *Device) GetLimits(limits Limits) Status {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&limits)
-	c_device := (C.WGPUDevice)(unsafe.Pointer(device.inner))
+	c_d := (C.WGPUDevice)(unsafe.Pointer(d.inner))
 	c_limits := (*C.WGPULimits)(unsafe.Pointer(&limits))
-	c_result := C.wgpuDeviceGetLimits(c_device, c_limits)
+	c_result := C.wgpuDeviceGetLimits(c_d, c_limits)
 	return (Status)(c_result)
 }
 
-// DeviceHasFeature calls C.wgpuDeviceHasFeature.
-func DeviceHasFeature(device *Device, feature FeatureName) bool {
-	c_device := (C.WGPUDevice)(unsafe.Pointer(device.inner))
+// HasFeature calls C.wgpuDeviceHasFeature.
+func (d *Device) HasFeature(feature FeatureName) bool {
+	c_d := (C.WGPUDevice)(unsafe.Pointer(d.inner))
 	c_feature := (C.WGPUFeatureName)(feature)
-	c_result := C.wgpuDeviceHasFeature(c_device, c_feature)
+	c_result := C.wgpuDeviceHasFeature(c_d, c_feature)
 	return c_result != 0
 }
 
-// DeviceGetFeatures calls C.wgpuDeviceGetFeatures.
-func DeviceGetFeatures(device *Device, features SupportedFeatures) {
+// GetFeatures calls C.wgpuDeviceGetFeatures.
+func (d *Device) GetFeatures(features SupportedFeatures) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&features)
 	if features.Features != nil {
 		pinner.Pin(features.Features)
 	}
-	c_device := (C.WGPUDevice)(unsafe.Pointer(device.inner))
+	c_d := (C.WGPUDevice)(unsafe.Pointer(d.inner))
 	c_features := (*C.WGPUSupportedFeatures)(unsafe.Pointer(&features))
-	C.wgpuDeviceGetFeatures(c_device, c_features)
+	C.wgpuDeviceGetFeatures(c_d, c_features)
 }
 
-// DeviceGetAdapterInfo calls C.wgpuDeviceGetAdapterInfo.
-func DeviceGetAdapterInfo(device *Device, adapterInfo AdapterInfo) Status {
+// GetAdapterInfo calls C.wgpuDeviceGetAdapterInfo.
+func (d *Device) GetAdapterInfo(adapterInfo AdapterInfo) Status {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&adapterInfo)
-	c_device := (C.WGPUDevice)(unsafe.Pointer(device.inner))
+	c_d := (C.WGPUDevice)(unsafe.Pointer(d.inner))
 	c_adapterInfo := (*C.WGPUAdapterInfo)(unsafe.Pointer(&adapterInfo))
-	c_result := C.wgpuDeviceGetAdapterInfo(c_device, c_adapterInfo)
+	c_result := C.wgpuDeviceGetAdapterInfo(c_d, c_adapterInfo)
 	return (Status)(c_result)
 }
 
-// DeviceGetQueue calls C.wgpuDeviceGetQueue.
-func DeviceGetQueue(device *Device) *Queue {
-	c_device := (C.WGPUDevice)(unsafe.Pointer(device.inner))
-	c_result := C.wgpuDeviceGetQueue(c_device)
+// GetQueue calls C.wgpuDeviceGetQueue.
+func (d *Device) GetQueue() *Queue {
+	c_d := (C.WGPUDevice)(unsafe.Pointer(d.inner))
+	c_result := C.wgpuDeviceGetQueue(c_d)
 	return &Queue{inner: uintptr(unsafe.Pointer(c_result))}
 }
 
-// DevicePushErrorScope calls C.wgpuDevicePushErrorScope.
-func DevicePushErrorScope(device *Device, filter ErrorFilter) {
-	c_device := (C.WGPUDevice)(unsafe.Pointer(device.inner))
+// PushErrorScope calls C.wgpuDevicePushErrorScope.
+func (d *Device) PushErrorScope(filter ErrorFilter) {
+	c_d := (C.WGPUDevice)(unsafe.Pointer(d.inner))
 	c_filter := (C.WGPUErrorFilter)(filter)
-	C.wgpuDevicePushErrorScope(c_device, c_filter)
+	C.wgpuDevicePushErrorScope(c_d, c_filter)
 }
 
-// DevicePopErrorScope calls C.wgpuDevicePopErrorScope.
-func DevicePopErrorScope(device *Device, callback PopErrorScopeFn) Future {
-	c_device := (C.WGPUDevice)(unsafe.Pointer(device.inner))
+// PopErrorScope calls C.wgpuDevicePopErrorScope.
+func (d *Device) PopErrorScope(callback PopErrorScopeFn) Future {
+	c_d := (C.WGPUDevice)(unsafe.Pointer(d.inner))
 	_cbHandle := cgo.NewHandle(callback)
 	var _cbInfo C.WGPUPopErrorScopeCallbackInfo
 	_cbInfo.mode = C.WGPUCallbackMode_AllowProcessEvents
 	// cgo.Handle is an opaque uintptr key; cast through uintptr for userdata.
 	_cbInfo.userdata1 = *(*unsafe.Pointer)(unsafe.Pointer(&_cbHandle))
-	c_result := C.wgpuDevicePopErrorScope(c_device, _cbInfo)
+	c_result := C.wgpuDevicePopErrorScope(c_d, _cbInfo)
 	return Future{Id: uint64(c_result.id)}
 }
 
-// DeviceSetLabel calls C.wgpuDeviceSetLabel.
-func DeviceSetLabel(device *Device, label string) {
+// SetLabel calls C.wgpuDeviceSetLabel.
+func (d *Device) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_device := (C.WGPUDevice)(unsafe.Pointer(device.inner))
+	c_d := (C.WGPUDevice)(unsafe.Pointer(d.inner))
 	c_label := cgoStringView(label, &pinner)
-	C.wgpuDeviceSetLabel(c_device, c_label)
+	C.wgpuDeviceSetLabel(c_d, c_label)
 }
 
-// ExternalTextureSetLabel calls C.wgpuExternalTextureSetLabel.
-func ExternalTextureSetLabel(externalTexture *ExternalTexture, label string) {
+// SetLabel calls C.wgpuExternalTextureSetLabel.
+func (e *ExternalTexture) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_externalTexture := (C.WGPUExternalTexture)(unsafe.Pointer(externalTexture.inner))
+	c_e := (C.WGPUExternalTexture)(unsafe.Pointer(e.inner))
 	c_label := cgoStringView(label, &pinner)
-	C.wgpuExternalTextureSetLabel(c_externalTexture, c_label)
+	C.wgpuExternalTextureSetLabel(c_e, c_label)
 }
 
-// InstanceCreateSurface calls C.wgpuInstanceCreateSurface.
-func InstanceCreateSurface(instance *Instance, descriptor SurfaceDescriptor) *Surface {
+// CreateSurface calls C.wgpuInstanceCreateSurface.
+func (i *Instance) CreateSurface(descriptor SurfaceDescriptor) *Surface {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
-	c_instance := (C.WGPUInstance)(unsafe.Pointer(instance.inner))
+	c_i := (C.WGPUInstance)(unsafe.Pointer(i.inner))
 	c_descriptor := (*C.WGPUSurfaceDescriptor)(unsafe.Pointer(&descriptor))
-	c_result := C.wgpuInstanceCreateSurface(c_instance, c_descriptor)
+	c_result := C.wgpuInstanceCreateSurface(c_i, c_descriptor)
 	return &Surface{inner: uintptr(unsafe.Pointer(c_result))}
 }
 
-// InstanceGetWGSLLanguageFeatures calls C.wgpuInstanceGetWGSLLanguageFeatures.
-func InstanceGetWGSLLanguageFeatures(instance *Instance, features SupportedWGSLLanguageFeatures) {
+// GetWGSLLanguageFeatures calls C.wgpuInstanceGetWGSLLanguageFeatures.
+func (i *Instance) GetWGSLLanguageFeatures(features SupportedWGSLLanguageFeatures) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&features)
 	if features.Features != nil {
 		pinner.Pin(features.Features)
 	}
-	c_instance := (C.WGPUInstance)(unsafe.Pointer(instance.inner))
+	c_i := (C.WGPUInstance)(unsafe.Pointer(i.inner))
 	c_features := (*C.WGPUSupportedWGSLLanguageFeatures)(unsafe.Pointer(&features))
-	C.wgpuInstanceGetWGSLLanguageFeatures(c_instance, c_features)
+	C.wgpuInstanceGetWGSLLanguageFeatures(c_i, c_features)
 }
 
-// InstanceHasWGSLLanguageFeature calls C.wgpuInstanceHasWGSLLanguageFeature.
-func InstanceHasWGSLLanguageFeature(instance *Instance, feature WGSLLanguageFeatureName) bool {
-	c_instance := (C.WGPUInstance)(unsafe.Pointer(instance.inner))
+// HasWGSLLanguageFeature calls C.wgpuInstanceHasWGSLLanguageFeature.
+func (i *Instance) HasWGSLLanguageFeature(feature WGSLLanguageFeatureName) bool {
+	c_i := (C.WGPUInstance)(unsafe.Pointer(i.inner))
 	c_feature := (C.WGPUWGSLLanguageFeatureName)(feature)
-	c_result := C.wgpuInstanceHasWGSLLanguageFeature(c_instance, c_feature)
+	c_result := C.wgpuInstanceHasWGSLLanguageFeature(c_i, c_feature)
 	return c_result != 0
 }
 
-// InstanceProcessEvents calls C.wgpuInstanceProcessEvents.
-func InstanceProcessEvents(instance *Instance) {
-	c_instance := (C.WGPUInstance)(unsafe.Pointer(instance.inner))
-	C.wgpuInstanceProcessEvents(c_instance)
+// ProcessEvents calls C.wgpuInstanceProcessEvents.
+func (i *Instance) ProcessEvents() {
+	c_i := (C.WGPUInstance)(unsafe.Pointer(i.inner))
+	C.wgpuInstanceProcessEvents(c_i)
 }
 
-// InstanceRequestAdapter calls C.wgpuInstanceRequestAdapter.
-func InstanceRequestAdapter(instance *Instance, options RequestAdapterOptions, callback RequestAdapterFn) Future {
+// RequestAdapter calls C.wgpuInstanceRequestAdapter.
+func (i *Instance) RequestAdapter(options RequestAdapterOptions, callback RequestAdapterFn) Future {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&options)
-	c_instance := (C.WGPUInstance)(unsafe.Pointer(instance.inner))
+	c_i := (C.WGPUInstance)(unsafe.Pointer(i.inner))
 	c_options := (*C.WGPURequestAdapterOptions)(unsafe.Pointer(&options))
 	_cbHandle := cgo.NewHandle(callback)
 	var _cbInfo C.WGPURequestAdapterCallbackInfo
@@ -909,69 +909,69 @@ func InstanceRequestAdapter(instance *Instance, options RequestAdapterOptions, c
 	// cgo.Handle is an opaque uintptr key; cast through uintptr for userdata.
 	_cbInfo.userdata1 = *(*unsafe.Pointer)(unsafe.Pointer(&_cbHandle))
 	_cbInfo.callback = C.WGPURequestAdapterCallback(C.goRequestAdapterCB)
-	c_result := C.wgpuInstanceRequestAdapter(c_instance, c_options, _cbInfo)
+	c_result := C.wgpuInstanceRequestAdapter(c_i, c_options, _cbInfo)
 	return Future{Id: uint64(c_result.id)}
 }
 
-// InstanceWaitAny calls C.wgpuInstanceWaitAny.
-func InstanceWaitAny(instance *Instance, futureCount uintptr, futures FutureWaitInfo, timeoutNS uint64) WaitStatus {
+// WaitAny calls C.wgpuInstanceWaitAny.
+func (i *Instance) WaitAny(futureCount uintptr, futures FutureWaitInfo, timeoutNS uint64) WaitStatus {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&futures)
-	c_instance := (C.WGPUInstance)(unsafe.Pointer(instance.inner))
+	c_i := (C.WGPUInstance)(unsafe.Pointer(i.inner))
 	c_futureCount := (C.size_t)(futureCount)
 	c_futures := (*C.WGPUFutureWaitInfo)(unsafe.Pointer(&futures))
 	c_timeoutNS := (C.uint64_t)(timeoutNS)
-	c_result := C.wgpuInstanceWaitAny(c_instance, c_futureCount, c_futures, c_timeoutNS)
+	c_result := C.wgpuInstanceWaitAny(c_i, c_futureCount, c_futures, c_timeoutNS)
 	return (WaitStatus)(c_result)
 }
 
-// PipelineLayoutSetLabel calls C.wgpuPipelineLayoutSetLabel.
-func PipelineLayoutSetLabel(pipelineLayout *PipelineLayout, label string) {
+// SetLabel calls C.wgpuPipelineLayoutSetLabel.
+func (p *PipelineLayout) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_pipelineLayout := (C.WGPUPipelineLayout)(unsafe.Pointer(pipelineLayout.inner))
+	c_p := (C.WGPUPipelineLayout)(unsafe.Pointer(p.inner))
 	c_label := cgoStringView(label, &pinner)
-	C.wgpuPipelineLayoutSetLabel(c_pipelineLayout, c_label)
+	C.wgpuPipelineLayoutSetLabel(c_p, c_label)
 }
 
-// QuerySetSetLabel calls C.wgpuQuerySetSetLabel.
-func QuerySetSetLabel(querySet *QuerySet, label string) {
+// SetLabel calls C.wgpuQuerySetSetLabel.
+func (q *QuerySet) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_querySet := (C.WGPUQuerySet)(unsafe.Pointer(querySet.inner))
+	c_q := (C.WGPUQuerySet)(unsafe.Pointer(q.inner))
 	c_label := cgoStringView(label, &pinner)
-	C.wgpuQuerySetSetLabel(c_querySet, c_label)
+	C.wgpuQuerySetSetLabel(c_q, c_label)
 }
 
-// QuerySetGetType calls C.wgpuQuerySetGetType.
-func QuerySetGetType(querySet *QuerySet) QueryType {
-	c_querySet := (C.WGPUQuerySet)(unsafe.Pointer(querySet.inner))
-	c_result := C.wgpuQuerySetGetType(c_querySet)
+// GetType calls C.wgpuQuerySetGetType.
+func (q *QuerySet) GetType() QueryType {
+	c_q := (C.WGPUQuerySet)(unsafe.Pointer(q.inner))
+	c_result := C.wgpuQuerySetGetType(c_q)
 	return (QueryType)(c_result)
 }
 
-// QuerySetGetCount calls C.wgpuQuerySetGetCount.
-func QuerySetGetCount(querySet *QuerySet) uint32 {
-	c_querySet := (C.WGPUQuerySet)(unsafe.Pointer(querySet.inner))
-	c_result := C.wgpuQuerySetGetCount(c_querySet)
+// GetCount calls C.wgpuQuerySetGetCount.
+func (q *QuerySet) GetCount() uint32 {
+	c_q := (C.WGPUQuerySet)(unsafe.Pointer(q.inner))
+	c_result := C.wgpuQuerySetGetCount(c_q)
 	return (uint32)(c_result)
 }
 
-// QuerySetDestroy calls C.wgpuQuerySetDestroy.
-func QuerySetDestroy(querySet *QuerySet) {
-	c_querySet := (C.WGPUQuerySet)(unsafe.Pointer(querySet.inner))
-	C.wgpuQuerySetDestroy(c_querySet)
+// Destroy calls C.wgpuQuerySetDestroy.
+func (q *QuerySet) Destroy() {
+	c_q := (C.WGPUQuerySet)(unsafe.Pointer(q.inner))
+	C.wgpuQuerySetDestroy(c_q)
 }
 
-// QueueSubmit calls C.wgpuQueueSubmit.
-func QueueSubmit(queue *Queue, commands []*CommandBuffer) {
+// Submit calls C.wgpuQueueSubmit.
+func (q *Queue) Submit(commands []*CommandBuffer) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	if len(commands) > 0 {
 		pinner.Pin(&commands[0])
 	}
-	c_queue := (C.WGPUQueue)(unsafe.Pointer(queue.inner))
+	c_q := (C.WGPUQueue)(unsafe.Pointer(q.inner))
 	commands_handles := make([]uintptr, len(commands))
 	for i, v := range commands {
 		commands_handles[i] = v.inner
@@ -981,81 +981,81 @@ func QueueSubmit(queue *Queue, commands []*CommandBuffer) {
 		c_commands_ptr = (*C.WGPUCommandBuffer)(unsafe.Pointer(&commands_handles[0]))
 	}
 	c_commands_count := (C.size_t)(len(commands))
-	C.wgpuQueueSubmit(c_queue, c_commands_count, c_commands_ptr)
+	C.wgpuQueueSubmit(c_q, c_commands_count, c_commands_ptr)
 }
 
-// QueueOnSubmittedWorkDone calls C.wgpuQueueOnSubmittedWorkDone.
-func QueueOnSubmittedWorkDone(queue *Queue, callback QueueWorkDoneFn) Future {
-	c_queue := (C.WGPUQueue)(unsafe.Pointer(queue.inner))
+// OnSubmittedWorkDone calls C.wgpuQueueOnSubmittedWorkDone.
+func (q *Queue) OnSubmittedWorkDone(callback QueueWorkDoneFn) Future {
+	c_q := (C.WGPUQueue)(unsafe.Pointer(q.inner))
 	_cbHandle := cgo.NewHandle(callback)
 	var _cbInfo C.WGPUQueueWorkDoneCallbackInfo
 	_cbInfo.mode = C.WGPUCallbackMode_AllowProcessEvents
 	// cgo.Handle is an opaque uintptr key; cast through uintptr for userdata.
 	_cbInfo.userdata1 = *(*unsafe.Pointer)(unsafe.Pointer(&_cbHandle))
 	_cbInfo.callback = C.WGPUQueueWorkDoneCallback(C.goQueueWorkDoneCB)
-	c_result := C.wgpuQueueOnSubmittedWorkDone(c_queue, _cbInfo)
+	c_result := C.wgpuQueueOnSubmittedWorkDone(c_q, _cbInfo)
 	return Future{Id: uint64(c_result.id)}
 }
 
-// QueueWriteBuffer calls C.wgpuQueueWriteBuffer.
-func QueueWriteBuffer(queue *Queue, buffer *Buffer, bufferOffset uint64, data unsafe.Pointer, size uintptr) {
-	c_queue := (C.WGPUQueue)(unsafe.Pointer(queue.inner))
+// WriteBuffer calls C.wgpuQueueWriteBuffer.
+func (q *Queue) WriteBuffer(buffer *Buffer, bufferOffset uint64, data unsafe.Pointer, size uintptr) {
+	c_q := (C.WGPUQueue)(unsafe.Pointer(q.inner))
 	c_buffer := (C.WGPUBuffer)(unsafe.Pointer(buffer.inner))
 	c_bufferOffset := (C.uint64_t)(bufferOffset)
 	c_data := (unsafe.Pointer)(data)
 	c_size := (C.size_t)(size)
-	C.wgpuQueueWriteBuffer(c_queue, c_buffer, c_bufferOffset, c_data, c_size)
+	C.wgpuQueueWriteBuffer(c_q, c_buffer, c_bufferOffset, c_data, c_size)
 }
 
-// QueueWriteTexture calls C.wgpuQueueWriteTexture.
-func QueueWriteTexture(queue *Queue, destination TexelCopyTextureInfo, data unsafe.Pointer, dataSize uintptr, dataLayout TexelCopyBufferLayout, writeSize Extent3D) {
+// WriteTexture calls C.wgpuQueueWriteTexture.
+func (q *Queue) WriteTexture(destination TexelCopyTextureInfo, data unsafe.Pointer, dataSize uintptr, dataLayout TexelCopyBufferLayout, writeSize Extent3D) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&destination)
 	pinner.Pin(&dataLayout)
 	pinner.Pin(&writeSize)
-	c_queue := (C.WGPUQueue)(unsafe.Pointer(queue.inner))
+	c_q := (C.WGPUQueue)(unsafe.Pointer(q.inner))
 	c_destination := (*C.WGPUTexelCopyTextureInfo)(unsafe.Pointer(&destination))
 	c_data := (unsafe.Pointer)(data)
 	c_dataSize := (C.size_t)(dataSize)
 	c_dataLayout := (*C.WGPUTexelCopyBufferLayout)(unsafe.Pointer(&dataLayout))
 	c_writeSize := (*C.WGPUExtent3D)(unsafe.Pointer(&writeSize))
-	C.wgpuQueueWriteTexture(c_queue, c_destination, c_data, c_dataSize, c_dataLayout, c_writeSize)
+	C.wgpuQueueWriteTexture(c_q, c_destination, c_data, c_dataSize, c_dataLayout, c_writeSize)
 }
 
-// QueueSetLabel calls C.wgpuQueueSetLabel.
-func QueueSetLabel(queue *Queue, label string) {
+// SetLabel calls C.wgpuQueueSetLabel.
+func (q *Queue) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_queue := (C.WGPUQueue)(unsafe.Pointer(queue.inner))
+	c_q := (C.WGPUQueue)(unsafe.Pointer(q.inner))
 	c_label := cgoStringView(label, &pinner)
-	C.wgpuQueueSetLabel(c_queue, c_label)
+	C.wgpuQueueSetLabel(c_q, c_label)
 }
 
-// RenderBundleSetLabel calls C.wgpuRenderBundleSetLabel.
-func RenderBundleSetLabel(renderBundle *RenderBundle, label string) {
+// SetLabel calls C.wgpuRenderBundleSetLabel.
+func (r *RenderBundle) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_renderBundle := (C.WGPURenderBundle)(unsafe.Pointer(renderBundle.inner))
+	c_r := (C.WGPURenderBundle)(unsafe.Pointer(r.inner))
 	c_label := cgoStringView(label, &pinner)
-	C.wgpuRenderBundleSetLabel(c_renderBundle, c_label)
+	C.wgpuRenderBundleSetLabel(c_r, c_label)
 }
 
-// RenderBundleEncoderSetPipeline calls C.wgpuRenderBundleEncoderSetPipeline.
-func RenderBundleEncoderSetPipeline(renderBundleEncoder *RenderBundleEncoder, pipeline *RenderPipeline) {
-	c_renderBundleEncoder := (C.WGPURenderBundleEncoder)(unsafe.Pointer(renderBundleEncoder.inner))
+// SetPipeline calls C.wgpuRenderBundleEncoderSetPipeline.
+func (r *RenderBundleEncoder) SetPipeline(pipeline *RenderPipeline) {
+	c_r := (C.WGPURenderBundleEncoder)(unsafe.Pointer(r.inner))
 	c_pipeline := (C.WGPURenderPipeline)(unsafe.Pointer(pipeline.inner))
-	C.wgpuRenderBundleEncoderSetPipeline(c_renderBundleEncoder, c_pipeline)
+	C.wgpuRenderBundleEncoderSetPipeline(c_r, c_pipeline)
 }
 
-// RenderBundleEncoderSetBindGroup calls C.wgpuRenderBundleEncoderSetBindGroup.
-func RenderBundleEncoderSetBindGroup(renderBundleEncoder *RenderBundleEncoder, groupIndex uint32, group *BindGroup, dynamicOffsets []uint32) {
+// SetBindGroup calls C.wgpuRenderBundleEncoderSetBindGroup.
+func (r *RenderBundleEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, dynamicOffsets []uint32) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	if len(dynamicOffsets) > 0 {
 		pinner.Pin(&dynamicOffsets[0])
 	}
-	c_renderBundleEncoder := (C.WGPURenderBundleEncoder)(unsafe.Pointer(renderBundleEncoder.inner))
+	c_r := (C.WGPURenderBundleEncoder)(unsafe.Pointer(r.inner))
 	c_groupIndex := (C.uint32_t)(groupIndex)
 	c_group := (C.WGPUBindGroup)(unsafe.Pointer(group.inner))
 	var c_dynamicOffsets_ptr *C.uint32_t
@@ -1063,134 +1063,134 @@ func RenderBundleEncoderSetBindGroup(renderBundleEncoder *RenderBundleEncoder, g
 		c_dynamicOffsets_ptr = (*C.uint32_t)(unsafe.Pointer(&dynamicOffsets[0]))
 	}
 	c_dynamicOffsets_count := (C.size_t)(len(dynamicOffsets))
-	C.wgpuRenderBundleEncoderSetBindGroup(c_renderBundleEncoder, c_groupIndex, c_group, c_dynamicOffsets_count, c_dynamicOffsets_ptr)
+	C.wgpuRenderBundleEncoderSetBindGroup(c_r, c_groupIndex, c_group, c_dynamicOffsets_count, c_dynamicOffsets_ptr)
 }
 
-// RenderBundleEncoderSetImmediates calls C.wgpuRenderBundleEncoderSetImmediates.
-func RenderBundleEncoderSetImmediates(renderBundleEncoder *RenderBundleEncoder, offset uint32, data unsafe.Pointer, size uintptr) {
-	c_renderBundleEncoder := (C.WGPURenderBundleEncoder)(unsafe.Pointer(renderBundleEncoder.inner))
+// SetImmediates calls C.wgpuRenderBundleEncoderSetImmediates.
+func (r *RenderBundleEncoder) SetImmediates(offset uint32, data unsafe.Pointer, size uintptr) {
+	c_r := (C.WGPURenderBundleEncoder)(unsafe.Pointer(r.inner))
 	c_offset := (C.uint32_t)(offset)
 	c_data := (unsafe.Pointer)(data)
 	c_size := (C.size_t)(size)
-	C.wgpuRenderBundleEncoderSetImmediates(c_renderBundleEncoder, c_offset, c_data, c_size)
+	C.wgpuRenderBundleEncoderSetImmediates(c_r, c_offset, c_data, c_size)
 }
 
-// RenderBundleEncoderDraw calls C.wgpuRenderBundleEncoderDraw.
-func RenderBundleEncoderDraw(renderBundleEncoder *RenderBundleEncoder, vertexCount uint32, instanceCount uint32, firstVertex uint32, firstInstance uint32) {
-	c_renderBundleEncoder := (C.WGPURenderBundleEncoder)(unsafe.Pointer(renderBundleEncoder.inner))
+// Draw calls C.wgpuRenderBundleEncoderDraw.
+func (r *RenderBundleEncoder) Draw(vertexCount uint32, instanceCount uint32, firstVertex uint32, firstInstance uint32) {
+	c_r := (C.WGPURenderBundleEncoder)(unsafe.Pointer(r.inner))
 	c_vertexCount := (C.uint32_t)(vertexCount)
 	c_instanceCount := (C.uint32_t)(instanceCount)
 	c_firstVertex := (C.uint32_t)(firstVertex)
 	c_firstInstance := (C.uint32_t)(firstInstance)
-	C.wgpuRenderBundleEncoderDraw(c_renderBundleEncoder, c_vertexCount, c_instanceCount, c_firstVertex, c_firstInstance)
+	C.wgpuRenderBundleEncoderDraw(c_r, c_vertexCount, c_instanceCount, c_firstVertex, c_firstInstance)
 }
 
-// RenderBundleEncoderDrawIndexed calls C.wgpuRenderBundleEncoderDrawIndexed.
-func RenderBundleEncoderDrawIndexed(renderBundleEncoder *RenderBundleEncoder, indexCount uint32, instanceCount uint32, firstIndex uint32, baseVertex int32, firstInstance uint32) {
-	c_renderBundleEncoder := (C.WGPURenderBundleEncoder)(unsafe.Pointer(renderBundleEncoder.inner))
+// DrawIndexed calls C.wgpuRenderBundleEncoderDrawIndexed.
+func (r *RenderBundleEncoder) DrawIndexed(indexCount uint32, instanceCount uint32, firstIndex uint32, baseVertex int32, firstInstance uint32) {
+	c_r := (C.WGPURenderBundleEncoder)(unsafe.Pointer(r.inner))
 	c_indexCount := (C.uint32_t)(indexCount)
 	c_instanceCount := (C.uint32_t)(instanceCount)
 	c_firstIndex := (C.uint32_t)(firstIndex)
 	c_baseVertex := (C.int32_t)(baseVertex)
 	c_firstInstance := (C.uint32_t)(firstInstance)
-	C.wgpuRenderBundleEncoderDrawIndexed(c_renderBundleEncoder, c_indexCount, c_instanceCount, c_firstIndex, c_baseVertex, c_firstInstance)
+	C.wgpuRenderBundleEncoderDrawIndexed(c_r, c_indexCount, c_instanceCount, c_firstIndex, c_baseVertex, c_firstInstance)
 }
 
-// RenderBundleEncoderDrawIndirect calls C.wgpuRenderBundleEncoderDrawIndirect.
-func RenderBundleEncoderDrawIndirect(renderBundleEncoder *RenderBundleEncoder, indirectBuffer *Buffer, indirectOffset uint64) {
-	c_renderBundleEncoder := (C.WGPURenderBundleEncoder)(unsafe.Pointer(renderBundleEncoder.inner))
+// DrawIndirect calls C.wgpuRenderBundleEncoderDrawIndirect.
+func (r *RenderBundleEncoder) DrawIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
+	c_r := (C.WGPURenderBundleEncoder)(unsafe.Pointer(r.inner))
 	c_indirectBuffer := (C.WGPUBuffer)(unsafe.Pointer(indirectBuffer.inner))
 	c_indirectOffset := (C.uint64_t)(indirectOffset)
-	C.wgpuRenderBundleEncoderDrawIndirect(c_renderBundleEncoder, c_indirectBuffer, c_indirectOffset)
+	C.wgpuRenderBundleEncoderDrawIndirect(c_r, c_indirectBuffer, c_indirectOffset)
 }
 
-// RenderBundleEncoderDrawIndexedIndirect calls C.wgpuRenderBundleEncoderDrawIndexedIndirect.
-func RenderBundleEncoderDrawIndexedIndirect(renderBundleEncoder *RenderBundleEncoder, indirectBuffer *Buffer, indirectOffset uint64) {
-	c_renderBundleEncoder := (C.WGPURenderBundleEncoder)(unsafe.Pointer(renderBundleEncoder.inner))
+// DrawIndexedIndirect calls C.wgpuRenderBundleEncoderDrawIndexedIndirect.
+func (r *RenderBundleEncoder) DrawIndexedIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
+	c_r := (C.WGPURenderBundleEncoder)(unsafe.Pointer(r.inner))
 	c_indirectBuffer := (C.WGPUBuffer)(unsafe.Pointer(indirectBuffer.inner))
 	c_indirectOffset := (C.uint64_t)(indirectOffset)
-	C.wgpuRenderBundleEncoderDrawIndexedIndirect(c_renderBundleEncoder, c_indirectBuffer, c_indirectOffset)
+	C.wgpuRenderBundleEncoderDrawIndexedIndirect(c_r, c_indirectBuffer, c_indirectOffset)
 }
 
-// RenderBundleEncoderInsertDebugMarker calls C.wgpuRenderBundleEncoderInsertDebugMarker.
-func RenderBundleEncoderInsertDebugMarker(renderBundleEncoder *RenderBundleEncoder, markerLabel string) {
+// InsertDebugMarker calls C.wgpuRenderBundleEncoderInsertDebugMarker.
+func (r *RenderBundleEncoder) InsertDebugMarker(markerLabel string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_renderBundleEncoder := (C.WGPURenderBundleEncoder)(unsafe.Pointer(renderBundleEncoder.inner))
+	c_r := (C.WGPURenderBundleEncoder)(unsafe.Pointer(r.inner))
 	c_markerLabel := cgoStringView(markerLabel, &pinner)
-	C.wgpuRenderBundleEncoderInsertDebugMarker(c_renderBundleEncoder, c_markerLabel)
+	C.wgpuRenderBundleEncoderInsertDebugMarker(c_r, c_markerLabel)
 }
 
-// RenderBundleEncoderPopDebugGroup calls C.wgpuRenderBundleEncoderPopDebugGroup.
-func RenderBundleEncoderPopDebugGroup(renderBundleEncoder *RenderBundleEncoder) {
-	c_renderBundleEncoder := (C.WGPURenderBundleEncoder)(unsafe.Pointer(renderBundleEncoder.inner))
-	C.wgpuRenderBundleEncoderPopDebugGroup(c_renderBundleEncoder)
+// PopDebugGroup calls C.wgpuRenderBundleEncoderPopDebugGroup.
+func (r *RenderBundleEncoder) PopDebugGroup() {
+	c_r := (C.WGPURenderBundleEncoder)(unsafe.Pointer(r.inner))
+	C.wgpuRenderBundleEncoderPopDebugGroup(c_r)
 }
 
-// RenderBundleEncoderPushDebugGroup calls C.wgpuRenderBundleEncoderPushDebugGroup.
-func RenderBundleEncoderPushDebugGroup(renderBundleEncoder *RenderBundleEncoder, groupLabel string) {
+// PushDebugGroup calls C.wgpuRenderBundleEncoderPushDebugGroup.
+func (r *RenderBundleEncoder) PushDebugGroup(groupLabel string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_renderBundleEncoder := (C.WGPURenderBundleEncoder)(unsafe.Pointer(renderBundleEncoder.inner))
+	c_r := (C.WGPURenderBundleEncoder)(unsafe.Pointer(r.inner))
 	c_groupLabel := cgoStringView(groupLabel, &pinner)
-	C.wgpuRenderBundleEncoderPushDebugGroup(c_renderBundleEncoder, c_groupLabel)
+	C.wgpuRenderBundleEncoderPushDebugGroup(c_r, c_groupLabel)
 }
 
-// RenderBundleEncoderSetVertexBuffer calls C.wgpuRenderBundleEncoderSetVertexBuffer.
-func RenderBundleEncoderSetVertexBuffer(renderBundleEncoder *RenderBundleEncoder, slot uint32, buffer *Buffer, offset uint64, size uint64) {
-	c_renderBundleEncoder := (C.WGPURenderBundleEncoder)(unsafe.Pointer(renderBundleEncoder.inner))
+// SetVertexBuffer calls C.wgpuRenderBundleEncoderSetVertexBuffer.
+func (r *RenderBundleEncoder) SetVertexBuffer(slot uint32, buffer *Buffer, offset uint64, size uint64) {
+	c_r := (C.WGPURenderBundleEncoder)(unsafe.Pointer(r.inner))
 	c_slot := (C.uint32_t)(slot)
 	c_buffer := (C.WGPUBuffer)(unsafe.Pointer(buffer.inner))
 	c_offset := (C.uint64_t)(offset)
 	c_size := (C.uint64_t)(size)
-	C.wgpuRenderBundleEncoderSetVertexBuffer(c_renderBundleEncoder, c_slot, c_buffer, c_offset, c_size)
+	C.wgpuRenderBundleEncoderSetVertexBuffer(c_r, c_slot, c_buffer, c_offset, c_size)
 }
 
-// RenderBundleEncoderSetIndexBuffer calls C.wgpuRenderBundleEncoderSetIndexBuffer.
-func RenderBundleEncoderSetIndexBuffer(renderBundleEncoder *RenderBundleEncoder, buffer *Buffer, format IndexFormat, offset uint64, size uint64) {
-	c_renderBundleEncoder := (C.WGPURenderBundleEncoder)(unsafe.Pointer(renderBundleEncoder.inner))
+// SetIndexBuffer calls C.wgpuRenderBundleEncoderSetIndexBuffer.
+func (r *RenderBundleEncoder) SetIndexBuffer(buffer *Buffer, format IndexFormat, offset uint64, size uint64) {
+	c_r := (C.WGPURenderBundleEncoder)(unsafe.Pointer(r.inner))
 	c_buffer := (C.WGPUBuffer)(unsafe.Pointer(buffer.inner))
 	c_format := (C.WGPUIndexFormat)(format)
 	c_offset := (C.uint64_t)(offset)
 	c_size := (C.uint64_t)(size)
-	C.wgpuRenderBundleEncoderSetIndexBuffer(c_renderBundleEncoder, c_buffer, c_format, c_offset, c_size)
+	C.wgpuRenderBundleEncoderSetIndexBuffer(c_r, c_buffer, c_format, c_offset, c_size)
 }
 
-// RenderBundleEncoderFinish calls C.wgpuRenderBundleEncoderFinish.
-func RenderBundleEncoderFinish(renderBundleEncoder *RenderBundleEncoder, descriptor RenderBundleDescriptor) *RenderBundle {
+// Finish calls C.wgpuRenderBundleEncoderFinish.
+func (r *RenderBundleEncoder) Finish(descriptor RenderBundleDescriptor) *RenderBundle {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
-	c_renderBundleEncoder := (C.WGPURenderBundleEncoder)(unsafe.Pointer(renderBundleEncoder.inner))
+	c_r := (C.WGPURenderBundleEncoder)(unsafe.Pointer(r.inner))
 	c_descriptor := (*C.WGPURenderBundleDescriptor)(unsafe.Pointer(&descriptor))
-	c_result := C.wgpuRenderBundleEncoderFinish(c_renderBundleEncoder, c_descriptor)
+	c_result := C.wgpuRenderBundleEncoderFinish(c_r, c_descriptor)
 	return &RenderBundle{inner: uintptr(unsafe.Pointer(c_result))}
 }
 
-// RenderBundleEncoderSetLabel calls C.wgpuRenderBundleEncoderSetLabel.
-func RenderBundleEncoderSetLabel(renderBundleEncoder *RenderBundleEncoder, label string) {
+// SetLabel calls C.wgpuRenderBundleEncoderSetLabel.
+func (r *RenderBundleEncoder) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_renderBundleEncoder := (C.WGPURenderBundleEncoder)(unsafe.Pointer(renderBundleEncoder.inner))
+	c_r := (C.WGPURenderBundleEncoder)(unsafe.Pointer(r.inner))
 	c_label := cgoStringView(label, &pinner)
-	C.wgpuRenderBundleEncoderSetLabel(c_renderBundleEncoder, c_label)
+	C.wgpuRenderBundleEncoderSetLabel(c_r, c_label)
 }
 
-// RenderPassEncoderSetPipeline calls C.wgpuRenderPassEncoderSetPipeline.
-func RenderPassEncoderSetPipeline(renderPassEncoder *RenderPassEncoder, pipeline *RenderPipeline) {
-	c_renderPassEncoder := (C.WGPURenderPassEncoder)(unsafe.Pointer(renderPassEncoder.inner))
+// SetPipeline calls C.wgpuRenderPassEncoderSetPipeline.
+func (r *RenderPassEncoder) SetPipeline(pipeline *RenderPipeline) {
+	c_r := (C.WGPURenderPassEncoder)(unsafe.Pointer(r.inner))
 	c_pipeline := (C.WGPURenderPipeline)(unsafe.Pointer(pipeline.inner))
-	C.wgpuRenderPassEncoderSetPipeline(c_renderPassEncoder, c_pipeline)
+	C.wgpuRenderPassEncoderSetPipeline(c_r, c_pipeline)
 }
 
-// RenderPassEncoderSetBindGroup calls C.wgpuRenderPassEncoderSetBindGroup.
-func RenderPassEncoderSetBindGroup(renderPassEncoder *RenderPassEncoder, groupIndex uint32, group *BindGroup, dynamicOffsets []uint32) {
+// SetBindGroup calls C.wgpuRenderPassEncoderSetBindGroup.
+func (r *RenderPassEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, dynamicOffsets []uint32) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	if len(dynamicOffsets) > 0 {
 		pinner.Pin(&dynamicOffsets[0])
 	}
-	c_renderPassEncoder := (C.WGPURenderPassEncoder)(unsafe.Pointer(renderPassEncoder.inner))
+	c_r := (C.WGPURenderPassEncoder)(unsafe.Pointer(r.inner))
 	c_groupIndex := (C.uint32_t)(groupIndex)
 	c_group := (C.WGPUBindGroup)(unsafe.Pointer(group.inner))
 	var c_dynamicOffsets_ptr *C.uint32_t
@@ -1198,63 +1198,63 @@ func RenderPassEncoderSetBindGroup(renderPassEncoder *RenderPassEncoder, groupIn
 		c_dynamicOffsets_ptr = (*C.uint32_t)(unsafe.Pointer(&dynamicOffsets[0]))
 	}
 	c_dynamicOffsets_count := (C.size_t)(len(dynamicOffsets))
-	C.wgpuRenderPassEncoderSetBindGroup(c_renderPassEncoder, c_groupIndex, c_group, c_dynamicOffsets_count, c_dynamicOffsets_ptr)
+	C.wgpuRenderPassEncoderSetBindGroup(c_r, c_groupIndex, c_group, c_dynamicOffsets_count, c_dynamicOffsets_ptr)
 }
 
-// RenderPassEncoderSetImmediates calls C.wgpuRenderPassEncoderSetImmediates.
-func RenderPassEncoderSetImmediates(renderPassEncoder *RenderPassEncoder, offset uint32, data unsafe.Pointer, size uintptr) {
-	c_renderPassEncoder := (C.WGPURenderPassEncoder)(unsafe.Pointer(renderPassEncoder.inner))
+// SetImmediates calls C.wgpuRenderPassEncoderSetImmediates.
+func (r *RenderPassEncoder) SetImmediates(offset uint32, data unsafe.Pointer, size uintptr) {
+	c_r := (C.WGPURenderPassEncoder)(unsafe.Pointer(r.inner))
 	c_offset := (C.uint32_t)(offset)
 	c_data := (unsafe.Pointer)(data)
 	c_size := (C.size_t)(size)
-	C.wgpuRenderPassEncoderSetImmediates(c_renderPassEncoder, c_offset, c_data, c_size)
+	C.wgpuRenderPassEncoderSetImmediates(c_r, c_offset, c_data, c_size)
 }
 
-// RenderPassEncoderDraw calls C.wgpuRenderPassEncoderDraw.
-func RenderPassEncoderDraw(renderPassEncoder *RenderPassEncoder, vertexCount uint32, instanceCount uint32, firstVertex uint32, firstInstance uint32) {
-	c_renderPassEncoder := (C.WGPURenderPassEncoder)(unsafe.Pointer(renderPassEncoder.inner))
+// Draw calls C.wgpuRenderPassEncoderDraw.
+func (r *RenderPassEncoder) Draw(vertexCount uint32, instanceCount uint32, firstVertex uint32, firstInstance uint32) {
+	c_r := (C.WGPURenderPassEncoder)(unsafe.Pointer(r.inner))
 	c_vertexCount := (C.uint32_t)(vertexCount)
 	c_instanceCount := (C.uint32_t)(instanceCount)
 	c_firstVertex := (C.uint32_t)(firstVertex)
 	c_firstInstance := (C.uint32_t)(firstInstance)
-	C.wgpuRenderPassEncoderDraw(c_renderPassEncoder, c_vertexCount, c_instanceCount, c_firstVertex, c_firstInstance)
+	C.wgpuRenderPassEncoderDraw(c_r, c_vertexCount, c_instanceCount, c_firstVertex, c_firstInstance)
 }
 
-// RenderPassEncoderDrawIndexed calls C.wgpuRenderPassEncoderDrawIndexed.
-func RenderPassEncoderDrawIndexed(renderPassEncoder *RenderPassEncoder, indexCount uint32, instanceCount uint32, firstIndex uint32, baseVertex int32, firstInstance uint32) {
-	c_renderPassEncoder := (C.WGPURenderPassEncoder)(unsafe.Pointer(renderPassEncoder.inner))
+// DrawIndexed calls C.wgpuRenderPassEncoderDrawIndexed.
+func (r *RenderPassEncoder) DrawIndexed(indexCount uint32, instanceCount uint32, firstIndex uint32, baseVertex int32, firstInstance uint32) {
+	c_r := (C.WGPURenderPassEncoder)(unsafe.Pointer(r.inner))
 	c_indexCount := (C.uint32_t)(indexCount)
 	c_instanceCount := (C.uint32_t)(instanceCount)
 	c_firstIndex := (C.uint32_t)(firstIndex)
 	c_baseVertex := (C.int32_t)(baseVertex)
 	c_firstInstance := (C.uint32_t)(firstInstance)
-	C.wgpuRenderPassEncoderDrawIndexed(c_renderPassEncoder, c_indexCount, c_instanceCount, c_firstIndex, c_baseVertex, c_firstInstance)
+	C.wgpuRenderPassEncoderDrawIndexed(c_r, c_indexCount, c_instanceCount, c_firstIndex, c_baseVertex, c_firstInstance)
 }
 
-// RenderPassEncoderDrawIndirect calls C.wgpuRenderPassEncoderDrawIndirect.
-func RenderPassEncoderDrawIndirect(renderPassEncoder *RenderPassEncoder, indirectBuffer *Buffer, indirectOffset uint64) {
-	c_renderPassEncoder := (C.WGPURenderPassEncoder)(unsafe.Pointer(renderPassEncoder.inner))
+// DrawIndirect calls C.wgpuRenderPassEncoderDrawIndirect.
+func (r *RenderPassEncoder) DrawIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
+	c_r := (C.WGPURenderPassEncoder)(unsafe.Pointer(r.inner))
 	c_indirectBuffer := (C.WGPUBuffer)(unsafe.Pointer(indirectBuffer.inner))
 	c_indirectOffset := (C.uint64_t)(indirectOffset)
-	C.wgpuRenderPassEncoderDrawIndirect(c_renderPassEncoder, c_indirectBuffer, c_indirectOffset)
+	C.wgpuRenderPassEncoderDrawIndirect(c_r, c_indirectBuffer, c_indirectOffset)
 }
 
-// RenderPassEncoderDrawIndexedIndirect calls C.wgpuRenderPassEncoderDrawIndexedIndirect.
-func RenderPassEncoderDrawIndexedIndirect(renderPassEncoder *RenderPassEncoder, indirectBuffer *Buffer, indirectOffset uint64) {
-	c_renderPassEncoder := (C.WGPURenderPassEncoder)(unsafe.Pointer(renderPassEncoder.inner))
+// DrawIndexedIndirect calls C.wgpuRenderPassEncoderDrawIndexedIndirect.
+func (r *RenderPassEncoder) DrawIndexedIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
+	c_r := (C.WGPURenderPassEncoder)(unsafe.Pointer(r.inner))
 	c_indirectBuffer := (C.WGPUBuffer)(unsafe.Pointer(indirectBuffer.inner))
 	c_indirectOffset := (C.uint64_t)(indirectOffset)
-	C.wgpuRenderPassEncoderDrawIndexedIndirect(c_renderPassEncoder, c_indirectBuffer, c_indirectOffset)
+	C.wgpuRenderPassEncoderDrawIndexedIndirect(c_r, c_indirectBuffer, c_indirectOffset)
 }
 
-// RenderPassEncoderExecuteBundles calls C.wgpuRenderPassEncoderExecuteBundles.
-func RenderPassEncoderExecuteBundles(renderPassEncoder *RenderPassEncoder, bundles []*RenderBundle) {
+// ExecuteBundles calls C.wgpuRenderPassEncoderExecuteBundles.
+func (r *RenderPassEncoder) ExecuteBundles(bundles []*RenderBundle) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	if len(bundles) > 0 {
 		pinner.Pin(&bundles[0])
 	}
-	c_renderPassEncoder := (C.WGPURenderPassEncoder)(unsafe.Pointer(renderPassEncoder.inner))
+	c_r := (C.WGPURenderPassEncoder)(unsafe.Pointer(r.inner))
 	bundles_handles := make([]uintptr, len(bundles))
 	for i, v := range bundles {
 		bundles_handles[i] = v.inner
@@ -1264,182 +1264,182 @@ func RenderPassEncoderExecuteBundles(renderPassEncoder *RenderPassEncoder, bundl
 		c_bundles_ptr = (*C.WGPURenderBundle)(unsafe.Pointer(&bundles_handles[0]))
 	}
 	c_bundles_count := (C.size_t)(len(bundles))
-	C.wgpuRenderPassEncoderExecuteBundles(c_renderPassEncoder, c_bundles_count, c_bundles_ptr)
+	C.wgpuRenderPassEncoderExecuteBundles(c_r, c_bundles_count, c_bundles_ptr)
 }
 
-// RenderPassEncoderInsertDebugMarker calls C.wgpuRenderPassEncoderInsertDebugMarker.
-func RenderPassEncoderInsertDebugMarker(renderPassEncoder *RenderPassEncoder, markerLabel string) {
+// InsertDebugMarker calls C.wgpuRenderPassEncoderInsertDebugMarker.
+func (r *RenderPassEncoder) InsertDebugMarker(markerLabel string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_renderPassEncoder := (C.WGPURenderPassEncoder)(unsafe.Pointer(renderPassEncoder.inner))
+	c_r := (C.WGPURenderPassEncoder)(unsafe.Pointer(r.inner))
 	c_markerLabel := cgoStringView(markerLabel, &pinner)
-	C.wgpuRenderPassEncoderInsertDebugMarker(c_renderPassEncoder, c_markerLabel)
+	C.wgpuRenderPassEncoderInsertDebugMarker(c_r, c_markerLabel)
 }
 
-// RenderPassEncoderPopDebugGroup calls C.wgpuRenderPassEncoderPopDebugGroup.
-func RenderPassEncoderPopDebugGroup(renderPassEncoder *RenderPassEncoder) {
-	c_renderPassEncoder := (C.WGPURenderPassEncoder)(unsafe.Pointer(renderPassEncoder.inner))
-	C.wgpuRenderPassEncoderPopDebugGroup(c_renderPassEncoder)
+// PopDebugGroup calls C.wgpuRenderPassEncoderPopDebugGroup.
+func (r *RenderPassEncoder) PopDebugGroup() {
+	c_r := (C.WGPURenderPassEncoder)(unsafe.Pointer(r.inner))
+	C.wgpuRenderPassEncoderPopDebugGroup(c_r)
 }
 
-// RenderPassEncoderPushDebugGroup calls C.wgpuRenderPassEncoderPushDebugGroup.
-func RenderPassEncoderPushDebugGroup(renderPassEncoder *RenderPassEncoder, groupLabel string) {
+// PushDebugGroup calls C.wgpuRenderPassEncoderPushDebugGroup.
+func (r *RenderPassEncoder) PushDebugGroup(groupLabel string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_renderPassEncoder := (C.WGPURenderPassEncoder)(unsafe.Pointer(renderPassEncoder.inner))
+	c_r := (C.WGPURenderPassEncoder)(unsafe.Pointer(r.inner))
 	c_groupLabel := cgoStringView(groupLabel, &pinner)
-	C.wgpuRenderPassEncoderPushDebugGroup(c_renderPassEncoder, c_groupLabel)
+	C.wgpuRenderPassEncoderPushDebugGroup(c_r, c_groupLabel)
 }
 
-// RenderPassEncoderSetStencilReference calls C.wgpuRenderPassEncoderSetStencilReference.
-func RenderPassEncoderSetStencilReference(renderPassEncoder *RenderPassEncoder, reference uint32) {
-	c_renderPassEncoder := (C.WGPURenderPassEncoder)(unsafe.Pointer(renderPassEncoder.inner))
+// SetStencilReference calls C.wgpuRenderPassEncoderSetStencilReference.
+func (r *RenderPassEncoder) SetStencilReference(reference uint32) {
+	c_r := (C.WGPURenderPassEncoder)(unsafe.Pointer(r.inner))
 	c_reference := (C.uint32_t)(reference)
-	C.wgpuRenderPassEncoderSetStencilReference(c_renderPassEncoder, c_reference)
+	C.wgpuRenderPassEncoderSetStencilReference(c_r, c_reference)
 }
 
-// RenderPassEncoderSetBlendConstant calls C.wgpuRenderPassEncoderSetBlendConstant.
-func RenderPassEncoderSetBlendConstant(renderPassEncoder *RenderPassEncoder, color Color) {
+// SetBlendConstant calls C.wgpuRenderPassEncoderSetBlendConstant.
+func (r *RenderPassEncoder) SetBlendConstant(color Color) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&color)
-	c_renderPassEncoder := (C.WGPURenderPassEncoder)(unsafe.Pointer(renderPassEncoder.inner))
+	c_r := (C.WGPURenderPassEncoder)(unsafe.Pointer(r.inner))
 	c_color := (*C.WGPUColor)(unsafe.Pointer(&color))
-	C.wgpuRenderPassEncoderSetBlendConstant(c_renderPassEncoder, c_color)
+	C.wgpuRenderPassEncoderSetBlendConstant(c_r, c_color)
 }
 
-// RenderPassEncoderSetViewport calls C.wgpuRenderPassEncoderSetViewport.
-func RenderPassEncoderSetViewport(renderPassEncoder *RenderPassEncoder, x float32, y float32, width float32, height float32, minDepth float32, maxDepth float32) {
-	c_renderPassEncoder := (C.WGPURenderPassEncoder)(unsafe.Pointer(renderPassEncoder.inner))
+// SetViewport calls C.wgpuRenderPassEncoderSetViewport.
+func (r *RenderPassEncoder) SetViewport(x float32, y float32, width float32, height float32, minDepth float32, maxDepth float32) {
+	c_r := (C.WGPURenderPassEncoder)(unsafe.Pointer(r.inner))
 	c_x := (C.float)(x)
 	c_y := (C.float)(y)
 	c_width := (C.float)(width)
 	c_height := (C.float)(height)
 	c_minDepth := (C.float)(minDepth)
 	c_maxDepth := (C.float)(maxDepth)
-	C.wgpuRenderPassEncoderSetViewport(c_renderPassEncoder, c_x, c_y, c_width, c_height, c_minDepth, c_maxDepth)
+	C.wgpuRenderPassEncoderSetViewport(c_r, c_x, c_y, c_width, c_height, c_minDepth, c_maxDepth)
 }
 
-// RenderPassEncoderSetScissorRect calls C.wgpuRenderPassEncoderSetScissorRect.
-func RenderPassEncoderSetScissorRect(renderPassEncoder *RenderPassEncoder, x uint32, y uint32, width uint32, height uint32) {
-	c_renderPassEncoder := (C.WGPURenderPassEncoder)(unsafe.Pointer(renderPassEncoder.inner))
+// SetScissorRect calls C.wgpuRenderPassEncoderSetScissorRect.
+func (r *RenderPassEncoder) SetScissorRect(x uint32, y uint32, width uint32, height uint32) {
+	c_r := (C.WGPURenderPassEncoder)(unsafe.Pointer(r.inner))
 	c_x := (C.uint32_t)(x)
 	c_y := (C.uint32_t)(y)
 	c_width := (C.uint32_t)(width)
 	c_height := (C.uint32_t)(height)
-	C.wgpuRenderPassEncoderSetScissorRect(c_renderPassEncoder, c_x, c_y, c_width, c_height)
+	C.wgpuRenderPassEncoderSetScissorRect(c_r, c_x, c_y, c_width, c_height)
 }
 
-// RenderPassEncoderSetVertexBuffer calls C.wgpuRenderPassEncoderSetVertexBuffer.
-func RenderPassEncoderSetVertexBuffer(renderPassEncoder *RenderPassEncoder, slot uint32, buffer *Buffer, offset uint64, size uint64) {
-	c_renderPassEncoder := (C.WGPURenderPassEncoder)(unsafe.Pointer(renderPassEncoder.inner))
+// SetVertexBuffer calls C.wgpuRenderPassEncoderSetVertexBuffer.
+func (r *RenderPassEncoder) SetVertexBuffer(slot uint32, buffer *Buffer, offset uint64, size uint64) {
+	c_r := (C.WGPURenderPassEncoder)(unsafe.Pointer(r.inner))
 	c_slot := (C.uint32_t)(slot)
 	c_buffer := (C.WGPUBuffer)(unsafe.Pointer(buffer.inner))
 	c_offset := (C.uint64_t)(offset)
 	c_size := (C.uint64_t)(size)
-	C.wgpuRenderPassEncoderSetVertexBuffer(c_renderPassEncoder, c_slot, c_buffer, c_offset, c_size)
+	C.wgpuRenderPassEncoderSetVertexBuffer(c_r, c_slot, c_buffer, c_offset, c_size)
 }
 
-// RenderPassEncoderSetIndexBuffer calls C.wgpuRenderPassEncoderSetIndexBuffer.
-func RenderPassEncoderSetIndexBuffer(renderPassEncoder *RenderPassEncoder, buffer *Buffer, format IndexFormat, offset uint64, size uint64) {
-	c_renderPassEncoder := (C.WGPURenderPassEncoder)(unsafe.Pointer(renderPassEncoder.inner))
+// SetIndexBuffer calls C.wgpuRenderPassEncoderSetIndexBuffer.
+func (r *RenderPassEncoder) SetIndexBuffer(buffer *Buffer, format IndexFormat, offset uint64, size uint64) {
+	c_r := (C.WGPURenderPassEncoder)(unsafe.Pointer(r.inner))
 	c_buffer := (C.WGPUBuffer)(unsafe.Pointer(buffer.inner))
 	c_format := (C.WGPUIndexFormat)(format)
 	c_offset := (C.uint64_t)(offset)
 	c_size := (C.uint64_t)(size)
-	C.wgpuRenderPassEncoderSetIndexBuffer(c_renderPassEncoder, c_buffer, c_format, c_offset, c_size)
+	C.wgpuRenderPassEncoderSetIndexBuffer(c_r, c_buffer, c_format, c_offset, c_size)
 }
 
-// RenderPassEncoderBeginOcclusionQuery calls C.wgpuRenderPassEncoderBeginOcclusionQuery.
-func RenderPassEncoderBeginOcclusionQuery(renderPassEncoder *RenderPassEncoder, queryIndex uint32) {
-	c_renderPassEncoder := (C.WGPURenderPassEncoder)(unsafe.Pointer(renderPassEncoder.inner))
+// BeginOcclusionQuery calls C.wgpuRenderPassEncoderBeginOcclusionQuery.
+func (r *RenderPassEncoder) BeginOcclusionQuery(queryIndex uint32) {
+	c_r := (C.WGPURenderPassEncoder)(unsafe.Pointer(r.inner))
 	c_queryIndex := (C.uint32_t)(queryIndex)
-	C.wgpuRenderPassEncoderBeginOcclusionQuery(c_renderPassEncoder, c_queryIndex)
+	C.wgpuRenderPassEncoderBeginOcclusionQuery(c_r, c_queryIndex)
 }
 
-// RenderPassEncoderEndOcclusionQuery calls C.wgpuRenderPassEncoderEndOcclusionQuery.
-func RenderPassEncoderEndOcclusionQuery(renderPassEncoder *RenderPassEncoder) {
-	c_renderPassEncoder := (C.WGPURenderPassEncoder)(unsafe.Pointer(renderPassEncoder.inner))
-	C.wgpuRenderPassEncoderEndOcclusionQuery(c_renderPassEncoder)
+// EndOcclusionQuery calls C.wgpuRenderPassEncoderEndOcclusionQuery.
+func (r *RenderPassEncoder) EndOcclusionQuery() {
+	c_r := (C.WGPURenderPassEncoder)(unsafe.Pointer(r.inner))
+	C.wgpuRenderPassEncoderEndOcclusionQuery(c_r)
 }
 
-// RenderPassEncoderEnd calls C.wgpuRenderPassEncoderEnd.
-func RenderPassEncoderEnd(renderPassEncoder *RenderPassEncoder) {
-	c_renderPassEncoder := (C.WGPURenderPassEncoder)(unsafe.Pointer(renderPassEncoder.inner))
-	C.wgpuRenderPassEncoderEnd(c_renderPassEncoder)
+// End calls C.wgpuRenderPassEncoderEnd.
+func (r *RenderPassEncoder) End() {
+	c_r := (C.WGPURenderPassEncoder)(unsafe.Pointer(r.inner))
+	C.wgpuRenderPassEncoderEnd(c_r)
 }
 
-// RenderPassEncoderSetLabel calls C.wgpuRenderPassEncoderSetLabel.
-func RenderPassEncoderSetLabel(renderPassEncoder *RenderPassEncoder, label string) {
+// SetLabel calls C.wgpuRenderPassEncoderSetLabel.
+func (r *RenderPassEncoder) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_renderPassEncoder := (C.WGPURenderPassEncoder)(unsafe.Pointer(renderPassEncoder.inner))
+	c_r := (C.WGPURenderPassEncoder)(unsafe.Pointer(r.inner))
 	c_label := cgoStringView(label, &pinner)
-	C.wgpuRenderPassEncoderSetLabel(c_renderPassEncoder, c_label)
+	C.wgpuRenderPassEncoderSetLabel(c_r, c_label)
 }
 
-// RenderPipelineGetBindGroupLayout calls C.wgpuRenderPipelineGetBindGroupLayout.
-func RenderPipelineGetBindGroupLayout(renderPipeline *RenderPipeline, groupIndex uint32) *BindGroupLayout {
-	c_renderPipeline := (C.WGPURenderPipeline)(unsafe.Pointer(renderPipeline.inner))
+// GetBindGroupLayout calls C.wgpuRenderPipelineGetBindGroupLayout.
+func (r *RenderPipeline) GetBindGroupLayout(groupIndex uint32) *BindGroupLayout {
+	c_r := (C.WGPURenderPipeline)(unsafe.Pointer(r.inner))
 	c_groupIndex := (C.uint32_t)(groupIndex)
-	c_result := C.wgpuRenderPipelineGetBindGroupLayout(c_renderPipeline, c_groupIndex)
+	c_result := C.wgpuRenderPipelineGetBindGroupLayout(c_r, c_groupIndex)
 	return &BindGroupLayout{inner: uintptr(unsafe.Pointer(c_result))}
 }
 
-// RenderPipelineSetLabel calls C.wgpuRenderPipelineSetLabel.
-func RenderPipelineSetLabel(renderPipeline *RenderPipeline, label string) {
+// SetLabel calls C.wgpuRenderPipelineSetLabel.
+func (r *RenderPipeline) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_renderPipeline := (C.WGPURenderPipeline)(unsafe.Pointer(renderPipeline.inner))
+	c_r := (C.WGPURenderPipeline)(unsafe.Pointer(r.inner))
 	c_label := cgoStringView(label, &pinner)
-	C.wgpuRenderPipelineSetLabel(c_renderPipeline, c_label)
+	C.wgpuRenderPipelineSetLabel(c_r, c_label)
 }
 
-// SamplerSetLabel calls C.wgpuSamplerSetLabel.
-func SamplerSetLabel(sampler *Sampler, label string) {
+// SetLabel calls C.wgpuSamplerSetLabel.
+func (s *Sampler) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_sampler := (C.WGPUSampler)(unsafe.Pointer(sampler.inner))
+	c_s := (C.WGPUSampler)(unsafe.Pointer(s.inner))
 	c_label := cgoStringView(label, &pinner)
-	C.wgpuSamplerSetLabel(c_sampler, c_label)
+	C.wgpuSamplerSetLabel(c_s, c_label)
 }
 
-// ShaderModuleGetCompilationInfo calls C.wgpuShaderModuleGetCompilationInfo.
-func ShaderModuleGetCompilationInfo(shaderModule *ShaderModule, callback CompilationInfoFn) Future {
-	c_shaderModule := (C.WGPUShaderModule)(unsafe.Pointer(shaderModule.inner))
+// GetCompilationInfo calls C.wgpuShaderModuleGetCompilationInfo.
+func (s *ShaderModule) GetCompilationInfo(callback CompilationInfoFn) Future {
+	c_s := (C.WGPUShaderModule)(unsafe.Pointer(s.inner))
 	_cbHandle := cgo.NewHandle(callback)
 	var _cbInfo C.WGPUCompilationInfoCallbackInfo
 	_cbInfo.mode = C.WGPUCallbackMode_AllowProcessEvents
 	// cgo.Handle is an opaque uintptr key; cast through uintptr for userdata.
 	_cbInfo.userdata1 = *(*unsafe.Pointer)(unsafe.Pointer(&_cbHandle))
-	c_result := C.wgpuShaderModuleGetCompilationInfo(c_shaderModule, _cbInfo)
+	c_result := C.wgpuShaderModuleGetCompilationInfo(c_s, _cbInfo)
 	return Future{Id: uint64(c_result.id)}
 }
 
-// ShaderModuleSetLabel calls C.wgpuShaderModuleSetLabel.
-func ShaderModuleSetLabel(shaderModule *ShaderModule, label string) {
+// SetLabel calls C.wgpuShaderModuleSetLabel.
+func (s *ShaderModule) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_shaderModule := (C.WGPUShaderModule)(unsafe.Pointer(shaderModule.inner))
+	c_s := (C.WGPUShaderModule)(unsafe.Pointer(s.inner))
 	c_label := cgoStringView(label, &pinner)
-	C.wgpuShaderModuleSetLabel(c_shaderModule, c_label)
+	C.wgpuShaderModuleSetLabel(c_s, c_label)
 }
 
-// SurfaceConfigure calls C.wgpuSurfaceConfigure.
-func SurfaceConfigure(surface *Surface, config SurfaceConfiguration) {
+// Configure calls C.wgpuSurfaceConfigure.
+func (s *Surface) Configure(config SurfaceConfiguration) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&config)
 	if config.ViewFormats != nil {
 		pinner.Pin(config.ViewFormats)
 	}
-	c_surface := (C.WGPUSurface)(unsafe.Pointer(surface.inner))
+	c_s := (C.WGPUSurface)(unsafe.Pointer(s.inner))
 	c_config := (*C.WGPUSurfaceConfiguration)(unsafe.Pointer(&config))
-	C.wgpuSurfaceConfigure(c_surface, c_config)
+	C.wgpuSurfaceConfigure(c_s, c_config)
 }
 
-// SurfaceGetCapabilities calls C.wgpuSurfaceGetCapabilities.
-func SurfaceGetCapabilities(surface *Surface, adapter *Adapter, capabilities SurfaceCapabilities) Status {
+// GetCapabilities calls C.wgpuSurfaceGetCapabilities.
+func (s *Surface) GetCapabilities(adapter *Adapter, capabilities SurfaceCapabilities) Status {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&capabilities)
@@ -1452,139 +1452,139 @@ func SurfaceGetCapabilities(surface *Surface, adapter *Adapter, capabilities Sur
 	if capabilities.AlphaModes != nil {
 		pinner.Pin(capabilities.AlphaModes)
 	}
-	c_surface := (C.WGPUSurface)(unsafe.Pointer(surface.inner))
+	c_s := (C.WGPUSurface)(unsafe.Pointer(s.inner))
 	c_adapter := (C.WGPUAdapter)(unsafe.Pointer(adapter.inner))
 	c_capabilities := (*C.WGPUSurfaceCapabilities)(unsafe.Pointer(&capabilities))
-	c_result := C.wgpuSurfaceGetCapabilities(c_surface, c_adapter, c_capabilities)
+	c_result := C.wgpuSurfaceGetCapabilities(c_s, c_adapter, c_capabilities)
 	return (Status)(c_result)
 }
 
-// SurfaceGetCurrentTexture calls C.wgpuSurfaceGetCurrentTexture.
-func SurfaceGetCurrentTexture(surface *Surface, surfaceTexture SurfaceTexture) {
+// GetCurrentTexture calls C.wgpuSurfaceGetCurrentTexture.
+func (s *Surface) GetCurrentTexture(surfaceTexture SurfaceTexture) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&surfaceTexture)
-	c_surface := (C.WGPUSurface)(unsafe.Pointer(surface.inner))
+	c_s := (C.WGPUSurface)(unsafe.Pointer(s.inner))
 	c_surfaceTexture := (*C.WGPUSurfaceTexture)(unsafe.Pointer(&surfaceTexture))
-	C.wgpuSurfaceGetCurrentTexture(c_surface, c_surfaceTexture)
+	C.wgpuSurfaceGetCurrentTexture(c_s, c_surfaceTexture)
 }
 
-// SurfacePresent calls C.wgpuSurfacePresent.
-func SurfacePresent(surface *Surface) Status {
-	c_surface := (C.WGPUSurface)(unsafe.Pointer(surface.inner))
-	c_result := C.wgpuSurfacePresent(c_surface)
+// Present calls C.wgpuSurfacePresent.
+func (s *Surface) Present() Status {
+	c_s := (C.WGPUSurface)(unsafe.Pointer(s.inner))
+	c_result := C.wgpuSurfacePresent(c_s)
 	return (Status)(c_result)
 }
 
-// SurfaceUnconfigure calls C.wgpuSurfaceUnconfigure.
-func SurfaceUnconfigure(surface *Surface) {
-	c_surface := (C.WGPUSurface)(unsafe.Pointer(surface.inner))
-	C.wgpuSurfaceUnconfigure(c_surface)
+// Unconfigure calls C.wgpuSurfaceUnconfigure.
+func (s *Surface) Unconfigure() {
+	c_s := (C.WGPUSurface)(unsafe.Pointer(s.inner))
+	C.wgpuSurfaceUnconfigure(c_s)
 }
 
-// SurfaceSetLabel calls C.wgpuSurfaceSetLabel.
-func SurfaceSetLabel(surface *Surface, label string) {
+// SetLabel calls C.wgpuSurfaceSetLabel.
+func (s *Surface) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_surface := (C.WGPUSurface)(unsafe.Pointer(surface.inner))
+	c_s := (C.WGPUSurface)(unsafe.Pointer(s.inner))
 	c_label := cgoStringView(label, &pinner)
-	C.wgpuSurfaceSetLabel(c_surface, c_label)
+	C.wgpuSurfaceSetLabel(c_s, c_label)
 }
 
-// TextureCreateView calls C.wgpuTextureCreateView.
-func TextureCreateView(texture *Texture, descriptor TextureViewDescriptor) *TextureView {
+// CreateView calls C.wgpuTextureCreateView.
+func (t *Texture) CreateView(descriptor TextureViewDescriptor) *TextureView {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
-	c_texture := (C.WGPUTexture)(unsafe.Pointer(texture.inner))
+	c_t := (C.WGPUTexture)(unsafe.Pointer(t.inner))
 	c_descriptor := (*C.WGPUTextureViewDescriptor)(unsafe.Pointer(&descriptor))
-	c_result := C.wgpuTextureCreateView(c_texture, c_descriptor)
+	c_result := C.wgpuTextureCreateView(c_t, c_descriptor)
 	return &TextureView{inner: uintptr(unsafe.Pointer(c_result))}
 }
 
-// TextureSetLabel calls C.wgpuTextureSetLabel.
-func TextureSetLabel(texture *Texture, label string) {
+// SetLabel calls C.wgpuTextureSetLabel.
+func (t *Texture) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_texture := (C.WGPUTexture)(unsafe.Pointer(texture.inner))
+	c_t := (C.WGPUTexture)(unsafe.Pointer(t.inner))
 	c_label := cgoStringView(label, &pinner)
-	C.wgpuTextureSetLabel(c_texture, c_label)
+	C.wgpuTextureSetLabel(c_t, c_label)
 }
 
-// TextureGetWidth calls C.wgpuTextureGetWidth.
-func TextureGetWidth(texture *Texture) uint32 {
-	c_texture := (C.WGPUTexture)(unsafe.Pointer(texture.inner))
-	c_result := C.wgpuTextureGetWidth(c_texture)
+// GetWidth calls C.wgpuTextureGetWidth.
+func (t *Texture) GetWidth() uint32 {
+	c_t := (C.WGPUTexture)(unsafe.Pointer(t.inner))
+	c_result := C.wgpuTextureGetWidth(c_t)
 	return (uint32)(c_result)
 }
 
-// TextureGetHeight calls C.wgpuTextureGetHeight.
-func TextureGetHeight(texture *Texture) uint32 {
-	c_texture := (C.WGPUTexture)(unsafe.Pointer(texture.inner))
-	c_result := C.wgpuTextureGetHeight(c_texture)
+// GetHeight calls C.wgpuTextureGetHeight.
+func (t *Texture) GetHeight() uint32 {
+	c_t := (C.WGPUTexture)(unsafe.Pointer(t.inner))
+	c_result := C.wgpuTextureGetHeight(c_t)
 	return (uint32)(c_result)
 }
 
-// TextureGetDepthOrArrayLayers calls C.wgpuTextureGetDepthOrArrayLayers.
-func TextureGetDepthOrArrayLayers(texture *Texture) uint32 {
-	c_texture := (C.WGPUTexture)(unsafe.Pointer(texture.inner))
-	c_result := C.wgpuTextureGetDepthOrArrayLayers(c_texture)
+// GetDepthOrArrayLayers calls C.wgpuTextureGetDepthOrArrayLayers.
+func (t *Texture) GetDepthOrArrayLayers() uint32 {
+	c_t := (C.WGPUTexture)(unsafe.Pointer(t.inner))
+	c_result := C.wgpuTextureGetDepthOrArrayLayers(c_t)
 	return (uint32)(c_result)
 }
 
-// TextureGetMipLevelCount calls C.wgpuTextureGetMipLevelCount.
-func TextureGetMipLevelCount(texture *Texture) uint32 {
-	c_texture := (C.WGPUTexture)(unsafe.Pointer(texture.inner))
-	c_result := C.wgpuTextureGetMipLevelCount(c_texture)
+// GetMipLevelCount calls C.wgpuTextureGetMipLevelCount.
+func (t *Texture) GetMipLevelCount() uint32 {
+	c_t := (C.WGPUTexture)(unsafe.Pointer(t.inner))
+	c_result := C.wgpuTextureGetMipLevelCount(c_t)
 	return (uint32)(c_result)
 }
 
-// TextureGetSampleCount calls C.wgpuTextureGetSampleCount.
-func TextureGetSampleCount(texture *Texture) uint32 {
-	c_texture := (C.WGPUTexture)(unsafe.Pointer(texture.inner))
-	c_result := C.wgpuTextureGetSampleCount(c_texture)
+// GetSampleCount calls C.wgpuTextureGetSampleCount.
+func (t *Texture) GetSampleCount() uint32 {
+	c_t := (C.WGPUTexture)(unsafe.Pointer(t.inner))
+	c_result := C.wgpuTextureGetSampleCount(c_t)
 	return (uint32)(c_result)
 }
 
-// TextureGetDimension calls C.wgpuTextureGetDimension.
-func TextureGetDimension(texture *Texture) TextureDimension {
-	c_texture := (C.WGPUTexture)(unsafe.Pointer(texture.inner))
-	c_result := C.wgpuTextureGetDimension(c_texture)
+// GetDimension calls C.wgpuTextureGetDimension.
+func (t *Texture) GetDimension() TextureDimension {
+	c_t := (C.WGPUTexture)(unsafe.Pointer(t.inner))
+	c_result := C.wgpuTextureGetDimension(c_t)
 	return (TextureDimension)(c_result)
 }
 
-// TextureGetTextureBindingViewDimension calls C.wgpuTextureGetTextureBindingViewDimension.
-func TextureGetTextureBindingViewDimension(texture *Texture) TextureViewDimension {
-	c_texture := (C.WGPUTexture)(unsafe.Pointer(texture.inner))
-	c_result := C.wgpuTextureGetTextureBindingViewDimension(c_texture)
+// GetTextureBindingViewDimension calls C.wgpuTextureGetTextureBindingViewDimension.
+func (t *Texture) GetTextureBindingViewDimension() TextureViewDimension {
+	c_t := (C.WGPUTexture)(unsafe.Pointer(t.inner))
+	c_result := C.wgpuTextureGetTextureBindingViewDimension(c_t)
 	return (TextureViewDimension)(c_result)
 }
 
-// TextureGetFormat calls C.wgpuTextureGetFormat.
-func TextureGetFormat(texture *Texture) TextureFormat {
-	c_texture := (C.WGPUTexture)(unsafe.Pointer(texture.inner))
-	c_result := C.wgpuTextureGetFormat(c_texture)
+// GetFormat calls C.wgpuTextureGetFormat.
+func (t *Texture) GetFormat() TextureFormat {
+	c_t := (C.WGPUTexture)(unsafe.Pointer(t.inner))
+	c_result := C.wgpuTextureGetFormat(c_t)
 	return (TextureFormat)(c_result)
 }
 
-// TextureGetUsage calls C.wgpuTextureGetUsage.
-func TextureGetUsage(texture *Texture) TextureUsage {
-	c_texture := (C.WGPUTexture)(unsafe.Pointer(texture.inner))
-	c_result := C.wgpuTextureGetUsage(c_texture)
+// GetUsage calls C.wgpuTextureGetUsage.
+func (t *Texture) GetUsage() TextureUsage {
+	c_t := (C.WGPUTexture)(unsafe.Pointer(t.inner))
+	c_result := C.wgpuTextureGetUsage(c_t)
 	return (TextureUsage)(c_result)
 }
 
-// TextureDestroy calls C.wgpuTextureDestroy.
-func TextureDestroy(texture *Texture) {
-	c_texture := (C.WGPUTexture)(unsafe.Pointer(texture.inner))
-	C.wgpuTextureDestroy(c_texture)
+// Destroy calls C.wgpuTextureDestroy.
+func (t *Texture) Destroy() {
+	c_t := (C.WGPUTexture)(unsafe.Pointer(t.inner))
+	C.wgpuTextureDestroy(c_t)
 }
 
-// TextureViewSetLabel calls C.wgpuTextureViewSetLabel.
-func TextureViewSetLabel(textureView *TextureView, label string) {
+// SetLabel calls C.wgpuTextureViewSetLabel.
+func (t *TextureView) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_textureView := (C.WGPUTextureView)(unsafe.Pointer(textureView.inner))
+	c_t := (C.WGPUTextureView)(unsafe.Pointer(t.inner))
 	c_label := cgoStringView(label, &pinner)
-	C.wgpuTextureViewSetLabel(c_textureView, c_label)
+	C.wgpuTextureViewSetLabel(c_t, c_label)
 }

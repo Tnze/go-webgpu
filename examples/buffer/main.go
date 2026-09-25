@@ -23,7 +23,7 @@ func wait(instance *webgpu.Instance, done *bool) {
 			fmt.Fprintln(os.Stderr, "timeout waiting for async callback")
 			os.Exit(1)
 		}
-		webgpu.InstanceProcessEvents(instance)
+		instance.ProcessEvents()
 		time.Sleep(time.Millisecond)
 	}
 }
@@ -40,7 +40,7 @@ func main() {
 		aErr    string
 		aDone   bool
 	)
-	webgpu.InstanceRequestAdapter(instance, webgpu.RequestAdapterOptions{},
+	instance.RequestAdapter(webgpu.RequestAdapterOptions{},
 		func(status webgpu.RequestAdapterStatus, a *webgpu.Adapter, message string) {
 			adapter, aErr = a, message
 			if status != webgpu.RequestAdapterStatusSuccess {
@@ -59,7 +59,7 @@ func main() {
 		dErr   string
 		dDone  bool
 	)
-	webgpu.AdapterRequestDevice(adapter, webgpu.DeviceDescriptor{},
+	adapter.RequestDevice(webgpu.DeviceDescriptor{},
 		func(status webgpu.RequestDeviceStatus, d *webgpu.Device, message string) {
 			device, dErr = d, message
 			if status != webgpu.RequestDeviceStatusSuccess {
@@ -73,16 +73,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	queue := webgpu.DeviceGetQueue(device)
+	queue := device.GetQueue()
 	const size = 256
 
 	// MAP_WRITE pairs with COPY_SRC; MAP_READ pairs with COPY_DST.
-	src := webgpu.DeviceCreateBuffer(device, webgpu.BufferDescriptor{
+	src := device.CreateBuffer(webgpu.BufferDescriptor{
 		Label: "src",
 		Usage: webgpu.BufferUsageMapWrite | webgpu.BufferUsageCopySrc,
 		Size:  size,
 	})
-	dst := webgpu.DeviceCreateBuffer(device, webgpu.BufferDescriptor{
+	dst := device.CreateBuffer(webgpu.BufferDescriptor{
 		Label: "dst",
 		Usage: webgpu.BufferUsageMapRead | webgpu.BufferUsageCopyDst,
 		Size:  size,
@@ -103,7 +103,7 @@ func main() {
 		wStatus webgpu.MapAsyncStatus
 		wDone   bool
 	)
-	webgpu.BufferMapAsync(src, webgpu.MapModeWrite, 0, size,
+	src.MapAsync(webgpu.MapModeWrite, 0, size,
 		func(status webgpu.MapAsyncStatus, message string) {
 			wStatus = status
 			wDone = true
@@ -113,26 +113,26 @@ func main() {
 		fmt.Fprintln(os.Stderr, "MapAsync(write) failed:", wStatus)
 		os.Exit(1)
 	}
-	wp := webgpu.BufferGetMappedRange(src, 0, size)
+	wp := src.GetMappedRange(0, size)
 	if wp == nil {
 		fmt.Fprintln(os.Stderr, "GetMappedRange(write) failed")
 		os.Exit(1)
 	}
 	copy(unsafe.Slice((*byte)(wp), size), payload)
-	webgpu.BufferUnmap(src)
+	src.Unmap()
 
 	// Copy src → dst, then map-read dst.
-	enc := webgpu.DeviceCreateCommandEncoder(device, webgpu.CommandEncoderDescriptor{})
-	webgpu.CommandEncoderCopyBufferToBuffer(enc, src, 0, dst, 0, size)
-	cmd := webgpu.CommandEncoderFinish(enc, webgpu.CommandBufferDescriptor{})
-	webgpu.QueueSubmit(queue, []*webgpu.CommandBuffer{cmd})
+	enc := device.CreateCommandEncoder(webgpu.CommandEncoderDescriptor{})
+	enc.CopyBufferToBuffer(src, 0, dst, 0, size)
+	cmd := enc.Finish(webgpu.CommandBufferDescriptor{})
+	queue.Submit([]*webgpu.CommandBuffer{cmd})
 
 	var (
 		mapStatus webgpu.MapAsyncStatus
 		mapMsg    string
 		mapDone   bool
 	)
-	webgpu.BufferMapAsync(dst, webgpu.MapModeRead, 0, size,
+	dst.MapAsync(webgpu.MapModeRead, 0, size,
 		func(status webgpu.MapAsyncStatus, message string) {
 			mapStatus, mapMsg = status, message
 			mapDone = true
@@ -143,7 +143,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	ptr := webgpu.BufferGetConstMappedRange(dst, 0, size)
+	ptr := dst.GetConstMappedRange(0, size)
 	if ptr == nil {
 		fmt.Fprintln(os.Stderr, "GetConstMappedRange failed")
 		os.Exit(1)
@@ -160,9 +160,9 @@ func main() {
 			break
 		}
 	}
-	webgpu.BufferUnmap(dst)
-	webgpu.BufferDestroy(src)
-	webgpu.BufferDestroy(dst)
+	dst.Unmap()
+	src.Destroy()
+	dst.Destroy()
 
 	if !ok {
 		os.Exit(1)

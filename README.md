@@ -40,20 +40,20 @@ handles). Only the function *implementations* differ.
 
 CGO backend:
 ```go
-func DeviceCreateBindGroup(device *Device, descriptor BindGroupDescriptor) *BindGroup {
-    c_device := (C.WGPUDevice)(unsafe.Pointer(device.inner))
+func (d *Device) CreateBindGroup(descriptor BindGroupDescriptor) *BindGroup {
+    c_d := (C.WGPUDevice)(unsafe.Pointer(d.inner))
     c_descriptor := (*C.WGPUBindGroupDescriptor)(unsafe.Pointer(&descriptor))
-    c_result := C.wgpuCreateBindGroup(c_device, c_descriptor)
+    c_result := C.wgpuDeviceCreateBindGroup(c_d, c_descriptor)
     return &BindGroup{inner: uintptr(unsafe.Pointer(c_result))}
 }
 ```
 
 Syscall backend:
 ```go
-func DeviceCreateBindGroup(device *Device, descriptor BindGroupDescriptor) *BindGroup {
-    device_v := uintptr(device.inner)
+func (d *Device) CreateBindGroup(descriptor BindGroupDescriptor) *BindGroup {
+    d_v := uintptr(d.inner)
     descriptor_v := uintptr(unsafe.Pointer(&descriptor))
-    r1, _, _ := procDeviceCreateBindGroup.Call(device_v, descriptor_v)
+    r1, _, _ := procDeviceCreateBindGroup.Call(d_v, descriptor_v)
     return &BindGroup{inner: r1}
 }
 ```
@@ -157,9 +157,13 @@ The generator converts C names to idiomatic Go names:
 | `WGPUBlendFactor_Zero` | `BlendFactorZero` | Enum: prefix + PascalCase |
 | `WGPUBufferUsage_MapRead` | `BufferUsageMapRead` | Bitflag: prefix + PascalCase |
 | `WGPUBufferDescriptor` | `BufferDescriptor` | Struct: PascalCase |
-| `wgpuDeviceCreateBuffer` | `DeviceCreateBuffer` | Method: Object + PascalCase |
+| `wgpuDeviceCreateBuffer` | `(*Device).CreateBuffer` | Method: receiver + PascalCase |
 | `wgpuCreateInstance` | `CreateInstance` | Function: PascalCase |
 | `array_layer_count_undefined` | `ArrayLayerCountUndefined` | Constant: PascalCase |
+
+Object methods become Go methods whenever a receiver is available (the object
+handle is the first argument). Top-level functions without a handle — for
+example `wgpuCreateInstance` — stay package-level functions.
 
 Go keywords (`type`, `range`, etc.) get a `Val` suffix to avoid collisions:
 `type` → `typeVal`.

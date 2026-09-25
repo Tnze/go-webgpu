@@ -105,6 +105,7 @@ func loadTemplates() (map[string]*template.Template, error) {
 		"isArrayLen":    isArrayLenField,
 		"comment":       commentLine,
 		"commentIndent": commentIndent,
+		"sig":           goSignature,
 		"handleType": func(goReturn string) string {
 			return strings.TrimPrefix(goReturn, "*")
 		},

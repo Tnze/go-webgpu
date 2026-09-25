@@ -112,11 +112,7 @@ func goQueueWorkDoneCB(status C.WGPUQueueWorkDoneStatus, message C.WGPUStringVie
 {{- range .Funcs }}
 
 // {{ .Name }} calls C.{{ .CName }}.
-func {{ .Name }}(
-	{{- range $i, $a := .GoArgs }}
-	{{- if $i }}, {{ end }}{{ $a.Name }} {{ $a.GoType }}
-	{{- end -}}
-){{ if .GoReturn }} {{ .GoReturn }}{{ end }} {
+{{ sig . }} {
 {{- $needsPinner := false }}
 {{- range .GoArgs }}{{ if or (isStruct .TypeRef) .IsSlice .IsStr }}{{ $needsPinner = true }}{{ end }}{{ end }}
 {{- if $needsPinner }}

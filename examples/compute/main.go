@@ -41,7 +41,7 @@ func wait(instance *webgpu.Instance, done *bool) {
 			fmt.Fprintln(os.Stderr, "timeout waiting for async callback")
 			os.Exit(1)
 		}
-		webgpu.InstanceProcessEvents(instance)
+		instance.ProcessEvents()
 		time.Sleep(time.Millisecond)
 	}
 }
@@ -58,7 +58,7 @@ func main() {
 		aErr    string
 		aDone   bool
 	)
-	webgpu.InstanceRequestAdapter(instance, webgpu.RequestAdapterOptions{},
+	instance.RequestAdapter(webgpu.RequestAdapterOptions{},
 		func(status webgpu.RequestAdapterStatus, a *webgpu.Adapter, message string) {
 			adapter, aErr = a, message
 			if status != webgpu.RequestAdapterStatusSuccess {
@@ -77,7 +77,7 @@ func main() {
 		dErr   string
 		dDone  bool
 	)
-	webgpu.AdapterRequestDevice(adapter, webgpu.DeviceDescriptor{},
+	adapter.RequestDevice(webgpu.DeviceDescriptor{},
 		func(status webgpu.RequestDeviceStatus, d *webgpu.Device, message string) {
 			device, dErr = d, message
 			if status != webgpu.RequestDeviceStatusSuccess {
@@ -91,16 +91,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	queue := webgpu.DeviceGetQueue(device)
+	queue := device.GetQueue()
 
 	// Storage buffer: written from the queue, read/written by the shader, copied out.
-	storage := webgpu.DeviceCreateBuffer(device, webgpu.BufferDescriptor{
+	storage := device.CreateBuffer(webgpu.BufferDescriptor{
 		Label: "storage",
 		Usage: webgpu.BufferUsageStorage | webgpu.BufferUsageCopySrc | webgpu.BufferUsageCopyDst,
 		Size:  storageBytes,
 	})
 	// MAP_READ pairs with COPY_DST.
-	readback := webgpu.DeviceCreateBuffer(device, webgpu.BufferDescriptor{
+	readback := device.CreateBuffer(webgpu.BufferDescriptor{
 		Label: "readback",
 		Usage: webgpu.BufferUsageMapRead | webgpu.BufferUsageCopyDst,
 		Size:  storageBytes,
@@ -114,7 +114,7 @@ func main() {
 	for i := range input {
 		input[i] = uint32(i)
 	}
-	webgpu.QueueWriteBuffer(queue, storage, 0, unsafe.Pointer(unsafe.SliceData(input)), storageBytes)
+	queue.WriteBuffer(storage, 0, unsafe.Pointer(unsafe.SliceData(input)), storageBytes)
 	runtime.KeepAlive(input)
 
 	// ShaderSourceWGSL is an extension struct: NewShaderSourceWGSL sets the
@@ -126,7 +126,7 @@ func main() {
 	src.Code = wgsl
 	pinner.Pin(&src)
 	pinner.Pin(unsafe.StringData(src.Code))
-	module := webgpu.DeviceCreateShaderModule(device, webgpu.ShaderModuleDescriptor{
+	module := device.CreateShaderModule(webgpu.ShaderModuleDescriptor{
 		Label:       "compute",
 		NextInChain: unsafe.Pointer(&src),
 	})
@@ -136,7 +136,7 @@ func main() {
 	}
 
 	// Layout 0 = auto: the pipeline derives its bind group layout from the shader.
-	pipeline := webgpu.DeviceCreateComputePipeline(device, webgpu.ComputePipelineDescriptor{
+	pipeline := device.CreateComputePipeline(webgpu.ComputePipelineDescriptor{
 		Label: "compute",
 		Compute: webgpu.ComputeState{
 			Module:     module.Handle(),
@@ -148,7 +148,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	bgLayout := webgpu.ComputePipelineGetBindGroupLayout(pipeline, 0)
+	bgLayout := pipeline.GetBindGroupLayout(0)
 	if bgLayout == nil {
 		fmt.Fprintln(os.Stderr, "GetBindGroupLayout failed")
 		os.Exit(1)
@@ -158,7 +158,7 @@ func main() {
 		Buffer:  storage.Handle(),
 		Size:    webgpu.WholeSize,
 	}}
-	bindGroup := webgpu.DeviceCreateBindGroup(device, webgpu.BindGroupDescriptor{
+	bindGroup := device.CreateBindGroup(webgpu.BindGroupDescriptor{
 		Label:        "bind-group",
 		Layout:       bgLayout.Handle(),
 		EntriesCount: 1,
@@ -170,22 +170,22 @@ func main() {
 		os.Exit(1)
 	}
 
-	enc := webgpu.DeviceCreateCommandEncoder(device, webgpu.CommandEncoderDescriptor{})
-	pass := webgpu.CommandEncoderBeginComputePass(enc, webgpu.ComputePassDescriptor{Label: "compute"})
-	webgpu.ComputePassEncoderSetPipeline(pass, pipeline)
-	webgpu.ComputePassEncoderSetBindGroup(pass, 0, bindGroup, nil)
-	webgpu.ComputePassEncoderDispatchWorkgroups(pass, (numElements+workgroupX-1)/workgroupX, 1, 1)
-	webgpu.ComputePassEncoderEnd(pass)
-	webgpu.CommandEncoderCopyBufferToBuffer(enc, storage, 0, readback, 0, storageBytes)
-	cmd := webgpu.CommandEncoderFinish(enc, webgpu.CommandBufferDescriptor{})
-	webgpu.QueueSubmit(queue, []*webgpu.CommandBuffer{cmd})
+	enc := device.CreateCommandEncoder(webgpu.CommandEncoderDescriptor{})
+	pass := enc.BeginComputePass(webgpu.ComputePassDescriptor{Label: "compute"})
+	pass.SetPipeline(pipeline)
+	pass.SetBindGroup(0, bindGroup, nil)
+	pass.DispatchWorkgroups((numElements+workgroupX-1)/workgroupX, 1, 1)
+	pass.End()
+	enc.CopyBufferToBuffer(storage, 0, readback, 0, storageBytes)
+	cmd := enc.Finish(webgpu.CommandBufferDescriptor{})
+	queue.Submit([]*webgpu.CommandBuffer{cmd})
 
 	var (
 		mapStatus webgpu.MapAsyncStatus
 		mapMsg    string
 		mapDone   bool
 	)
-	webgpu.BufferMapAsync(readback, webgpu.MapModeRead, 0, storageBytes,
+	readback.MapAsync(webgpu.MapModeRead, 0, storageBytes,
 		func(status webgpu.MapAsyncStatus, message string) {
 			mapStatus, mapMsg = status, message
 			mapDone = true
@@ -196,7 +196,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	ptr := webgpu.BufferGetConstMappedRange(readback, 0, storageBytes)
+	ptr := readback.GetConstMappedRange(0, storageBytes)
 	if ptr == nil {
 		fmt.Fprintln(os.Stderr, "GetConstMappedRange failed")
 		os.Exit(1)
@@ -213,9 +213,9 @@ func main() {
 	}
 	head := [4]uint32{}
 	copy(head[:], got)
-	webgpu.BufferUnmap(readback)
-	webgpu.BufferDestroy(storage)
-	webgpu.BufferDestroy(readback)
+	readback.Unmap()
+	storage.Destroy()
+	readback.Destroy()
 
 	if !ok {
 		os.Exit(1)

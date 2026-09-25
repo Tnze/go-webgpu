@@ -95,15 +95,18 @@ type CallbackInfoData struct {
 }
 
 // FuncData describes a function to generate.
+// When IsMethod is set, GoArgs[0] is the receiver and Name omits the
+// object prefix (e.g. Device.CreateBuffer, not DeviceCreateBuffer).
 type FuncData struct {
 	Name          string
 	CName         string
+	Ident         string // unique Go identifier for internal symbols (e.g. proc vars)
 	GoArgs        []FuncArgData
 	GoReturn      string
 	ReturnRef     string // original YAML type reference for the return type
 	Doc           string
 	IsMethod      bool
-	ObjName       string
+	ObjName       string // receiver type name without '*', e.g. "Device"
 	HasCallback   bool
 	CallbackFn    string // Go callback type, e.g. RequestAdapterFn
 	CallbackName  string // original callback name, e.g. request_adapter
@@ -340,32 +343,81 @@ func buildTemplateData(spec *parser.Spec) *TemplateData {
 		td.Structs = append(td.Structs, sd)
 	}
 
-	// Functions
+	// Functions. Prefer a Go method whenever the call has an object handle
+	// to use as a receiver; otherwise emit a package-level function.
 	for _, f := range spec.Functions {
-		td.Funcs = append(td.Funcs, buildFuncData(f, spec))
+		fd := buildFuncData(f, spec)
+		if tryAsMethod(&fd, f.Name) {
+			fd.Ident = fd.ObjName + fd.Name
+		} else {
+			fd.Ident = fd.Name
+		}
+		td.Funcs = append(td.Funcs, fd)
 	}
 	for _, obj := range spec.Objects {
+		objName := pascalCase(obj.Name)
+		// "Handle" is already defined on every handle type.
+		used := map[string]bool{"Handle": true}
 		for _, m := range obj.Methods {
 			fd := buildFuncData(m, spec)
-			fd.IsMethod = true
-			fd.ObjName = pascalCase(obj.Name)
-			// Prefix method name with object name to avoid collisions.
-			fd.Name = fd.ObjName + fd.Name
+			methodName := pascalCase(m.Name)
 			// C API always prefixes methods with the object name.
-			fd.CName = "wgpu" + fd.ObjName + pascalCase(m.Name)
-			// Prepend the object handle as the first argument.
+			fd.CName = "wgpu" + objName + methodName
+			// Prepend the object handle as the first argument (the receiver).
 			handleArg := FuncArgData{
-				Name:    camelCase(obj.Name),
-				GoType:  "*" + pascalCase(obj.Name),
+				Name:    receiverName(objName),
+				GoType:  "*" + objName,
 				TypeRef: "object." + obj.Name,
 				CName:   obj.Name,
 			}
 			fd.GoArgs = append([]FuncArgData{handleArg}, fd.GoArgs...)
+
+			if used[methodName] {
+				// Name collision on the receiver type: fall back to a function.
+				fd.Name = objName + methodName
+				fd.Ident = fd.Name
+			} else {
+				used[methodName] = true
+				fd.IsMethod = true
+				fd.ObjName = objName
+				fd.Name = methodName
+				fd.Ident = objName + methodName
+			}
 			td.Funcs = append(td.Funcs, fd)
 		}
 	}
 
 	return td
+}
+
+// tryAsMethod converts a function into a method when its first argument is an
+// object handle. The handle argument becomes the receiver. Returns false when
+// no receiver is available (or the name is already taken on that type).
+func tryAsMethod(fd *FuncData, rawName string) bool {
+	if len(fd.GoArgs) == 0 || !isHandleType(fd.GoArgs[0].TypeRef) {
+		return false
+	}
+	recv := fd.GoArgs[0]
+	objName := pascalCase(strings.TrimPrefix(recv.TypeRef, "object."))
+	methodName := pascalCase(rawName)
+	// Avoid colliding with the generated Handle() method.
+	if methodName == "Handle" {
+		return false
+	}
+	fd.IsMethod = true
+	fd.ObjName = objName
+	fd.Name = methodName
+	fd.GoArgs[0].Name = receiverName(objName)
+	return true
+}
+
+// receiverName returns the conventional single-letter Go receiver name
+// for a type (Device → d, CommandEncoder → c).
+func receiverName(typeName string) string {
+	if typeName == "" {
+		return "x"
+	}
+	return strings.ToLower(typeName[:1])
 }
 
 func buildFuncData(f parser.Function, spec *parser.Spec) FuncData {
@@ -802,6 +854,31 @@ func commentIndent(s string) string {
 
 func goTypeName(ref string) string {
 	return goTypeForRef(ref, nil)
+}
+
+// goSignature renders a complete Go func/method signature (without the body).
+func goSignature(fd FuncData) string {
+	var b strings.Builder
+	args := fd.GoArgs
+	if fd.IsMethod && len(args) > 0 {
+		recv := args[0]
+		args = args[1:]
+		fmt.Fprintf(&b, "func (%s %s) %s(", recv.Name, recv.GoType, fd.Name)
+	} else {
+		fmt.Fprintf(&b, "func %s(", fd.Name)
+	}
+	for i, a := range args {
+		if i > 0 {
+			b.WriteString(", ")
+		}
+		fmt.Fprintf(&b, "%s %s", a.Name, a.GoType)
+	}
+	b.WriteString(")")
+	if fd.GoReturn != "" {
+		b.WriteString(" ")
+		b.WriteString(fd.GoReturn)
+	}
+	return b.String()
 }
 
 // structSliceFields returns the Go field names of a struct that are slices
