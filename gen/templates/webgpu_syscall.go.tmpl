@@ -77,16 +77,14 @@ func release{{ .Name }}(inner uintptr) {
 // Blocks until the operation completes.
 {{ sig . }} {
 {{- if .HasCallback }}
-{{- $n := len .BlockResults }}
 	type _res struct {
 {{- range $i, $r := .BlockResults }}
 		r{{ $i }} {{ $r.GoType }}
 {{- end }}
-		err error
 	}
 	_ch := make(chan _res, 1)
-	callback := {{ .CallbackFn }}(func({{ range $i, $r := .BlockResults }}{{ if $i }}, {{ end }}r{{ $i }} {{ $r.GoType }}{{ end }}{{ if $n }}, {{ end }}err error) {
-		_ch <- _res{ {{ range $i, $r := .BlockResults }}r{{ $i }}, {{ end }}err }
+	callback := {{ .CallbackFn }}(func({{ range $i, $r := .BlockResults }}{{ if $i }}, {{ end }}r{{ $i }} {{ $r.GoType }}{{ end }}) {
+		_ch <- _res{ {{ range $i, $r := .BlockResults }}{{ if $i }}, {{ end }}r{{ $i }}{{ end }} }
 	})
 {{- end }}
 {{- $needsPinner := false }}
@@ -111,29 +109,28 @@ func release{{ .Name }}(inner uintptr) {
 {{- end }}
 {{- range .GoArgs }}
 {{- if isHandle .TypeRef }}
-	{{ .Name }}_v := uintptr({{ .Name }}.Handle())
+	{{ .Name }}_v := {{ .Name }}.Handle()
 {{- else if .IsStr }}
 	{{ .Name }}_sv := syscallStringView({{ .Name }}, &pinner)
-	{{ .Name }}_v := uintptr(unsafe.Pointer(&{{ .Name }}_sv))
 {{- else if .IsSlice }}
 {{- if hasPrefix .TypeRef "array<object." }}
 	{{ .Name }}_handles := make([]uintptr, len({{ .Name }}))
 	for i, v := range {{ .Name }} {
 		{{ .Name }}_handles[i] = v.Handle()
 	}
-	var {{ .Name }}_ptr uintptr
+	var {{ .Name }}_ptr unsafe.Pointer
 	if len({{ .Name }}) > 0 {
-		{{ .Name }}_ptr = uintptr(unsafe.Pointer(&{{ .Name }}_handles[0]))
+		{{ .Name }}_ptr = unsafe.Pointer(&{{ .Name }}_handles[0])
 	}
 {{- else }}
-	var {{ .Name }}_ptr uintptr
+	var {{ .Name }}_ptr unsafe.Pointer
 	if len({{ .Name }}) > 0 {
-		{{ .Name }}_ptr = uintptr(unsafe.Pointer(&{{ .Name }}[0]))
+		{{ .Name }}_ptr = unsafe.Pointer(&{{ .Name }}[0])
 	}
 {{- end }}
 	{{ .Name }}_count := uintptr(len({{ .Name }}))
 {{- else if isStruct .TypeRef }}
-	{{ .Name }}_v := uintptr(unsafe.Pointer(&{{ .Name }}))
+	// pinned above; pointer converted to uintptr in the Call expression
 {{- else if isFuncPtr .TypeRef }}
 {{- else }}
 	{{ .Name }}_v := uintptr({{ .Name }})
@@ -152,6 +149,18 @@ func release{{ .Name }}(inner uintptr) {
 {{- range $.CallbackInfos }}
 {{- if and .HasTrampoline (eq .BaseName $cbBase) }}
 	_cbInfo.callback = syscall.NewCallback(func({{ range .Args }}{{ .Name }}, {{ end }}ud1, ud2 uintptr) {
+{{- /* Pre-convert error_msg so error_type can reference it. */}}
+{{- range .Args }}
+{{- if eq .Kind "error_msg" }}
+		var emsg string
+		if {{ .Name }} != 0 {
+			sv := (*wgpuStringView)(unsafe.Pointer({{ .Name }}))
+			if sv.data != nil && sv.length > 0 {
+				emsg = unsafe.String(sv.data, int(sv.length))
+			}
+		}
+{{- end }}
+{{- end }}
 {{- range .Args }}
 {{- if eq .Kind "message" }}
 		var s string
@@ -171,64 +180,43 @@ func release{{ .Name }}(inner uintptr) {
 		if {{ .Name }} != 0 {
 			{{ .GoName }} = *(*{{ .GoType }})(unsafe.Pointer({{ .Name }}))
 		}
-{{- else if eq .Kind "enum" }}
+{{- else if eq .Kind "error_type" }}
+		{{ .GoName }} := errorFromErrorType(ErrorType({{ .Name }}), emsg)
+{{- else if or (eq .Kind "enum") (eq .Kind "status") }}
 		{{ .GoName }} := {{ .GoType }}({{ .Name }})
 {{- end }}
 {{- end }}
 		if fn := callback; fn != nil {
-			var err error
-{{- if .StatusArg }}
-			if {{ .StatusArg.GoType }}({{ .StatusArg.Name }}) != {{ .SuccessConst }} {
-{{- if .MessageArg }}
-				err = newError("{{ .OpName }}", s, uint32({{ .StatusArg.Name }}))
-{{- else }}
-				err = newError("{{ .OpName }}", "", uint32({{ .StatusArg.Name }}))
-{{- end }}
-			}
-{{- end }}
 			fn({{ join .CallArgs ", " }})
 		}
 	})
 {{- end }}
 {{- end }}
-	_cbInfo_v := uintptr(unsafe.Pointer(&_cbInfo))
 {{- end }}
 {{- if .ReturnRef }}
 {{- $funcName := .Ident }}
 {{- $kind := .RetKind }}
 	r1, _, _ := proc{{ $funcName }}.Call(
-		{{- range $i, $a := .GoArgs }}{{ if $i }}, {{ end }}{{ if $a.IsSlice }}{{ $a.Name }}_count, {{ $a.Name }}_ptr{{ else if isFuncPtr $a.TypeRef }}_cbInfo_v{{ else }}{{ $a.Name }}_v{{ end }}{{ end -}}
+		{{- range $i, $a := .GoArgs }}{{ if $i }}, {{ end }}{{ if $a.IsSlice }}{{ $a.Name }}_count, uintptr({{ $a.Name }}_ptr){{ else if isFuncPtr $a.TypeRef }}uintptr(unsafe.Pointer(&_cbInfo)){{ else if isHandle $a.TypeRef }}{{ $a.Name }}_v{{ else if $a.IsStr }}uintptr(unsafe.Pointer(&{{ $a.Name }}_sv)){{ else if isStruct $a.TypeRef }}uintptr(unsafe.Pointer(&{{ $a.Name }})){{ else }}{{ $a.Name }}_v{{ end }}{{ end -}}
 	)
 {{- if eq $kind "blocking" }}
 	_ = r1
 	_out := waitRecv(_ch)
-	return {{ range $i, $r := .BlockResults }}_out.r{{ $i }}, {{ end }}_out.err
+{{- if .BlockResults }}
+	return {{ range $i, $r := .BlockResults }}{{ if $i }}, {{ end }}_out.r{{ $i }}{{ end }}
+{{- end }}
 {{- else if eq $kind "handle" }}
 {{- if eq .GoReturn "Instance" }}
-	_result := wrapInstance(r1)
+	return wrapInstance(r1)
 {{- else }}
-	_result := {{ .GoReturn }}(r1)
+	return {{ .GoReturn }}(r1)
 {{- end }}
-	if _result == 0 {
-		return 0, newError("{{ .OpName }}", "", 0)
-	}
-	return _result, nil
 {{- else if eq $kind "status" }}
-	if Status(r1) != {{ .SuccessConst }} {
-		return newError("{{ .OpName }}", "", uint32(r1))
-	}
-	return nil
+	return Status(r1)
 {{- else if eq $kind "wait" }}
-	if WaitStatus(r1) != {{ .SuccessConst }} {
-		return newError("{{ .OpName }}", "", uint32(r1))
-	}
-	return nil
+	return WaitStatus(r1)
 {{- else if eq $kind "pointer" }}
-	_result := unsafe.Pointer(r1)
-	if _result == nil {
-		return nil, newError("{{ .OpName }}", "", 0)
-	}
-	return _result, nil
+	return unsafe.Pointer(r1)
 {{- else if eq $kind "bool" }}
 	return r1 != 0
 {{- else if eq $kind "future" }}
@@ -238,7 +226,7 @@ func release{{ .Name }}(inner uintptr) {
 {{- end }}
 {{- else }}
 	proc{{ .Ident }}.Call(
-		{{- range $i, $a := .GoArgs }}{{ if $i }}, {{ end }}{{ if $a.IsSlice }}{{ $a.Name }}_count, {{ $a.Name }}_ptr{{ else if isFuncPtr $a.TypeRef }}_cbInfo_v{{ else }}{{ $a.Name }}_v{{ end }}{{ end -}}
+		{{- range $i, $a := .GoArgs }}{{ if $i }}, {{ end }}{{ if $a.IsSlice }}{{ $a.Name }}_count, uintptr({{ $a.Name }}_ptr){{ else if isFuncPtr $a.TypeRef }}uintptr(unsafe.Pointer(&_cbInfo)){{ else if isHandle $a.TypeRef }}{{ $a.Name }}_v{{ else if $a.IsStr }}uintptr(unsafe.Pointer(&{{ $a.Name }}_sv)){{ else if isStruct $a.TypeRef }}uintptr(unsafe.Pointer(&{{ $a.Name }})){{ else }}{{ $a.Name }}_v{{ end }}{{ end -}}
 	)
 {{- end }}
 }

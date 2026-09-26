@@ -31,6 +31,15 @@ type TemplateData struct {
 	Handles       []HandleData
 	Consts        []ConstData
 	CallbackInfos []CallbackInfoData
+	ErrorTypes    []ErrorTypeEntryData
+}
+
+// ErrorTypeEntryData describes one distinct Go error type generated
+// from the WGPUErrorType enum.
+type ErrorTypeEntryData struct {
+	Name    string // Go type name, e.g. "ValidationError"
+	Value   string // enum value, e.g. "ErrorTypeValidation"
+	Display string // lowercase label for Error(), e.g. "validation"
 }
 
 // EnumData describes a Go enum type.
@@ -103,10 +112,13 @@ type CallbackInfoData struct {
 	// callbacks (device_lost, uncaptured_error) are false.
 	HasTrampoline bool
 	// Precomputed conveniences for templates.
-	StatusArg  *CallbackArgInfo
-	MessageArg *CallbackArgInfo
-	SuccessConst string       // e.g. MapAsyncStatusSuccess
-	CallArgs     []string     // Go value names passed to cb(...), incl. "err"
+	StatusArg      *CallbackArgInfo
+	MessageArg     *CallbackArgInfo
+	ErrorTypeArg   *CallbackArgInfo // enum.error_type parameter (if any)
+	ErrorMessageArg *CallbackArgInfo // message parameter feeding the typed error
+	SuccessConst   string       // e.g. MapAsyncStatusSuccess
+	CallArgs       []string     // Go value names passed to cb(...)
+	ErrConvert     string       // Go expression producing the typed error ("" if none)
 }
 
 // CallbackArgInfo describes one C parameter of a callback trampoline.
@@ -128,9 +140,10 @@ type CallbackArgInfo struct {
 // IsRelease marks the per-type Release method, which is emitted after the
 // type's other methods and has a special body (Cleanup.Stop + wgpu*Release).
 //
-// Error convention: operations that can fail return error. Handle results
-// become (T, error); status results become error (nil = success). Async
-// callbacks deliver err error instead of a status enum + message string.
+// Return convention: raw C results are surfaced directly — status enums
+// stay enums, handles stay handles (zero = failure), pointer returns stay
+// pointers (nil = failure). Callback APIs become blocking multi-return
+// functions whose last value is the status enum.
 type FuncData struct {
 	Name          string
 	CName         string
@@ -232,6 +245,24 @@ func buildTemplateData(spec *parser.Spec) *TemplateData {
 		td.Enums = append(td.Enums, ed)
 	}
 
+	// Distinct Go error types for WGPUErrorType entries.
+	// NoError is skipped — it maps to nil, not an error value.
+	for _, e := range spec.Enums {
+		if e.Name != "error_type" {
+			continue
+		}
+		for _, entry := range e.Entries {
+			if entry.IsNull || entry.Name == "no_error" {
+				continue
+			}
+			td.ErrorTypes = append(td.ErrorTypes, ErrorTypeEntryData{
+				Name:    pascalCase(entry.Name) + "Error",
+				Value:   "ErrorType" + pascalCase(entry.Name),
+				Display: strings.ReplaceAll(entry.Name, "_", " "),
+			})
+		}
+	}
+
 	// Bitflags
 	for _, bf := range spec.Bitflags {
 		bfName := pascalCase(bf.Name)
@@ -323,17 +354,22 @@ func buildTemplateData(spec *parser.Spec) *TemplateData {
 			ci.CFnType = "WGPU" + pascalCase(cb.Name) + "Callback"
 		}
 
-		// Classify each C parameter. Message after status is folded into err.
-		sawStatus := false
+		// Classify each C parameter.
+		//   status         → raw status enum (last Go callback arg)
+		//   error_type     → folded with following message into typed error
+		//   message        → dropped (or feeds the typed error)
+		//   everything else → passed through raw
+		sawErrorType := false
 		for _, a := range cb.Args {
 			ai := callbackArgInfo(a)
-			if ai.IsStatus {
-				sawStatus = true
-				ci.SuccessConst = pascalCase(strings.TrimPrefix(a.Type, "enum.")) + "Success"
+			if ai.Kind == "error_type" {
+				sawErrorType = true
 			}
-			if sawStatus && a.Name == "message" && isStringType(a.Type) {
-				ai.Kind = "message"
+			// The message immediately after error_type feeds the typed error.
+			if sawErrorType && !ai.IsStatus && ai.Kind != "error_type" && a.Name == "message" && isStringType(a.Type) {
+				ai.Kind = "error_msg"
 				ai.IsMessage = true
+				sawErrorType = false
 			}
 			ci.Args = append(ci.Args, ai)
 		}
@@ -342,14 +378,27 @@ func buildTemplateData(spec *parser.Spec) *TemplateData {
 			switch {
 			case ci.Args[i].IsStatus:
 				ci.StatusArg = &ci.Args[i]
+				ci.SuccessConst = pascalCase(strings.TrimPrefix(cb.Args[i].Type, "enum.")) + "Success"
+			case ci.Args[i].Kind == "error_type":
+				ci.ErrorTypeArg = &ci.Args[i]
+			case ci.Args[i].Kind == "error_msg":
+				ci.ErrorMessageArg = &ci.Args[i]
 			case ci.Args[i].IsMessage:
 				ci.MessageArg = &ci.Args[i]
 			default:
 				ci.CallArgs = append(ci.CallArgs, ci.Args[i].GoName)
 			}
 		}
-		if ci.StatusArg != nil {
+		if ci.ErrorTypeArg != nil {
 			ci.CallArgs = append(ci.CallArgs, "err")
+			msgExpr := `""`
+			if ci.ErrorMessageArg != nil {
+				msgExpr = "cgoGoString(" + ci.ErrorMessageArg.Name + ")"
+			}
+			ci.ErrConvert = "errorFromErrorType(" + "ErrorType(" + ci.ErrorTypeArg.Name + "), " + msgExpr + ")"
+		}
+		if ci.StatusArg != nil {
+			ci.CallArgs = append(ci.CallArgs, ci.StatusArg.GoName)
 		}
 
 		td.CallbackInfos = append(td.CallbackInfos, ci)
@@ -548,19 +597,14 @@ func buildFuncData(f parser.Function, spec *parser.Spec) FuncData {
 		fd.CallbackName = strings.TrimPrefix(f.Callback, "callback.")
 		fd.CallbackFn = pascalCase(fd.CallbackName) + "Fn"
 		// Blocking Go API: the C Future/callback is an implementation detail.
-		// Results are delivered by returning them (via an internal channel).
+		// Results (including the status enum) are returned via an internal channel.
 		fd.RetKind = "blocking"
-		fd.ReturnsError = true
+		fd.ReturnsError = false
 		fd.GoReturn = ""
 		fd.ReturnRef = "struct.future" // C still returns a Future we ignore
 		if spec != nil {
 			if cb := spec.GetCallback(fd.CallbackName); cb != nil {
-				for _, a := range goCallbackArgs(*cb) {
-					if a.Name == "err" {
-						continue
-					}
-					fd.BlockResults = append(fd.BlockResults, a)
-				}
+				fd.BlockResults = goCallbackArgs(*cb)
 			}
 		}
 		// MapAsync is blocking in this API; expose it as Map.
@@ -573,20 +617,14 @@ func buildFuncData(f parser.Function, spec *parser.Spec) FuncData {
 		switch {
 		case isHandleType(f.Returns.Type):
 			fd.RetKind = "handle"
-			fd.ReturnsError = true
 		case f.Returns.Type == "enum.status":
 			fd.RetKind = "status"
-			fd.ReturnsError = true
-			fd.SuccessConst = "StatusSuccess"
-			fd.GoReturn = "" // signature is just `error`
+			fd.GoReturn = "Status"
 		case f.Returns.Type == "enum.wait_status":
 			fd.RetKind = "wait"
-			fd.ReturnsError = true
-			fd.SuccessConst = "WaitStatusSuccess"
-			fd.GoReturn = ""
+			fd.GoReturn = "WaitStatus"
 		case f.Returns.Type == "c_void_mapped_range_ptr" || strings.HasPrefix(f.Returns.Type, "c_void"):
 			fd.RetKind = "pointer"
-			fd.ReturnsError = true
 		case f.Returns.Type == "bool":
 			fd.RetKind = "bool"
 		case f.Returns.Type == "struct.future":
@@ -690,6 +728,10 @@ func callbackArgInfo(a parser.CallbackArg) CallbackArgInfo {
 		ai.Kind = "status"
 		ai.IsStatus = true
 		ai.GoType = pascalCase(strings.TrimPrefix(a.Type, "enum."))
+	case a.Type == "enum.error_type":
+		ai.Kind = "error_type"
+		ai.GoName = "err"
+		ai.GoType = "error"
 	case a.Name == "message" && isStringType(a.Type):
 		ai.Kind = "message"
 		ai.IsMessage = true
@@ -1085,27 +1127,38 @@ type CallbackArgData struct {
 	GoType string
 }
 
-// goCallbackArgs returns the Go parameters for a callback. Completion
-// callbacks (those with a status enum) drop the status/message pair and
-// append err error instead.
+// goCallbackArgs returns the Go parameters for a callback. Status enums
+// are passed as raw values (never wrapped in error). The message string is
+// dropped. An error_type argument is folded with its following message into
+// a single typed error parameter.
 func goCallbackArgs(cb parser.Callback) []CallbackArgData {
 	var args []CallbackArgData
-	hasStatus := false
+	var statusGoType string
+	skipMessage := false
 	for _, a := range cb.Args {
-		if a.Name == "status" && strings.HasPrefix(a.Type, "enum.") {
-			hasStatus = true
+		if skipMessage {
+			skipMessage = false
 			continue
 		}
-		if hasStatus && a.Name == "message" && isStringType(a.Type) {
-			continue // folded into err
+		if a.Name == "status" && strings.HasPrefix(a.Type, "enum.") {
+			statusGoType = pascalCase(strings.TrimPrefix(a.Type, "enum."))
+			continue
+		}
+		if a.Type == "enum.error_type" {
+			args = append(args, CallbackArgData{Name: "err", GoType: "error"})
+			skipMessage = true // following message feeds the error
+			continue
+		}
+		if a.Name == "message" && isStringType(a.Type) {
+			continue // message is not surfaced
 		}
 		args = append(args, CallbackArgData{
 			Name:   camelCase(a.Name),
 			GoType: goTypeForRef(a.Type, nil),
 		})
 	}
-	if hasStatus {
-		args = append(args, CallbackArgData{Name: "err", GoType: "error"})
+	if statusGoType != "" {
+		args = append(args, CallbackArgData{Name: "status", GoType: statusGoType})
 	}
 	return args
 }
@@ -1158,14 +1211,8 @@ func goSignature(fd FuncData) string {
 				}
 				b.WriteString(r.GoType)
 			}
-			b.WriteString(", error)")
-		} else {
-			b.WriteString(" error")
+			b.WriteString(")")
 		}
-	case fd.ReturnsError && fd.GoReturn != "":
-		fmt.Fprintf(&b, " (%s, error)", fd.GoReturn)
-	case fd.ReturnsError:
-		b.WriteString(" error")
 	case fd.GoReturn != "":
 		fmt.Fprintf(&b, " %s", fd.GoReturn)
 	}

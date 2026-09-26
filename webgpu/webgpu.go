@@ -3,7 +3,6 @@
 package webgpu
 
 import (
-	"fmt"
 	"math"
 	"runtime"
 	"structs"
@@ -2143,22 +2142,60 @@ type UncapturedErrorCallbackInfo struct {
 // Errors
 // ---------------------------------------------------------------------------
 
-// Error describes a failed WebGPU operation.
-type Error struct {
-	Op   string // operation name, e.g. "Device.CreateBuffer"
-	Msg  string // implementation message, if any
-	Code uint32 // status code, when the API reported one
-}
+// ValidationError is a WebGPU validation error.
+type ValidationError struct{ Message string }
 
-func (e *Error) Error() string {
-	if e.Msg != "" {
-		return fmt.Sprintf("webgpu: %s: %s", e.Op, e.Msg)
+func (e *ValidationError) Error() string {
+	if e.Message != "" {
+		return "webgpu: validation: " + e.Message
 	}
-	return fmt.Sprintf("webgpu: %s failed", e.Op)
+	return "webgpu: validation"
 }
 
-func newError(op, msg string, code uint32) *Error {
-	return &Error{Op: op, Msg: msg, Code: code}
+// OutOfMemoryError is a WebGPU out of memory error.
+type OutOfMemoryError struct{ Message string }
+
+func (e *OutOfMemoryError) Error() string {
+	if e.Message != "" {
+		return "webgpu: out of memory: " + e.Message
+	}
+	return "webgpu: out of memory"
+}
+
+// InternalError is a WebGPU internal error.
+type InternalError struct{ Message string }
+
+func (e *InternalError) Error() string {
+	if e.Message != "" {
+		return "webgpu: internal: " + e.Message
+	}
+	return "webgpu: internal"
+}
+
+// UnknownError is a WebGPU unknown error.
+type UnknownError struct{ Message string }
+
+func (e *UnknownError) Error() string {
+	if e.Message != "" {
+		return "webgpu: unknown: " + e.Message
+	}
+	return "webgpu: unknown"
+}
+
+// errorFromErrorType creates the typed error for a WGPUErrorType value.
+// Returns nil for ErrorTypeNoError.
+func errorFromErrorType(t ErrorType, message string) error {
+	switch t {
+	case ErrorTypeValidation:
+		return &ValidationError{Message: message}
+	case ErrorTypeOutOfMemory:
+		return &OutOfMemoryError{Message: message}
+	case ErrorTypeInternal:
+		return &InternalError{Message: message}
+	case ErrorTypeUnknown:
+		return &UnknownError{Message: message}
+	}
+	return nil
 }
 
 // ---------------------------------------------------------------------------
@@ -2461,31 +2498,31 @@ func (t TextureView) Handle() uintptr {
 // ---------------------------------------------------------------------------
 
 // BufferMapFn is a callback function type.
-type BufferMapFn func(err error)
+type BufferMapFn func(status MapAsyncStatus)
 
 // CompilationInfoFn is a callback function type.
-type CompilationInfoFn func(compilationInfo CompilationInfo, err error)
+type CompilationInfoFn func(compilationInfo CompilationInfo, status CompilationInfoRequestStatus)
 
 // CreateComputePipelineAsyncFn is a callback function type.
-type CreateComputePipelineAsyncFn func(pipeline ComputePipeline, err error)
+type CreateComputePipelineAsyncFn func(pipeline ComputePipeline, status CreatePipelineAsyncStatus)
 
 // CreateRenderPipelineAsyncFn is a callback function type.
-type CreateRenderPipelineAsyncFn func(pipeline RenderPipeline, err error)
+type CreateRenderPipelineAsyncFn func(pipeline RenderPipeline, status CreatePipelineAsyncStatus)
 
 // DeviceLostFn is a callback function type.
-type DeviceLostFn func(device Device, reason DeviceLostReason, message string)
+type DeviceLostFn func(device Device, reason DeviceLostReason)
 
 // PopErrorScopeFn is a callback function type.
-type PopErrorScopeFn func(typeVal ErrorType, err error)
+type PopErrorScopeFn func(err error, status PopErrorScopeStatus)
 
 // QueueWorkDoneFn is a callback function type.
-type QueueWorkDoneFn func(err error)
+type QueueWorkDoneFn func(status QueueWorkDoneStatus)
 
 // RequestAdapterFn is a callback function type.
-type RequestAdapterFn func(adapter Adapter, err error)
+type RequestAdapterFn func(adapter Adapter, status RequestAdapterStatus)
 
 // RequestDeviceFn is a callback function type.
-type RequestDeviceFn func(device Device, err error)
+type RequestDeviceFn func(device Device, status RequestDeviceStatus)
 
 // UncapturedErrorFn is a callback function type.
-type UncapturedErrorFn func(device Device, typeVal ErrorType, message string)
+type UncapturedErrorFn func(device Device, err error)

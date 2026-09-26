@@ -14,51 +14,51 @@ import (
 )
 
 func main() {
-	instance, err := webgpu.CreateInstance(webgpu.InstanceDescriptor{})
-	if err != nil {
-		log.Fatal(err)
+	instance := webgpu.CreateInstance(webgpu.InstanceDescriptor{})
+	if instance == 0 {
+		log.Fatal("create instance failed")
 	}
 	defer instance.Release()
 
-	adapter, err := instance.RequestAdapter(webgpu.RequestAdapterOptions{})
-	if err != nil {
-		log.Fatal(err)
+	adapter, adapterStatus := instance.RequestAdapter(webgpu.RequestAdapterOptions{})
+	if adapterStatus != webgpu.RequestAdapterStatusSuccess {
+		log.Fatalf("request adapter: status %d", adapterStatus)
 	}
 	defer adapter.Release()
 
-	device, err := adapter.RequestDevice(webgpu.DeviceDescriptor{})
-	if err != nil {
-		log.Fatal(err)
+	device, deviceStatus := adapter.RequestDevice(webgpu.DeviceDescriptor{})
+	if deviceStatus != webgpu.RequestDeviceStatusSuccess {
+		log.Fatalf("request device: status %d", deviceStatus)
 	}
 	defer device.Release()
 
-	queue, err := device.GetQueue()
-	if err != nil {
-		log.Fatal(err)
+	queue := device.GetQueue()
+	if queue == 0 {
+		log.Fatal("get queue failed")
 	}
 	defer queue.Release()
 
 	const size = 256
 
 	// MAP_WRITE pairs with COPY_SRC; MAP_READ pairs with COPY_DST.
-	src, err := device.CreateBuffer(webgpu.BufferDescriptor{
+	src := device.CreateBuffer(webgpu.BufferDescriptor{
 		Label: "src",
 		Usage: webgpu.BufferUsageMapWrite | webgpu.BufferUsageCopySrc,
 		Size:  size,
 	})
-	if err != nil {
-		log.Fatal(err)
+	if src == 0 {
+		log.Fatal("create src buffer failed")
 	}
 	defer src.Release()
 	defer src.Destroy()
 
-	dst, err := device.CreateBuffer(webgpu.BufferDescriptor{
+	dst := device.CreateBuffer(webgpu.BufferDescriptor{
 		Label: "dst",
 		Usage: webgpu.BufferUsageMapRead | webgpu.BufferUsageCopyDst,
 		Size:  size,
 	})
-	if err != nil {
-		log.Fatal(err)
+	if dst == 0 {
+		log.Fatal("create dst buffer failed")
 	}
 	defer dst.Release()
 	defer dst.Destroy()
@@ -70,38 +70,38 @@ func main() {
 	binary.LittleEndian.PutUint32(payload[0:], 0xC0FFEE00)
 
 	// Map-write the source buffer and fill it.
-	if err := src.Map(webgpu.MapModeWrite, 0, size); err != nil {
-		log.Fatal(err)
+	if status := src.Map(webgpu.MapModeWrite, 0, size); status != webgpu.MapAsyncStatusSuccess {
+		log.Fatalf("map src: status %d", status)
 	}
-	wp, err := src.GetMappedRange(0, size)
-	if err != nil {
-		log.Fatal(err)
+	wp := src.GetMappedRange(0, size)
+	if wp == nil {
+		log.Fatal("get src mapped range failed")
 	}
 	copy(unsafe.Slice((*byte)(wp), size), payload)
 	src.Unmap()
 
 	// Copy src → dst, then map-read dst.
-	enc, err := device.CreateCommandEncoder(webgpu.CommandEncoderDescriptor{})
-	if err != nil {
-		log.Fatal(err)
+	enc := device.CreateCommandEncoder(webgpu.CommandEncoderDescriptor{})
+	if enc == 0 {
+		log.Fatal("create command encoder failed")
 	}
 	defer enc.Release()
 
 	enc.CopyBufferToBuffer(src, 0, dst, 0, size)
-	cmd, err := enc.Finish(webgpu.CommandBufferDescriptor{})
-	if err != nil {
-		log.Fatal(err)
+	cmd := enc.Finish(webgpu.CommandBufferDescriptor{})
+	if cmd == 0 {
+		log.Fatal("finish command buffer failed")
 	}
 	defer cmd.Release()
 
 	queue.Submit([]webgpu.CommandBuffer{cmd})
 
-	if err := dst.Map(webgpu.MapModeRead, 0, size); err != nil {
-		log.Fatal(err)
+	if status := dst.Map(webgpu.MapModeRead, 0, size); status != webgpu.MapAsyncStatusSuccess {
+		log.Fatalf("map dst: status %d", status)
 	}
-	ptr, err := dst.GetConstMappedRange(0, size)
-	if err != nil {
-		log.Fatal(err)
+	ptr := dst.GetConstMappedRange(0, size)
+	if ptr == nil {
+		log.Fatal("get dst mapped range failed")
 	}
 	got := unsafe.Slice((*byte)(ptr), size)
 	magic := binary.LittleEndian.Uint32(got[0:])

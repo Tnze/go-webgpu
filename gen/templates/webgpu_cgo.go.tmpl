@@ -53,6 +53,7 @@ func cgoGoString(v C.WGPUStringView) string {
 
 {{- range .CallbackInfos }}
 {{- if .HasTrampoline }}
+{{- $cb := . }}
 
 //export {{ .ExportName }}
 func {{ .ExportName }}({{ range $i, $a := .Args }}{{ if $i }}, {{ end }}{{ $a.Name }} {{ $a.CGoType }}{{ end }}, userdata1, userdata2 unsafe.Pointer) {
@@ -70,19 +71,11 @@ func {{ .ExportName }}({{ range $i, $a := .Args }}{{ if $i }}, {{ end }}{{ $a.Na
 	if {{ .Name }} != nil {
 		{{ .GoName }} = *(*{{ .GoType }})(unsafe.Pointer({{ .Name }}))
 	}
-{{- else if eq .Kind "enum" }}
+{{- else if eq .Kind "error_type" }}
+	{{ .GoName }} := {{ $cb.ErrConvert }}
+{{- else if or (eq .Kind "enum") (eq .Kind "status") }}
 	{{ .GoName }} := {{ .GoType }}({{ .Name }})
 {{- end }}
-{{- end }}
-	var err error
-{{- if .StatusArg }}
-	if {{ .StatusArg.GoType }}({{ .StatusArg.Name }}) != {{ .SuccessConst }} {
-{{- if .MessageArg }}
-		err = newError("{{ .OpName }}", cgoGoString({{ .MessageArg.Name }}), uint32({{ .StatusArg.Name }}))
-{{- else }}
-		err = newError("{{ .OpName }}", "", uint32({{ .StatusArg.Name }}))
-{{- end }}
-	}
 {{- end }}
 	cb({{ join .CallArgs ", " }})
 }
@@ -125,16 +118,14 @@ func release{{ .Name }}(inner uintptr) {
 // Blocks until the operation completes.
 {{ sig . }} {
 {{- if .HasCallback }}
-{{- $n := len .BlockResults }}
 	type _res struct {
 {{- range $i, $r := .BlockResults }}
 		r{{ $i }} {{ $r.GoType }}
 {{- end }}
-		err error
 	}
 	_ch := make(chan _res, 1)
-	callback := {{ .CallbackFn }}(func({{ range $i, $r := .BlockResults }}{{ if $i }}, {{ end }}r{{ $i }} {{ $r.GoType }}{{ end }}{{ if $n }}, {{ end }}err error) {
-		_ch <- _res{ {{ range $i, $r := .BlockResults }}r{{ $i }}, {{ end }}err }
+	callback := {{ .CallbackFn }}(func({{ range $i, $r := .BlockResults }}{{ if $i }}, {{ end }}r{{ $i }} {{ $r.GoType }}{{ end }}) {
+		_ch <- _res{ {{ range $i, $r := .BlockResults }}{{ if $i }}, {{ end }}r{{ $i }}{{ end }} }
 	})
 {{- end }}
 {{- $needsPinner := false }}
@@ -209,33 +200,21 @@ func release{{ .Name }}(inner uintptr) {
 {{- if eq $kind "blocking" }}
 	_ = c_result
 	_out := waitRecv(_ch)
-	return {{ range $i, $r := .BlockResults }}_out.r{{ $i }}, {{ end }}_out.err
+{{- if .BlockResults }}
+	return {{ range $i, $r := .BlockResults }}{{ if $i }}, {{ end }}_out.r{{ $i }}{{ end }}
+{{- end }}
 {{- else if eq $kind "handle" }}
 {{- if eq .GoReturn "Instance" }}
-	_result := wrapInstance(uintptr(unsafe.Pointer(c_result)))
+	return wrapInstance(uintptr(unsafe.Pointer(c_result)))
 {{- else }}
-	_result := {{ .GoReturn }}(uintptr(unsafe.Pointer(c_result)))
+	return {{ .GoReturn }}(uintptr(unsafe.Pointer(c_result)))
 {{- end }}
-	if _result == 0 {
-		return 0, newError("{{ .OpName }}", "", 0)
-	}
-	return _result, nil
 {{- else if eq $kind "status" }}
-	if Status(c_result) != {{ .SuccessConst }} {
-		return newError("{{ .OpName }}", "", uint32(c_result))
-	}
-	return nil
+	return Status(c_result)
 {{- else if eq $kind "wait" }}
-	if WaitStatus(c_result) != {{ .SuccessConst }} {
-		return newError("{{ .OpName }}", "", uint32(c_result))
-	}
-	return nil
+	return WaitStatus(c_result)
 {{- else if eq $kind "pointer" }}
-	_result := unsafe.Pointer(c_result)
-	if _result == nil {
-		return nil, newError("{{ .OpName }}", "", 0)
-	}
-	return _result, nil
+	return unsafe.Pointer(c_result)
 {{- else if eq $kind "bool" }}
 	return c_result != 0
 {{- else if eq $kind "future" }}

@@ -32,50 +32,50 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
 `
 
 func main() {
-	instance, err := webgpu.CreateInstance(webgpu.InstanceDescriptor{})
-	if err != nil {
-		log.Fatal(err)
+	instance := webgpu.CreateInstance(webgpu.InstanceDescriptor{})
+	if instance == 0 {
+		log.Fatal("create instance failed")
 	}
 	defer instance.Release()
 
-	adapter, err := instance.RequestAdapter(webgpu.RequestAdapterOptions{})
-	if err != nil {
-		log.Fatal(err)
+	adapter, adapterStatus := instance.RequestAdapter(webgpu.RequestAdapterOptions{})
+	if adapterStatus != webgpu.RequestAdapterStatusSuccess {
+		log.Fatalf("request adapter: status %d", adapterStatus)
 	}
 	defer adapter.Release()
 
-	device, err := adapter.RequestDevice(webgpu.DeviceDescriptor{})
-	if err != nil {
-		log.Fatal(err)
+	device, deviceStatus := adapter.RequestDevice(webgpu.DeviceDescriptor{})
+	if deviceStatus != webgpu.RequestDeviceStatusSuccess {
+		log.Fatalf("request device: status %d", deviceStatus)
 	}
 	defer device.Release()
 
-	queue, err := device.GetQueue()
-	if err != nil {
-		log.Fatal(err)
+	queue := device.GetQueue()
+	if queue == 0 {
+		log.Fatal("get queue failed")
 	}
 	defer queue.Release()
 
 	// Storage buffer: written from the queue, read/written by the shader, copied out.
-	storage, err := device.CreateBuffer(webgpu.BufferDescriptor{
+	storage := device.CreateBuffer(webgpu.BufferDescriptor{
 		Label: "storage",
 		Usage: webgpu.BufferUsageStorage | webgpu.BufferUsageCopySrc | webgpu.BufferUsageCopyDst,
 		Size:  storageBytes,
 	})
-	if err != nil {
-		log.Fatal(err)
+	if storage == 0 {
+		log.Fatal("create storage buffer failed")
 	}
 	defer storage.Release()
 	defer storage.Destroy()
 
 	// MAP_READ pairs with COPY_DST.
-	readback, err := device.CreateBuffer(webgpu.BufferDescriptor{
+	readback := device.CreateBuffer(webgpu.BufferDescriptor{
 		Label: "readback",
 		Usage: webgpu.BufferUsageMapRead | webgpu.BufferUsageCopyDst,
 		Size:  storageBytes,
 	})
-	if err != nil {
-		log.Fatal(err)
+	if readback == 0 {
+		log.Fatal("create readback buffer failed")
 	}
 	defer readback.Release()
 	defer readback.Destroy()
@@ -96,31 +96,31 @@ func main() {
 	src.Code = wgsl
 	pinner.Pin(&src)
 	pinner.Pin(unsafe.StringData(src.Code))
-	module, err := device.CreateShaderModule(webgpu.ShaderModuleDescriptor{
+	module := device.CreateShaderModule(webgpu.ShaderModuleDescriptor{
 		Label:       "compute",
 		NextInChain: unsafe.Pointer(&src),
 	})
-	if err != nil {
-		log.Fatal(err)
+	if module == 0 {
+		log.Fatal("create shader module failed")
 	}
 	defer module.Release()
 
 	// Layout 0 = auto: the pipeline derives its bind group layout from the shader.
-	pipeline, err := device.CreateComputePipeline(webgpu.ComputePipelineDescriptor{
+	pipeline := device.CreateComputePipeline(webgpu.ComputePipelineDescriptor{
 		Label: "compute",
 		Compute: webgpu.ComputeState{
 			Module:     module.Handle(),
 			EntryPoint: "main",
 		},
 	})
-	if err != nil {
-		log.Fatal(err)
+	if pipeline == 0 {
+		log.Fatal("create compute pipeline failed")
 	}
 	defer pipeline.Release()
 
-	bgLayout, err := pipeline.GetBindGroupLayout(0)
-	if err != nil {
-		log.Fatal(err)
+	bgLayout := pipeline.GetBindGroupLayout(0)
+	if bgLayout == 0 {
+		log.Fatal("get bind group layout failed")
 	}
 	defer bgLayout.Release()
 
@@ -129,27 +129,27 @@ func main() {
 		Buffer:  storage.Handle(),
 		Size:    webgpu.WholeSize,
 	}}
-	bindGroup, err := device.CreateBindGroup(webgpu.BindGroupDescriptor{
+	bindGroup := device.CreateBindGroup(webgpu.BindGroupDescriptor{
 		Label:        "bind-group",
 		Layout:       bgLayout.Handle(),
 		EntriesCount: 1,
 		Entries:      &entries[0],
 	})
 	runtime.KeepAlive(entries)
-	if err != nil {
-		log.Fatal(err)
+	if bindGroup == 0 {
+		log.Fatal("create bind group failed")
 	}
 	defer bindGroup.Release()
 
-	enc, err := device.CreateCommandEncoder(webgpu.CommandEncoderDescriptor{})
-	if err != nil {
-		log.Fatal(err)
+	enc := device.CreateCommandEncoder(webgpu.CommandEncoderDescriptor{})
+	if enc == 0 {
+		log.Fatal("create command encoder failed")
 	}
 	defer enc.Release()
 
-	pass, err := enc.BeginComputePass(webgpu.ComputePassDescriptor{Label: "compute"})
-	if err != nil {
-		log.Fatal(err)
+	pass := enc.BeginComputePass(webgpu.ComputePassDescriptor{Label: "compute"})
+	if pass == 0 {
+		log.Fatal("begin compute pass failed")
 	}
 	pass.SetPipeline(pipeline)
 	pass.SetBindGroup(0, bindGroup, nil)
@@ -158,20 +158,20 @@ func main() {
 	pass.Release()
 
 	enc.CopyBufferToBuffer(storage, 0, readback, 0, storageBytes)
-	cmd, err := enc.Finish(webgpu.CommandBufferDescriptor{})
-	if err != nil {
-		log.Fatal(err)
+	cmd := enc.Finish(webgpu.CommandBufferDescriptor{})
+	if cmd == 0 {
+		log.Fatal("finish command buffer failed")
 	}
 	defer cmd.Release()
 
 	queue.Submit([]webgpu.CommandBuffer{cmd})
 
-	if err := readback.Map(webgpu.MapModeRead, 0, storageBytes); err != nil {
-		log.Fatal(err)
+	if status := readback.Map(webgpu.MapModeRead, 0, storageBytes); status != webgpu.MapAsyncStatusSuccess {
+		log.Fatalf("map readback: status %d", status)
 	}
-	ptr, err := readback.GetConstMappedRange(0, storageBytes)
-	if err != nil {
-		log.Fatal(err)
+	ptr := readback.GetConstMappedRange(0, storageBytes)
+	if ptr == nil {
+		log.Fatal("get readback mapped range failed")
 	}
 	got := unsafe.Slice((*uint32)(ptr), numElements)
 	for i := range input {

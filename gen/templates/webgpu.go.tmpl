@@ -3,7 +3,6 @@
 package webgpu
 
 import (
-	"fmt"
 	"math"
 	"runtime"
 	"structs"
@@ -112,23 +111,29 @@ type {{ .Name }} struct {
 // ---------------------------------------------------------------------------
 // Errors
 // ---------------------------------------------------------------------------
+{{- range .ErrorTypes }}
 
-// Error describes a failed WebGPU operation.
-type Error struct {
-	Op   string // operation name, e.g. "Device.CreateBuffer"
-	Msg  string // implementation message, if any
-	Code uint32 // status code, when the API reported one
-}
+// {{ .Name }} is a WebGPU {{ .Display }} error.
+type {{ .Name }} struct{ Message string }
 
-func (e *Error) Error() string {
-	if e.Msg != "" {
-		return fmt.Sprintf("webgpu: %s: %s", e.Op, e.Msg)
+func (e *{{ .Name }}) Error() string {
+	if e.Message != "" {
+		return "webgpu: {{ .Display }}: " + e.Message
 	}
-	return fmt.Sprintf("webgpu: %s failed", e.Op)
+	return "webgpu: {{ .Display }}"
 }
+{{- end }}
 
-func newError(op, msg string, code uint32) *Error {
-	return &Error{Op: op, Msg: msg, Code: code}
+// errorFromErrorType creates the typed error for a WGPUErrorType value.
+// Returns nil for ErrorTypeNoError.
+func errorFromErrorType(t ErrorType, message string) error {
+	switch t {
+{{- range .ErrorTypes }}
+	case {{ .Value }}:
+		return &{{ .Name }}{Message: message}
+{{- end }}
+	}
+	return nil
 }
 
 // ---------------------------------------------------------------------------
