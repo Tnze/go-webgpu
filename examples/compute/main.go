@@ -6,9 +6,8 @@ package main
 
 import (
 	"fmt"
-	"os"
+	"log"
 	"runtime"
-	"time"
 	"unsafe"
 
 	"github.com/Tnze/go-webgpu/webgpu"
@@ -32,83 +31,54 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
 }
 `
 
-// wait polls process-events until done is set by the async callback.
-// (wgpu-native's wgpuInstanceWaitAny is not implemented for all builds.)
-func wait(instance *webgpu.Instance, done *bool) {
-	deadline := time.Now().Add(10 * time.Second)
-	for !*done {
-		if time.Now().After(deadline) {
-			fmt.Fprintln(os.Stderr, "timeout waiting for async callback")
-			os.Exit(1)
-		}
-		instance.ProcessEvents()
-		time.Sleep(time.Millisecond)
-	}
-}
-
 func main() {
-	instance := webgpu.CreateInstance(webgpu.InstanceDescriptor{})
-	if instance == nil {
-		fmt.Fprintln(os.Stderr, "CreateInstance failed")
-		os.Exit(1)
+	instance, err := webgpu.CreateInstance(webgpu.InstanceDescriptor{})
+	if err != nil {
+		log.Fatal(err)
 	}
+	defer instance.Release()
 
-	var (
-		adapter *webgpu.Adapter
-		aErr    string
-		aDone   bool
-	)
-	instance.RequestAdapter(webgpu.RequestAdapterOptions{},
-		func(status webgpu.RequestAdapterStatus, a *webgpu.Adapter, message string) {
-			adapter, aErr = a, message
-			if status != webgpu.RequestAdapterStatusSuccess {
-				aErr = fmt.Sprintf("request adapter status=%v %s", status, message)
-			}
-			aDone = true
-		})
-	wait(instance, &aDone)
-	if adapter == nil {
-		fmt.Fprintln(os.Stderr, "RequestAdapter failed:", aErr)
-		os.Exit(1)
+	adapter, err := instance.RequestAdapter(webgpu.RequestAdapterOptions{})
+	if err != nil {
+		log.Fatal(err)
 	}
+	defer adapter.Release()
 
-	var (
-		device *webgpu.Device
-		dErr   string
-		dDone  bool
-	)
-	adapter.RequestDevice(webgpu.DeviceDescriptor{},
-		func(status webgpu.RequestDeviceStatus, d *webgpu.Device, message string) {
-			device, dErr = d, message
-			if status != webgpu.RequestDeviceStatusSuccess {
-				dErr = fmt.Sprintf("request device status=%v %s", status, message)
-			}
-			dDone = true
-		})
-	wait(instance, &dDone)
-	if device == nil {
-		fmt.Fprintln(os.Stderr, "RequestDevice failed:", dErr)
-		os.Exit(1)
+	device, err := adapter.RequestDevice(webgpu.DeviceDescriptor{})
+	if err != nil {
+		log.Fatal(err)
 	}
+	defer device.Release()
 
-	queue := device.GetQueue()
+	queue, err := device.GetQueue()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer queue.Release()
 
 	// Storage buffer: written from the queue, read/written by the shader, copied out.
-	storage := device.CreateBuffer(webgpu.BufferDescriptor{
+	storage, err := device.CreateBuffer(webgpu.BufferDescriptor{
 		Label: "storage",
 		Usage: webgpu.BufferUsageStorage | webgpu.BufferUsageCopySrc | webgpu.BufferUsageCopyDst,
 		Size:  storageBytes,
 	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer storage.Release()
+	defer storage.Destroy()
+
 	// MAP_READ pairs with COPY_DST.
-	readback := device.CreateBuffer(webgpu.BufferDescriptor{
+	readback, err := device.CreateBuffer(webgpu.BufferDescriptor{
 		Label: "readback",
 		Usage: webgpu.BufferUsageMapRead | webgpu.BufferUsageCopyDst,
 		Size:  storageBytes,
 	})
-	if storage == nil || readback == nil {
-		fmt.Fprintln(os.Stderr, "CreateBuffer failed")
-		os.Exit(1)
+	if err != nil {
+		log.Fatal(err)
 	}
+	defer readback.Release()
+	defer readback.Destroy()
 
 	input := make([]uint32, numElements)
 	for i := range input {
@@ -126,100 +96,95 @@ func main() {
 	src.Code = wgsl
 	pinner.Pin(&src)
 	pinner.Pin(unsafe.StringData(src.Code))
-	module := device.CreateShaderModule(webgpu.ShaderModuleDescriptor{
+	module, err := device.CreateShaderModule(webgpu.ShaderModuleDescriptor{
 		Label:       "compute",
 		NextInChain: unsafe.Pointer(&src),
 	})
-	if module == nil {
-		fmt.Fprintln(os.Stderr, "CreateShaderModule failed")
-		os.Exit(1)
+	if err != nil {
+		log.Fatal(err)
 	}
+	defer module.Release()
 
 	// Layout 0 = auto: the pipeline derives its bind group layout from the shader.
-	pipeline := device.CreateComputePipeline(webgpu.ComputePipelineDescriptor{
+	pipeline, err := device.CreateComputePipeline(webgpu.ComputePipelineDescriptor{
 		Label: "compute",
 		Compute: webgpu.ComputeState{
 			Module:     module.Handle(),
 			EntryPoint: "main",
 		},
 	})
-	if pipeline == nil {
-		fmt.Fprintln(os.Stderr, "CreateComputePipeline failed")
-		os.Exit(1)
+	if err != nil {
+		log.Fatal(err)
 	}
+	defer pipeline.Release()
 
-	bgLayout := pipeline.GetBindGroupLayout(0)
-	if bgLayout == nil {
-		fmt.Fprintln(os.Stderr, "GetBindGroupLayout failed")
-		os.Exit(1)
+	bgLayout, err := pipeline.GetBindGroupLayout(0)
+	if err != nil {
+		log.Fatal(err)
 	}
+	defer bgLayout.Release()
+
 	entries := []webgpu.BindGroupEntry{{
 		Binding: 0,
 		Buffer:  storage.Handle(),
 		Size:    webgpu.WholeSize,
 	}}
-	bindGroup := device.CreateBindGroup(webgpu.BindGroupDescriptor{
+	bindGroup, err := device.CreateBindGroup(webgpu.BindGroupDescriptor{
 		Label:        "bind-group",
 		Layout:       bgLayout.Handle(),
 		EntriesCount: 1,
 		Entries:      &entries[0],
 	})
 	runtime.KeepAlive(entries)
-	if bindGroup == nil {
-		fmt.Fprintln(os.Stderr, "CreateBindGroup failed")
-		os.Exit(1)
+	if err != nil {
+		log.Fatal(err)
 	}
+	defer bindGroup.Release()
 
-	enc := device.CreateCommandEncoder(webgpu.CommandEncoderDescriptor{})
-	pass := enc.BeginComputePass(webgpu.ComputePassDescriptor{Label: "compute"})
+	enc, err := device.CreateCommandEncoder(webgpu.CommandEncoderDescriptor{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer enc.Release()
+
+	pass, err := enc.BeginComputePass(webgpu.ComputePassDescriptor{Label: "compute"})
+	if err != nil {
+		log.Fatal(err)
+	}
 	pass.SetPipeline(pipeline)
 	pass.SetBindGroup(0, bindGroup, nil)
 	pass.DispatchWorkgroups((numElements+workgroupX-1)/workgroupX, 1, 1)
 	pass.End()
+	pass.Release()
+
 	enc.CopyBufferToBuffer(storage, 0, readback, 0, storageBytes)
-	cmd := enc.Finish(webgpu.CommandBufferDescriptor{})
-	queue.Submit([]*webgpu.CommandBuffer{cmd})
-
-	var (
-		mapStatus webgpu.MapAsyncStatus
-		mapMsg    string
-		mapDone   bool
-	)
-	readback.MapAsync(webgpu.MapModeRead, 0, storageBytes,
-		func(status webgpu.MapAsyncStatus, message string) {
-			mapStatus, mapMsg = status, message
-			mapDone = true
-		})
-	wait(instance, &mapDone)
-	if mapStatus != webgpu.MapAsyncStatusSuccess {
-		fmt.Fprintln(os.Stderr, "MapAsync failed:", mapStatus, mapMsg)
-		os.Exit(1)
+	cmd, err := enc.Finish(webgpu.CommandBufferDescriptor{})
+	if err != nil {
+		log.Fatal(err)
 	}
+	defer cmd.Release()
 
-	ptr := readback.GetConstMappedRange(0, storageBytes)
-	if ptr == nil {
-		fmt.Fprintln(os.Stderr, "GetConstMappedRange failed")
-		os.Exit(1)
+	queue.Submit([]webgpu.CommandBuffer{cmd})
+
+	if err := readback.Map(webgpu.MapModeRead, 0, storageBytes); err != nil {
+		log.Fatal(err)
+	}
+	ptr, err := readback.GetConstMappedRange(0, storageBytes)
+	if err != nil {
+		log.Fatal(err)
 	}
 	got := unsafe.Slice((*uint32)(ptr), numElements)
-	ok := true
 	for i := range input {
 		want := input[i] * 2
 		if got[i] != want {
-			fmt.Fprintf(os.Stderr, "mismatch at %d: got %d want %d\n", i, got[i], want)
-			ok = false
-			break
+			readback.Unmap()
+			log.Fatalf("mismatch at %d: got %d want %d", i, got[i], want)
 		}
 	}
 	head := [4]uint32{}
 	copy(head[:], got)
 	readback.Unmap()
-	storage.Destroy()
-	readback.Destroy()
 
-	if !ok {
-		os.Exit(1)
-	}
 	fmt.Printf("compute ok (elements=%d, workgroup=%d, got[0..3]=%v)\n",
 		numElements, workgroupX, head)
 }

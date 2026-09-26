@@ -5,21 +5,15 @@ package webgpu
 
 /*
 #cgo CFLAGS: -I${SRCDIR}/../third_party/webgpu-headers
-#cgo darwin,arm64 LDFLAGS: -L${SRCDIR}/../third_party/wgpu-native/macos-aarch64/lib -lwgpu_native
-#cgo darwin,amd64 LDFLAGS: -L${SRCDIR}/../third_party/wgpu-native/macos-x86_64/lib -lwgpu_native
-#cgo linux,amd64 LDFLAGS: -L${SRCDIR}/../third_party/wgpu-native/linux-x86_64/lib -lwgpu_native
-#cgo linux,arm64 LDFLAGS: -L${SRCDIR}/../third_party/wgpu-native/linux-aarch64/lib -lwgpu_native
+#cgo darwin,arm64 LDFLAGS: -L${SRCDIR}/../third_party/wgpu-native/macos-aarch64/lib -lwgpu_native -Wl,-rpath,${SRCDIR}/../third_party/wgpu-native/macos-aarch64/lib
+#cgo darwin,amd64 LDFLAGS: -L${SRCDIR}/../third_party/wgpu-native/macos-x86_64/lib -lwgpu_native -Wl,-rpath,${SRCDIR}/../third_party/wgpu-native/macos-x86_64/lib
+#cgo linux,amd64 LDFLAGS: -L${SRCDIR}/../third_party/wgpu-native/linux-x86_64/lib -lwgpu_native -Wl,-rpath,${SRCDIR}/../third_party/wgpu-native/linux-x86_64/lib
+#cgo linux,arm64 LDFLAGS: -L${SRCDIR}/../third_party/wgpu-native/linux-aarch64/lib -lwgpu_native -Wl,-rpath,${SRCDIR}/../third_party/wgpu-native/linux-aarch64/lib
 #include "webgpu.h"
 #include <stdlib.h>
 {{- range .CallbackInfos }}
-{{- if eq .Name "RequestAdapterCallbackInfo" }}
-extern void goRequestAdapterCB(WGPURequestAdapterStatus status, WGPUAdapter adapter, WGPUStringView message, void* userdata1, void* userdata2);
-{{- else if eq .Name "RequestDeviceCallbackInfo" }}
-extern void goRequestDeviceCB(WGPURequestDeviceStatus status, WGPUDevice device, WGPUStringView message, void* userdata1, void* userdata2);
-{{- else if eq .Name "BufferMapCallbackInfo" }}
-extern void goBufferMapCB(WGPUMapAsyncStatus status, WGPUStringView message, void* userdata1, void* userdata2);
-{{- else if eq .Name "QueueWorkDoneCallbackInfo" }}
-extern void goQueueWorkDoneCB(WGPUQueueWorkDoneStatus status, WGPUStringView message, void* userdata1, void* userdata2);
+{{- if .HasTrampoline }}
+extern void {{ .ExportName }}({{ range $i, $a := .Args }}{{ if $i }}, {{ end }}{{ $a.ExternType }} {{ $a.YAMLName }}{{ end }}, void* userdata1, void* userdata2);
 {{- end }}
 {{- end }}
 */
@@ -58,51 +52,54 @@ func cgoGoString(v C.WGPUStringView) string {
 // ---------------------------------------------------------------------------
 
 {{- range .CallbackInfos }}
-{{- if eq .Name "RequestAdapterCallbackInfo" }}
+{{- if .HasTrampoline }}
 
-//export goRequestAdapterCB
-func goRequestAdapterCB(status C.WGPURequestAdapterStatus, adapter C.WGPUAdapter, message C.WGPUStringView, userdata1, userdata2 unsafe.Pointer) {
+//export {{ .ExportName }}
+func {{ .ExportName }}({{ range $i, $a := .Args }}{{ if $i }}, {{ end }}{{ $a.Name }} {{ $a.CGoType }}{{ end }}, userdata1, userdata2 unsafe.Pointer) {
 	h := cgo.Handle(uintptr(userdata1))
 	defer h.Delete()
-	cb := h.Value().(RequestAdapterFn)
-	var a *Adapter
-	if adapter != nil {
-		a = &Adapter{inner: uintptr(unsafe.Pointer(adapter))}
+	cb := h.Value().({{ .FnType }})
+{{- range .Args }}
+{{- if eq .Kind "object" }}
+	var {{ .GoName }} {{ .GoType }}
+	if {{ .Name }} != nil {
+		{{ .GoName }} = {{ .GoType }}(uintptr(unsafe.Pointer({{ .Name }})))
 	}
-	cb(RequestAdapterStatus(status), a, cgoGoString(message))
-}
-{{- else if eq .Name "RequestDeviceCallbackInfo" }}
-
-//export goRequestDeviceCB
-func goRequestDeviceCB(status C.WGPURequestDeviceStatus, device C.WGPUDevice, message C.WGPUStringView, userdata1, userdata2 unsafe.Pointer) {
-	h := cgo.Handle(uintptr(userdata1))
-	defer h.Delete()
-	cb := h.Value().(RequestDeviceFn)
-	var d *Device
-	if device != nil {
-		d = &Device{inner: uintptr(unsafe.Pointer(device))}
+{{- else if eq .Kind "struct_ptr" }}
+	var {{ .GoName }} {{ .GoType }}
+	if {{ .Name }} != nil {
+		{{ .GoName }} = *(*{{ .GoType }})(unsafe.Pointer({{ .Name }}))
 	}
-	cb(RequestDeviceStatus(status), d, cgoGoString(message))
-}
-{{- else if eq .Name "BufferMapCallbackInfo" }}
-
-//export goBufferMapCB
-func goBufferMapCB(status C.WGPUMapAsyncStatus, message C.WGPUStringView, userdata1, userdata2 unsafe.Pointer) {
-	h := cgo.Handle(uintptr(userdata1))
-	defer h.Delete()
-	cb := h.Value().(BufferMapFn)
-	cb(MapAsyncStatus(status), cgoGoString(message))
-}
-{{- else if eq .Name "QueueWorkDoneCallbackInfo" }}
-
-//export goQueueWorkDoneCB
-func goQueueWorkDoneCB(status C.WGPUQueueWorkDoneStatus, message C.WGPUStringView, userdata1, userdata2 unsafe.Pointer) {
-	h := cgo.Handle(uintptr(userdata1))
-	defer h.Delete()
-	cb := h.Value().(QueueWorkDoneFn)
-	cb(QueueWorkDoneStatus(status), cgoGoString(message))
+{{- else if eq .Kind "enum" }}
+	{{ .GoName }} := {{ .GoType }}({{ .Name }})
+{{- end }}
+{{- end }}
+	var err error
+{{- if .StatusArg }}
+	if {{ .StatusArg.GoType }}({{ .StatusArg.Name }}) != {{ .SuccessConst }} {
+{{- if .MessageArg }}
+		err = newError("{{ .OpName }}", cgoGoString({{ .MessageArg.Name }}), uint32({{ .StatusArg.Name }}))
+{{- else }}
+		err = newError("{{ .OpName }}", "", uint32({{ .StatusArg.Name }}))
+{{- end }}
+	}
+{{- end }}
+	cb({{ join .CallArgs ", " }})
 }
 {{- end }}
+{{- end }}
+
+// ---------------------------------------------------------------------------
+// Handle release
+// ---------------------------------------------------------------------------
+
+{{- range .Handles }}
+
+// release{{ .Name }} drops one reference to a native {{ .CName }}.
+// Safe to call from any goroutine (wgpu-native refcounts are atomic).
+func release{{ .Name }}(inner uintptr) {
+	C.wgpu{{ .Name }}Release(({{ cgoType .Name }})(unsafe.Pointer(inner)))
+}
 {{- end }}
 
 // ---------------------------------------------------------------------------
@@ -110,9 +107,36 @@ func goQueueWorkDoneCB(status C.WGPUQueueWorkDoneStatus, message C.WGPUStringVie
 // ---------------------------------------------------------------------------
 
 {{- range .Funcs }}
+{{- if .IsRelease }}
+
+// Release drops this handle's reference to the native {{ .ObjName }}.
+// Do not use the handle after calling Release.
+{{ sig . }} {
+	if {{ (index .GoArgs 0).Name }} != 0 {
+{{- if eq .ObjName "Instance" }}
+		removeInstance({{ (index .GoArgs 0).Name }})
+{{- end }}
+		release{{ .ObjName }}({{ (index .GoArgs 0).Name }}.Handle())
+	}
+}
+{{- else }}
 
 // {{ .Name }} calls C.{{ .CName }}.
+// Blocks until the operation completes.
 {{ sig . }} {
+{{- if .HasCallback }}
+{{- $n := len .BlockResults }}
+	type _res struct {
+{{- range $i, $r := .BlockResults }}
+		r{{ $i }} {{ $r.GoType }}
+{{- end }}
+		err error
+	}
+	_ch := make(chan _res, 1)
+	callback := {{ .CallbackFn }}(func({{ range $i, $r := .BlockResults }}{{ if $i }}, {{ end }}r{{ $i }} {{ $r.GoType }}{{ end }}{{ if $n }}, {{ end }}err error) {
+		_ch <- _res{ {{ range $i, $r := .BlockResults }}r{{ $i }}, {{ end }}err }
+	})
+{{- end }}
 {{- $needsPinner := false }}
 {{- range .GoArgs }}{{ if or (isStruct .TypeRef) .IsSlice .IsStr }}{{ $needsPinner = true }}{{ end }}{{ end }}
 {{- if $needsPinner }}
@@ -135,14 +159,14 @@ func goQueueWorkDoneCB(status C.WGPUQueueWorkDoneStatus, message C.WGPUStringVie
 {{- end }}
 {{- range .GoArgs }}
 {{- if isHandle .TypeRef }}
-	c_{{ .Name }} := ({{ cgoType .GoType }})(unsafe.Pointer({{ .Name }}.inner))
+	c_{{ .Name }} := ({{ cgoType .GoType }})(unsafe.Pointer({{ .Name }}.Handle()))
 {{- else if .IsStr }}
 	c_{{ .Name }} := cgoStringView({{ .Name }}, &pinner)
 {{- else if .IsSlice }}
 {{- if hasPrefix .TypeRef "array<object." }}
 	{{ .Name }}_handles := make([]uintptr, len({{ .Name }}))
 	for i, v := range {{ .Name }} {
-		{{ .Name }}_handles[i] = v.inner
+		{{ .Name }}_handles[i] = v.Handle()
 	}
 	var c_{{ .Name }}_ptr {{ .SliceCPtr }}
 	if len({{ .Name }}) > 0 {
@@ -164,38 +188,60 @@ func goQueueWorkDoneCB(status C.WGPUQueueWorkDoneStatus, message C.WGPUStringVie
 {{- end }}
 {{- end }}
 {{- if .HasCallback }}
-{{- $cbName := .CallbackName }}
+{{- $cbBase := .CallbackName | pascal }}
 	_cbHandle := cgo.NewHandle(callback)
-	var _cbInfo C.WGPU{{ $cbName | pascal }}CallbackInfo
+	var _cbInfo C.WGPU{{ $cbBase }}CallbackInfo
 	_cbInfo.mode = C.WGPUCallbackMode_AllowProcessEvents
 	// cgo.Handle is an opaque uintptr key; cast through uintptr for userdata.
 	_cbInfo.userdata1 = *(*unsafe.Pointer)(unsafe.Pointer(&_cbHandle))
-{{- if eq $cbName "request_adapter" }}
-	_cbInfo.callback = C.WGPURequestAdapterCallback(C.goRequestAdapterCB)
-{{- else if eq $cbName "request_device" }}
-	_cbInfo.callback = C.WGPURequestDeviceCallback(C.goRequestDeviceCB)
-{{- else if eq $cbName "buffer_map" }}
-	_cbInfo.callback = C.WGPUBufferMapCallback(C.goBufferMapCB)
-{{- else if eq $cbName "queue_work_done" }}
-	_cbInfo.callback = C.WGPUQueueWorkDoneCallback(C.goQueueWorkDoneCB)
+{{- range $.CallbackInfos }}
+{{- if and .HasTrampoline (eq .BaseName $cbBase) }}
+	_cbInfo.callback = C.{{ .CFnType }}(C.{{ .ExportName }})
 {{- end }}
 {{- end }}
-{{- if .GoReturn }}
+{{- end }}
+{{- if .ReturnRef }}
 {{- $funcName := .CName }}
-{{- $isHandleRet := isHandle .ReturnRef }}
-{{- $goReturn := .GoReturn }}
-{{- $isFuture := eq $goReturn "Future" }}
+{{- $kind := .RetKind }}
 	c_result := C.{{ $funcName }}(
 		{{- range $i, $a := .GoArgs }}{{ if $i }}, {{ end }}{{ if $a.IsSlice }}c_{{ $a.Name }}_count, c_{{ $a.Name }}_ptr{{ else if isFuncPtr $a.TypeRef }}_cbInfo{{ else }}c_{{ $a.Name }}{{ end }}{{ end -}}
 	)
-{{- if $isHandleRet }}
-	return &{{ handleType $goReturn }}{inner: uintptr(unsafe.Pointer(c_result))}
-{{- else if eq $goReturn "bool" }}
+{{- if eq $kind "blocking" }}
+	_ = c_result
+	_out := waitRecv(_ch)
+	return {{ range $i, $r := .BlockResults }}_out.r{{ $i }}, {{ end }}_out.err
+{{- else if eq $kind "handle" }}
+{{- if eq .GoReturn "Instance" }}
+	_result := wrapInstance(uintptr(unsafe.Pointer(c_result)))
+{{- else }}
+	_result := {{ .GoReturn }}(uintptr(unsafe.Pointer(c_result)))
+{{- end }}
+	if _result == 0 {
+		return 0, newError("{{ .OpName }}", "", 0)
+	}
+	return _result, nil
+{{- else if eq $kind "status" }}
+	if Status(c_result) != {{ .SuccessConst }} {
+		return newError("{{ .OpName }}", "", uint32(c_result))
+	}
+	return nil
+{{- else if eq $kind "wait" }}
+	if WaitStatus(c_result) != {{ .SuccessConst }} {
+		return newError("{{ .OpName }}", "", uint32(c_result))
+	}
+	return nil
+{{- else if eq $kind "pointer" }}
+	_result := unsafe.Pointer(c_result)
+	if _result == nil {
+		return nil, newError("{{ .OpName }}", "", 0)
+	}
+	return _result, nil
+{{- else if eq $kind "bool" }}
 	return c_result != 0
-{{- else if $isFuture }}
+{{- else if eq $kind "future" }}
 	return Future{Id: uint64(c_result.id)}
 {{- else }}
-	return ({{ $goReturn }})(c_result)
+	return ({{ .GoReturn }})(c_result)
 {{- end }}
 {{- else }}
 	C.{{ .CName }}(
@@ -203,4 +249,5 @@ func goQueueWorkDoneCB(status C.WGPUQueueWorkDoneStatus, message C.WGPUStringVie
 	)
 {{- end }}
 }
+{{- end }}
 {{- end }}

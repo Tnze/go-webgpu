@@ -3,8 +3,11 @@
 package webgpu
 
 import (
+	"fmt"
 	"math"
+	"runtime"
 	"structs"
+	"sync"
 	"unsafe"
 )
 
@@ -1381,7 +1384,7 @@ type PipelineLayoutDescriptor struct {
 	Label                 string
 	BindGroupLayoutsCount uintptr
 	// TODO
-	BindGroupLayouts **BindGroupLayout
+	BindGroupLayouts *BindGroupLayout
 	// TODO
 	ImmediateSize uint32
 }
@@ -2137,306 +2140,320 @@ type UncapturedErrorCallbackInfo struct {
 }
 
 // ---------------------------------------------------------------------------
+// Errors
+// ---------------------------------------------------------------------------
+
+// Error describes a failed WebGPU operation.
+type Error struct {
+	Op   string // operation name, e.g. "Device.CreateBuffer"
+	Msg  string // implementation message, if any
+	Code uint32 // status code, when the API reported one
+}
+
+func (e *Error) Error() string {
+	if e.Msg != "" {
+		return fmt.Sprintf("webgpu: %s: %s", e.Op, e.Msg)
+	}
+	return fmt.Sprintf("webgpu: %s failed", e.Op)
+}
+
+func newError(op, msg string, code uint32) *Error {
+	return &Error{Op: op, Msg: msg, Code: code}
+}
+
+// ---------------------------------------------------------------------------
+// Blocking wait
+// ---------------------------------------------------------------------------
+
+// liveInstances is the set of Instance handles that should be pumped while
+// a blocking API is waiting for its callback.
+var (
+	instanceMu    sync.Mutex
+	liveInstances []Instance
+)
+
+func addInstance(i Instance) {
+	instanceMu.Lock()
+	liveInstances = append(liveInstances, i)
+	instanceMu.Unlock()
+}
+
+func removeInstance(i Instance) {
+	instanceMu.Lock()
+	for j, x := range liveInstances {
+		if x == i {
+			liveInstances = append(liveInstances[:j], liveInstances[j+1:]...)
+			break
+		}
+	}
+	instanceMu.Unlock()
+}
+
+func pumpEvents() {
+	instanceMu.Lock()
+	insts := make([]Instance, len(liveInstances))
+	copy(insts, liveInstances)
+	instanceMu.Unlock()
+	for _, in := range insts {
+		in.ProcessEvents()
+	}
+}
+
+// waitRecv blocks until a value arrives on ch, pumping WebGPU events so
+// completion callbacks can run on this goroutine.
+func waitRecv[T any](ch <-chan T) T {
+	for {
+		select {
+		case v := <-ch:
+			return v
+		default:
+			pumpEvents()
+			runtime.Gosched()
+		}
+	}
+}
+
+// wrapInstance registers a new Instance for event pumping.
+func wrapInstance(inner uintptr) Instance {
+	i := Instance(inner)
+	if i != 0 {
+		addInstance(i)
+	}
+	return i
+}
+
+// ---------------------------------------------------------------------------
 // Handle (object) types
 // ---------------------------------------------------------------------------
 
-// Adapter is a WebGPU object handle.
-type Adapter struct {
-	inner uintptr // native handle
-}
+// Adapter is a WebGPU object handle (a native WGPUAdapter pointer).
+// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
+// and must call Release when done.
+type Adapter uintptr
 
 // Handle returns the raw native handle.
-func (h *Adapter) Handle() uintptr {
-	if h == nil {
-		return 0
-	}
-	return h.inner
+func (a Adapter) Handle() uintptr {
+	return uintptr(a)
 }
 
-// BindGroup is a WebGPU object handle.
-type BindGroup struct {
-	inner uintptr // native handle
-}
+// BindGroup is a WebGPU object handle (a native WGPUBindGroup pointer).
+// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
+// and must call Release when done.
+type BindGroup uintptr
 
 // Handle returns the raw native handle.
-func (h *BindGroup) Handle() uintptr {
-	if h == nil {
-		return 0
-	}
-	return h.inner
+func (b BindGroup) Handle() uintptr {
+	return uintptr(b)
 }
 
-// BindGroupLayout is a WebGPU object handle.
-type BindGroupLayout struct {
-	inner uintptr // native handle
-}
+// BindGroupLayout is a WebGPU object handle (a native WGPUBindGroupLayout pointer).
+// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
+// and must call Release when done.
+type BindGroupLayout uintptr
 
 // Handle returns the raw native handle.
-func (h *BindGroupLayout) Handle() uintptr {
-	if h == nil {
-		return 0
-	}
-	return h.inner
+func (b BindGroupLayout) Handle() uintptr {
+	return uintptr(b)
 }
 
-// Buffer is a WebGPU object handle.
-type Buffer struct {
-	inner uintptr // native handle
-}
+// Buffer is a WebGPU object handle (a native WGPUBuffer pointer).
+// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
+// and must call Release when done.
+type Buffer uintptr
 
 // Handle returns the raw native handle.
-func (h *Buffer) Handle() uintptr {
-	if h == nil {
-		return 0
-	}
-	return h.inner
+func (b Buffer) Handle() uintptr {
+	return uintptr(b)
 }
 
-// CommandBuffer is a WebGPU object handle.
-type CommandBuffer struct {
-	inner uintptr // native handle
-}
+// CommandBuffer is a WebGPU object handle (a native WGPUCommandBuffer pointer).
+// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
+// and must call Release when done.
+type CommandBuffer uintptr
 
 // Handle returns the raw native handle.
-func (h *CommandBuffer) Handle() uintptr {
-	if h == nil {
-		return 0
-	}
-	return h.inner
+func (c CommandBuffer) Handle() uintptr {
+	return uintptr(c)
 }
 
-// CommandEncoder is a WebGPU object handle.
-type CommandEncoder struct {
-	inner uintptr // native handle
-}
+// CommandEncoder is a WebGPU object handle (a native WGPUCommandEncoder pointer).
+// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
+// and must call Release when done.
+type CommandEncoder uintptr
 
 // Handle returns the raw native handle.
-func (h *CommandEncoder) Handle() uintptr {
-	if h == nil {
-		return 0
-	}
-	return h.inner
+func (c CommandEncoder) Handle() uintptr {
+	return uintptr(c)
 }
 
-// ComputePassEncoder is a WebGPU object handle.
-type ComputePassEncoder struct {
-	inner uintptr // native handle
-}
+// ComputePassEncoder is a WebGPU object handle (a native WGPUComputePassEncoder pointer).
+// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
+// and must call Release when done.
+type ComputePassEncoder uintptr
 
 // Handle returns the raw native handle.
-func (h *ComputePassEncoder) Handle() uintptr {
-	if h == nil {
-		return 0
-	}
-	return h.inner
+func (c ComputePassEncoder) Handle() uintptr {
+	return uintptr(c)
 }
 
-// ComputePipeline is a WebGPU object handle.
-type ComputePipeline struct {
-	inner uintptr // native handle
-}
+// ComputePipeline is a WebGPU object handle (a native WGPUComputePipeline pointer).
+// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
+// and must call Release when done.
+type ComputePipeline uintptr
 
 // Handle returns the raw native handle.
-func (h *ComputePipeline) Handle() uintptr {
-	if h == nil {
-		return 0
-	}
-	return h.inner
+func (c ComputePipeline) Handle() uintptr {
+	return uintptr(c)
 }
 
-// Device is a WebGPU object handle.
-type Device struct {
-	inner uintptr // native handle
-}
+// Device is a WebGPU object handle (a native WGPUDevice pointer).
+// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
+// and must call Release when done.
+type Device uintptr
 
 // Handle returns the raw native handle.
-func (h *Device) Handle() uintptr {
-	if h == nil {
-		return 0
-	}
-	return h.inner
+func (d Device) Handle() uintptr {
+	return uintptr(d)
 }
 
-// ExternalTexture is a WebGPU object handle.
-type ExternalTexture struct {
-	inner uintptr // native handle
-}
+// ExternalTexture is a WebGPU object handle (a native WGPUExternalTexture pointer).
+// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
+// and must call Release when done.
+type ExternalTexture uintptr
 
 // Handle returns the raw native handle.
-func (h *ExternalTexture) Handle() uintptr {
-	if h == nil {
-		return 0
-	}
-	return h.inner
+func (e ExternalTexture) Handle() uintptr {
+	return uintptr(e)
 }
 
-// Instance is a WebGPU object handle.
-type Instance struct {
-	inner uintptr // native handle
-}
+// Instance is a WebGPU object handle (a native WGPUInstance pointer).
+// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
+// and must call Release when done.
+type Instance uintptr
 
 // Handle returns the raw native handle.
-func (h *Instance) Handle() uintptr {
-	if h == nil {
-		return 0
-	}
-	return h.inner
+func (i Instance) Handle() uintptr {
+	return uintptr(i)
 }
 
-// PipelineLayout is a WebGPU object handle.
-type PipelineLayout struct {
-	inner uintptr // native handle
-}
+// PipelineLayout is a WebGPU object handle (a native WGPUPipelineLayout pointer).
+// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
+// and must call Release when done.
+type PipelineLayout uintptr
 
 // Handle returns the raw native handle.
-func (h *PipelineLayout) Handle() uintptr {
-	if h == nil {
-		return 0
-	}
-	return h.inner
+func (p PipelineLayout) Handle() uintptr {
+	return uintptr(p)
 }
 
-// QuerySet is a WebGPU object handle.
-type QuerySet struct {
-	inner uintptr // native handle
-}
+// QuerySet is a WebGPU object handle (a native WGPUQuerySet pointer).
+// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
+// and must call Release when done.
+type QuerySet uintptr
 
 // Handle returns the raw native handle.
-func (h *QuerySet) Handle() uintptr {
-	if h == nil {
-		return 0
-	}
-	return h.inner
+func (q QuerySet) Handle() uintptr {
+	return uintptr(q)
 }
 
-// Queue is a WebGPU object handle.
-type Queue struct {
-	inner uintptr // native handle
-}
+// Queue is a WebGPU object handle (a native WGPUQueue pointer).
+// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
+// and must call Release when done.
+type Queue uintptr
 
 // Handle returns the raw native handle.
-func (h *Queue) Handle() uintptr {
-	if h == nil {
-		return 0
-	}
-	return h.inner
+func (q Queue) Handle() uintptr {
+	return uintptr(q)
 }
 
-// RenderBundle is a WebGPU object handle.
-type RenderBundle struct {
-	inner uintptr // native handle
-}
+// RenderBundle is a WebGPU object handle (a native WGPURenderBundle pointer).
+// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
+// and must call Release when done.
+type RenderBundle uintptr
 
 // Handle returns the raw native handle.
-func (h *RenderBundle) Handle() uintptr {
-	if h == nil {
-		return 0
-	}
-	return h.inner
+func (r RenderBundle) Handle() uintptr {
+	return uintptr(r)
 }
 
-// RenderBundleEncoder is a WebGPU object handle.
-type RenderBundleEncoder struct {
-	inner uintptr // native handle
-}
+// RenderBundleEncoder is a WebGPU object handle (a native WGPURenderBundleEncoder pointer).
+// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
+// and must call Release when done.
+type RenderBundleEncoder uintptr
 
 // Handle returns the raw native handle.
-func (h *RenderBundleEncoder) Handle() uintptr {
-	if h == nil {
-		return 0
-	}
-	return h.inner
+func (r RenderBundleEncoder) Handle() uintptr {
+	return uintptr(r)
 }
 
-// RenderPassEncoder is a WebGPU object handle.
-type RenderPassEncoder struct {
-	inner uintptr // native handle
-}
+// RenderPassEncoder is a WebGPU object handle (a native WGPURenderPassEncoder pointer).
+// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
+// and must call Release when done.
+type RenderPassEncoder uintptr
 
 // Handle returns the raw native handle.
-func (h *RenderPassEncoder) Handle() uintptr {
-	if h == nil {
-		return 0
-	}
-	return h.inner
+func (r RenderPassEncoder) Handle() uintptr {
+	return uintptr(r)
 }
 
-// RenderPipeline is a WebGPU object handle.
-type RenderPipeline struct {
-	inner uintptr // native handle
-}
+// RenderPipeline is a WebGPU object handle (a native WGPURenderPipeline pointer).
+// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
+// and must call Release when done.
+type RenderPipeline uintptr
 
 // Handle returns the raw native handle.
-func (h *RenderPipeline) Handle() uintptr {
-	if h == nil {
-		return 0
-	}
-	return h.inner
+func (r RenderPipeline) Handle() uintptr {
+	return uintptr(r)
 }
 
-// Sampler is a WebGPU object handle.
-type Sampler struct {
-	inner uintptr // native handle
-}
+// Sampler is a WebGPU object handle (a native WGPUSampler pointer).
+// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
+// and must call Release when done.
+type Sampler uintptr
 
 // Handle returns the raw native handle.
-func (h *Sampler) Handle() uintptr {
-	if h == nil {
-		return 0
-	}
-	return h.inner
+func (s Sampler) Handle() uintptr {
+	return uintptr(s)
 }
 
-// ShaderModule is a WebGPU object handle.
-type ShaderModule struct {
-	inner uintptr // native handle
-}
+// ShaderModule is a WebGPU object handle (a native WGPUShaderModule pointer).
+// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
+// and must call Release when done.
+type ShaderModule uintptr
 
 // Handle returns the raw native handle.
-func (h *ShaderModule) Handle() uintptr {
-	if h == nil {
-		return 0
-	}
-	return h.inner
+func (s ShaderModule) Handle() uintptr {
+	return uintptr(s)
 }
 
-// Surface is a WebGPU object handle.
-type Surface struct {
-	inner uintptr // native handle
-}
+// Surface is a WebGPU object handle (a native WGPUSurface pointer).
+// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
+// and must call Release when done.
+type Surface uintptr
 
 // Handle returns the raw native handle.
-func (h *Surface) Handle() uintptr {
-	if h == nil {
-		return 0
-	}
-	return h.inner
+func (s Surface) Handle() uintptr {
+	return uintptr(s)
 }
 
-// Texture is a WebGPU object handle.
-type Texture struct {
-	inner uintptr // native handle
-}
+// Texture is a WebGPU object handle (a native WGPUTexture pointer).
+// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
+// and must call Release when done.
+type Texture uintptr
 
 // Handle returns the raw native handle.
-func (h *Texture) Handle() uintptr {
-	if h == nil {
-		return 0
-	}
-	return h.inner
+func (t Texture) Handle() uintptr {
+	return uintptr(t)
 }
 
-// TextureView is a WebGPU object handle.
-type TextureView struct {
-	inner uintptr // native handle
-}
+// TextureView is a WebGPU object handle (a native WGPUTextureView pointer).
+// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
+// and must call Release when done.
+type TextureView uintptr
 
 // Handle returns the raw native handle.
-func (h *TextureView) Handle() uintptr {
-	if h == nil {
-		return 0
-	}
-	return h.inner
+func (t TextureView) Handle() uintptr {
+	return uintptr(t)
 }
 
 // ---------------------------------------------------------------------------
@@ -2444,31 +2461,31 @@ func (h *TextureView) Handle() uintptr {
 // ---------------------------------------------------------------------------
 
 // BufferMapFn is a callback function type.
-type BufferMapFn func(status MapAsyncStatus, message string)
+type BufferMapFn func(err error)
 
 // CompilationInfoFn is a callback function type.
-type CompilationInfoFn func(status CompilationInfoRequestStatus, compilationInfo CompilationInfo)
+type CompilationInfoFn func(compilationInfo CompilationInfo, err error)
 
 // CreateComputePipelineAsyncFn is a callback function type.
-type CreateComputePipelineAsyncFn func(status CreatePipelineAsyncStatus, pipeline *ComputePipeline, message string)
+type CreateComputePipelineAsyncFn func(pipeline ComputePipeline, err error)
 
 // CreateRenderPipelineAsyncFn is a callback function type.
-type CreateRenderPipelineAsyncFn func(status CreatePipelineAsyncStatus, pipeline *RenderPipeline, message string)
+type CreateRenderPipelineAsyncFn func(pipeline RenderPipeline, err error)
 
 // DeviceLostFn is a callback function type.
-type DeviceLostFn func(device *Device, reason DeviceLostReason, message string)
+type DeviceLostFn func(device Device, reason DeviceLostReason, message string)
 
 // PopErrorScopeFn is a callback function type.
-type PopErrorScopeFn func(status PopErrorScopeStatus, typeVal ErrorType, message string)
+type PopErrorScopeFn func(typeVal ErrorType, err error)
 
 // QueueWorkDoneFn is a callback function type.
-type QueueWorkDoneFn func(status QueueWorkDoneStatus, message string)
+type QueueWorkDoneFn func(err error)
 
 // RequestAdapterFn is a callback function type.
-type RequestAdapterFn func(status RequestAdapterStatus, adapter *Adapter, message string)
+type RequestAdapterFn func(adapter Adapter, err error)
 
 // RequestDeviceFn is a callback function type.
-type RequestDeviceFn func(status RequestDeviceStatus, device *Device, message string)
+type RequestDeviceFn func(device Device, err error)
 
 // UncapturedErrorFn is a callback function type.
-type UncapturedErrorFn func(device *Device, typeVal ErrorType, message string)
+type UncapturedErrorFn func(device Device, typeVal ErrorType, message string)

@@ -3,8 +3,11 @@
 package webgpu
 
 import (
+	"fmt"
 	"math"
+	"runtime"
 	"structs"
+	"sync"
 	"unsafe"
 )
 
@@ -107,22 +110,102 @@ type {{ .Name }} struct {
 }{{ end }}
 
 // ---------------------------------------------------------------------------
+// Errors
+// ---------------------------------------------------------------------------
+
+// Error describes a failed WebGPU operation.
+type Error struct {
+	Op   string // operation name, e.g. "Device.CreateBuffer"
+	Msg  string // implementation message, if any
+	Code uint32 // status code, when the API reported one
+}
+
+func (e *Error) Error() string {
+	if e.Msg != "" {
+		return fmt.Sprintf("webgpu: %s: %s", e.Op, e.Msg)
+	}
+	return fmt.Sprintf("webgpu: %s failed", e.Op)
+}
+
+func newError(op, msg string, code uint32) *Error {
+	return &Error{Op: op, Msg: msg, Code: code}
+}
+
+// ---------------------------------------------------------------------------
+// Blocking wait
+// ---------------------------------------------------------------------------
+
+// liveInstances is the set of Instance handles that should be pumped while
+// a blocking API is waiting for its callback.
+var (
+	instanceMu    sync.Mutex
+	liveInstances []Instance
+)
+
+func addInstance(i Instance) {
+	instanceMu.Lock()
+	liveInstances = append(liveInstances, i)
+	instanceMu.Unlock()
+}
+
+func removeInstance(i Instance) {
+	instanceMu.Lock()
+	for j, x := range liveInstances {
+		if x == i {
+			liveInstances = append(liveInstances[:j], liveInstances[j+1:]...)
+			break
+		}
+	}
+	instanceMu.Unlock()
+}
+
+func pumpEvents() {
+	instanceMu.Lock()
+	insts := make([]Instance, len(liveInstances))
+	copy(insts, liveInstances)
+	instanceMu.Unlock()
+	for _, in := range insts {
+		in.ProcessEvents()
+	}
+}
+
+// waitRecv blocks until a value arrives on ch, pumping WebGPU events so
+// completion callbacks can run on this goroutine.
+func waitRecv[T any](ch <-chan T) T {
+	for {
+		select {
+		case v := <-ch:
+			return v
+		default:
+			pumpEvents()
+			runtime.Gosched()
+		}
+	}
+}
+
+// wrapInstance registers a new Instance for event pumping.
+func wrapInstance(inner uintptr) Instance {
+	i := Instance(inner)
+	if i != 0 {
+		addInstance(i)
+	}
+	return i
+}
+
+// ---------------------------------------------------------------------------
 // Handle (object) types
 // ---------------------------------------------------------------------------
 
 {{- range .Handles }}
 
-// {{ .Name }} is a WebGPU object handle.
-type {{ .Name }} struct {
-	inner uintptr // native handle
-}
+// {{ .Name }} is a WebGPU object handle (a native {{ .CName }} pointer).
+// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
+// and must call Release when done.
+type {{ .Name }} uintptr
 
 // Handle returns the raw native handle.
-func (h *{{ .Name }}) Handle() uintptr {
-	if h == nil {
-		return 0
-	}
-	return h.inner
+func ({{ recv .Name }} {{ .Name }}) Handle() uintptr {
+	return uintptr({{ recv .Name }})
 }{{ end }}
 
 // ---------------------------------------------------------------------------
@@ -132,8 +215,5 @@ func (h *{{ .Name }}) Handle() uintptr {
 {{- range .Spec.Callbacks }}
 
 // {{ .Name | pascal }}Fn is a callback function type.
-type {{ .Name | pascal }}Fn func(
-	{{- range $i, $a := .Args }}
-	{{- if $i }}, {{ end }}{{ $a.Name | camel }} {{ $a.Type | goType }}
-	{{- end -}})
+type {{ .Name | pascal }}Fn {{ cbSig . }}
 {{ end }}

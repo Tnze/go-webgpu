@@ -42,13 +42,53 @@ func syscallStringView(s string, pinner *runtime.Pinner) wgpuStringView {
 }
 
 // ---------------------------------------------------------------------------
+// Handle release
+// ---------------------------------------------------------------------------
+
+{{- range .Handles }}
+
+// release{{ .Name }} drops one reference to a native {{ .CName }}.
+// Safe to call from any goroutine (wgpu-native refcounts are atomic).
+func release{{ .Name }}(inner uintptr) {
+	proc{{ .Name }}Release.Call(inner)
+}
+{{- end }}
+
+// ---------------------------------------------------------------------------
 // Syscall-based function implementations
 // ---------------------------------------------------------------------------
 
 {{- range .Funcs }}
+{{- if .IsRelease }}
+
+// Release drops this handle's reference to the native {{ .ObjName }}.
+// Do not use the handle after calling Release.
+{{ sig . }} {
+	if {{ (index .GoArgs 0).Name }} != 0 {
+{{- if eq .ObjName "Instance" }}
+		removeInstance({{ (index .GoArgs 0).Name }})
+{{- end }}
+		release{{ .ObjName }}({{ (index .GoArgs 0).Name }}.Handle())
+	}
+}
+{{- else }}
 
 // {{ .Name }} calls {{ .CName }} via syscall.
+// Blocks until the operation completes.
 {{ sig . }} {
+{{- if .HasCallback }}
+{{- $n := len .BlockResults }}
+	type _res struct {
+{{- range $i, $r := .BlockResults }}
+		r{{ $i }} {{ $r.GoType }}
+{{- end }}
+		err error
+	}
+	_ch := make(chan _res, 1)
+	callback := {{ .CallbackFn }}(func({{ range $i, $r := .BlockResults }}{{ if $i }}, {{ end }}r{{ $i }} {{ $r.GoType }}{{ end }}{{ if $n }}, {{ end }}err error) {
+		_ch <- _res{ {{ range $i, $r := .BlockResults }}r{{ $i }}, {{ end }}err }
+	})
+{{- end }}
 {{- $needsPinner := false }}
 {{- range .GoArgs }}{{ if or (isStruct .TypeRef) .IsSlice .IsStr }}{{ $needsPinner = true }}{{ end }}{{ end }}
 {{- if $needsPinner }}
@@ -71,7 +111,7 @@ func syscallStringView(s string, pinner *runtime.Pinner) wgpuStringView {
 {{- end }}
 {{- range .GoArgs }}
 {{- if isHandle .TypeRef }}
-	{{ .Name }}_v := uintptr({{ .Name }}.inner)
+	{{ .Name }}_v := uintptr({{ .Name }}.Handle())
 {{- else if .IsStr }}
 	{{ .Name }}_sv := syscallStringView({{ .Name }}, &pinner)
 	{{ .Name }}_v := uintptr(unsafe.Pointer(&{{ .Name }}_sv))
@@ -79,7 +119,7 @@ func syscallStringView(s string, pinner *runtime.Pinner) wgpuStringView {
 {{- if hasPrefix .TypeRef "array<object." }}
 	{{ .Name }}_handles := make([]uintptr, len({{ .Name }}))
 	for i, v := range {{ .Name }} {
-		{{ .Name }}_handles[i] = v.inner
+		{{ .Name }}_handles[i] = v.Handle()
 	}
 	var {{ .Name }}_ptr uintptr
 	if len({{ .Name }}) > 0 {
@@ -100,7 +140,7 @@ func syscallStringView(s string, pinner *runtime.Pinner) wgpuStringView {
 {{- end }}
 {{- end }}
 {{- if .HasCallback }}
-{{- $cbName := .CallbackName }}
+{{- $cbBase := .CallbackName | pascal }}
 	_cbInfo := struct {
 		next     uintptr
 		mode     uint32
@@ -109,85 +149,92 @@ func syscallStringView(s string, pinner *runtime.Pinner) wgpuStringView {
 		ud2      uintptr
 	}{}
 	_cbInfo.mode = uint32(CallbackModeAllowProcessEvents)
-{{- if eq $cbName "request_adapter" }}
-	_cbInfo.callback = syscall.NewCallback(func(status, adapter, msg, ud1, ud2 uintptr) {
+{{- range $.CallbackInfos }}
+{{- if and .HasTrampoline (eq .BaseName $cbBase) }}
+	_cbInfo.callback = syscall.NewCallback(func({{ range .Args }}{{ .Name }}, {{ end }}ud1, ud2 uintptr) {
+{{- range .Args }}
+{{- if eq .Kind "message" }}
 		var s string
-		if msg != 0 {
-			sv := (*wgpuStringView)(unsafe.Pointer(msg))
+		if {{ .Name }} != 0 {
+			sv := (*wgpuStringView)(unsafe.Pointer({{ .Name }}))
 			if sv.data != nil && sv.length > 0 {
 				s = unsafe.String(sv.data, int(sv.length))
 			}
 		}
-		var h *Adapter
-		if adapter != 0 {
-			h = &Adapter{inner: adapter}
+{{- else if eq .Kind "object" }}
+		var {{ .GoName }} {{ .GoType }}
+		if {{ .Name }} != 0 {
+			{{ .GoName }} = {{ .GoType }}({{ .Name }})
 		}
+{{- else if eq .Kind "struct_ptr" }}
+		var {{ .GoName }} {{ .GoType }}
+		if {{ .Name }} != 0 {
+			{{ .GoName }} = *(*{{ .GoType }})(unsafe.Pointer({{ .Name }}))
+		}
+{{- else if eq .Kind "enum" }}
+		{{ .GoName }} := {{ .GoType }}({{ .Name }})
+{{- end }}
+{{- end }}
 		if fn := callback; fn != nil {
-			fn(RequestAdapterStatus(status), h, s)
-		}
-	})
-{{- else if eq $cbName "request_device" }}
-	_cbInfo.callback = syscall.NewCallback(func(status, device, msg, ud1, ud2 uintptr) {
-		var s string
-		if msg != 0 {
-			sv := (*wgpuStringView)(unsafe.Pointer(msg))
-			if sv.data != nil && sv.length > 0 {
-				s = unsafe.String(sv.data, int(sv.length))
+			var err error
+{{- if .StatusArg }}
+			if {{ .StatusArg.GoType }}({{ .StatusArg.Name }}) != {{ .SuccessConst }} {
+{{- if .MessageArg }}
+				err = newError("{{ .OpName }}", s, uint32({{ .StatusArg.Name }}))
+{{- else }}
+				err = newError("{{ .OpName }}", "", uint32({{ .StatusArg.Name }}))
+{{- end }}
 			}
-		}
-		var h *Device
-		if device != 0 {
-			h = &Device{inner: device}
-		}
-		if fn := callback; fn != nil {
-			fn(RequestDeviceStatus(status), h, s)
+{{- end }}
+			fn({{ join .CallArgs ", " }})
 		}
 	})
-{{- else if eq $cbName "buffer_map" }}
-	_cbInfo.callback = syscall.NewCallback(func(status, msg, ud1, ud2, ud3 uintptr) {
-		var s string
-		if msg != 0 {
-			sv := (*wgpuStringView)(unsafe.Pointer(msg))
-			if sv.data != nil && sv.length > 0 {
-				s = unsafe.String(sv.data, int(sv.length))
-			}
-		}
-		if fn := callback; fn != nil {
-			fn(MapAsyncStatus(status), s)
-		}
-	})
-{{- else if eq $cbName "queue_work_done" }}
-	_cbInfo.callback = syscall.NewCallback(func(status, msg, ud1, ud2, ud3 uintptr) {
-		var s string
-		if msg != 0 {
-			sv := (*wgpuStringView)(unsafe.Pointer(msg))
-			if sv.data != nil && sv.length > 0 {
-				s = unsafe.String(sv.data, int(sv.length))
-			}
-		}
-		if fn := callback; fn != nil {
-			fn(QueueWorkDoneStatus(status), s)
-		}
-	})
+{{- end }}
 {{- end }}
 	_cbInfo_v := uintptr(unsafe.Pointer(&_cbInfo))
 {{- end }}
-{{- if .GoReturn }}
+{{- if .ReturnRef }}
 {{- $funcName := .Ident }}
-{{- $isHandleRet := isHandle .ReturnRef }}
-{{- $goReturn := .GoReturn }}
-{{- $isFuture := eq $goReturn "Future" }}
+{{- $kind := .RetKind }}
 	r1, _, _ := proc{{ $funcName }}.Call(
 		{{- range $i, $a := .GoArgs }}{{ if $i }}, {{ end }}{{ if $a.IsSlice }}{{ $a.Name }}_count, {{ $a.Name }}_ptr{{ else if isFuncPtr $a.TypeRef }}_cbInfo_v{{ else }}{{ $a.Name }}_v{{ end }}{{ end -}}
 	)
-{{- if $isHandleRet }}
-	return &{{ handleType $goReturn }}{inner: r1}
-{{- else if eq $goReturn "bool" }}
+{{- if eq $kind "blocking" }}
+	_ = r1
+	_out := waitRecv(_ch)
+	return {{ range $i, $r := .BlockResults }}_out.r{{ $i }}, {{ end }}_out.err
+{{- else if eq $kind "handle" }}
+{{- if eq .GoReturn "Instance" }}
+	_result := wrapInstance(r1)
+{{- else }}
+	_result := {{ .GoReturn }}(r1)
+{{- end }}
+	if _result == 0 {
+		return 0, newError("{{ .OpName }}", "", 0)
+	}
+	return _result, nil
+{{- else if eq $kind "status" }}
+	if Status(r1) != {{ .SuccessConst }} {
+		return newError("{{ .OpName }}", "", uint32(r1))
+	}
+	return nil
+{{- else if eq $kind "wait" }}
+	if WaitStatus(r1) != {{ .SuccessConst }} {
+		return newError("{{ .OpName }}", "", uint32(r1))
+	}
+	return nil
+{{- else if eq $kind "pointer" }}
+	_result := unsafe.Pointer(r1)
+	if _result == nil {
+		return nil, newError("{{ .OpName }}", "", 0)
+	}
+	return _result, nil
+{{- else if eq $kind "bool" }}
 	return r1 != 0
-{{- else if $isFuture }}
+{{- else if eq $kind "future" }}
 	return Future{Id: uint64(r1)}
 {{- else }}
-	return ({{ $goReturn }})(r1)
+	return ({{ .GoReturn }})(r1)
 {{- end }}
 {{- else }}
 	proc{{ .Ident }}.Call(
@@ -195,4 +242,5 @@ func syscallStringView(s string, pinner *runtime.Pinner) wgpuStringView {
 	)
 {{- end }}
 }
+{{- end }}
 {{- end }}

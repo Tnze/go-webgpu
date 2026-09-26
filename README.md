@@ -40,39 +40,50 @@ handles). Only the function *implementations* differ.
 
 CGO backend:
 ```go
-func (d *Device) CreateBindGroup(descriptor BindGroupDescriptor) *BindGroup {
-    c_d := (C.WGPUDevice)(unsafe.Pointer(d.inner))
+func (d Device) CreateBindGroup(descriptor BindGroupDescriptor) BindGroup {
+    c_d := (C.WGPUDevice)(unsafe.Pointer(d.Handle()))
     c_descriptor := (*C.WGPUBindGroupDescriptor)(unsafe.Pointer(&descriptor))
     c_result := C.wgpuDeviceCreateBindGroup(c_d, c_descriptor)
-    return &BindGroup{inner: uintptr(unsafe.Pointer(c_result))}
+    return BindGroup(uintptr(unsafe.Pointer(c_result)))
 }
 ```
 
 Syscall backend:
 ```go
-func (d *Device) CreateBindGroup(descriptor BindGroupDescriptor) *BindGroup {
-    d_v := uintptr(d.inner)
+func (d Device) CreateBindGroup(descriptor BindGroupDescriptor) BindGroup {
+    d_v := d.Handle()
     descriptor_v := uintptr(unsafe.Pointer(&descriptor))
     r1, _, _ := procDeviceCreateBindGroup.Call(d_v, descriptor_v)
-    return &BindGroup{inner: r1}
+    return BindGroup(r1)
 }
 ```
 
 ### Handle representation
 
-All WebGPU opaque objects (`WGPUDevice`, `WGPUBuffer`, etc.) are represented as:
+All WebGPU opaque objects (`WGPUDevice`, `WGPUBuffer`, etc.) are thin typed
+uintptr values. Wrapping is zero-allocation:
 
 ```go
-type Device struct {
-    inner uintptr // stores the native C pointer as a uintptr
-}
+type Device uintptr // zero is null
 ```
 
-- **CGO**: cast `uintptr` → `unsafe.Pointer` → `C.WGPUXxx` when calling C functions.
-- **Syscall**: pass `uintptr` directly to `LazyProc.Call()`.
+- **CGO**: `unsafe.Pointer(d.Handle())` → `C.WGPUXxx` when calling C functions.
+- **Syscall**: `d.Handle()` passed to `LazyProc.Call()`.
 
-This avoids importing `unsafe` in the common types file while keeping both
-backends zero-allocation.
+### Object lifetime
+
+WebGPU objects are reference-counted. Each returned Go handle owns one
+reference. The binding does **not** install GC cleanup — the caller controls
+lifetime and must call `Release()` when done:
+
+```go
+buf := d.CreateBuffer(webgpu.BufferDescriptor{ /* ... */ })
+defer buf.Release()
+```
+
+`Destroy()` (Buffer, Device, Texture, QuerySet) destroys the GPU resource but
+does not drop the reference — call `Release()` afterwards. `Handle()` returns
+the raw pointer without taking ownership. Do not use a handle after `Release()`.
 
 ## Type mapping reference
 
@@ -88,8 +99,27 @@ backends zero-allocation.
 | `enum.*` | `type X uint32` | `C.WGPUXxx` | Prefixed names: `BlendFactorZero` |
 | `bitflag.*` | `type X uint32` | `C.WGPUXxx` | Auto `1<<N` values |
 | `struct.*` | Go struct | `C.WGPUXxx` | Passed by pointer to C |
-| `object.*` | `*X` (handle) | `C.WGPUXxx` | Stored as `inner uintptr` |
-| `callback.*` | `type XFn func(…)` | — | `Fn` suffix avoids name collisions |
+| `object.*` | `X` (handle) | `C.WGPUXxx` | `type X uintptr`; zero is null |
+| `callback.*` | internal only | — | blocking wrappers hide C futures/callbacks |
+
+### Errors and blocking
+
+Go methods follow normal Go error style. Operations that can fail return
+`error` (and a handle/value as the first result when there is one):
+
+```go
+buf, err := d.CreateBuffer(webgpu.BufferDescriptor{ /* ... */ })
+if err != nil { ... }
+```
+
+There are no callbacks or `Future`s in the public API. C async entry points
+(`wgpuInstanceRequestAdapter`, `wgpuBufferMapAsync`, …) are wrapped in blocking
+methods that wait on an internal channel while pumping events:
+
+```go
+adapter, err := instance.RequestAdapter(webgpu.RequestAdapterOptions{})
+err = buf.Map(webgpu.MapModeRead, 0, size) // not MapAsync
+```
 | `c_void_*` | `unsafe.Pointer` | `unsafe.Pointer` | Platform-specific window handles |
 | `array<T>` | `[]T` | ptr + count | Expanded to two C args |
 
@@ -157,7 +187,7 @@ The generator converts C names to idiomatic Go names:
 | `WGPUBlendFactor_Zero` | `BlendFactorZero` | Enum: prefix + PascalCase |
 | `WGPUBufferUsage_MapRead` | `BufferUsageMapRead` | Bitflag: prefix + PascalCase |
 | `WGPUBufferDescriptor` | `BufferDescriptor` | Struct: PascalCase |
-| `wgpuDeviceCreateBuffer` | `(*Device).CreateBuffer` | Method: receiver + PascalCase |
+| `wgpuDeviceCreateBuffer` | `Device.CreateBuffer` | Method: receiver + PascalCase |
 | `wgpuCreateInstance` | `CreateInstance` | Function: PascalCase |
 | `array_layer_count_undefined` | `ArrayLayerCountUndefined` | Constant: PascalCase |
 

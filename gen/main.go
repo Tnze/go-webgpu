@@ -106,6 +106,8 @@ func loadTemplates() (map[string]*template.Template, error) {
 		"comment":       commentLine,
 		"commentIndent": commentIndent,
 		"sig":           goSignature,
+		"recv":          receiverName,
+		"cbSig":         goCallbackSig,
 		"handleType": func(goReturn string) string {
 			return strings.TrimPrefix(goReturn, "*")
 		},

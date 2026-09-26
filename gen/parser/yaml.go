@@ -178,9 +178,10 @@ type Callback struct {
 
 // CallbackArg is a single argument of a callback.
 type CallbackArg struct {
-	Name string `yaml:"name"`
-	Doc  string `yaml:"doc"`
-	Type string `yaml:"type"`
+	Name    string `yaml:"name"`
+	Doc     string `yaml:"doc"`
+	Type    string `yaml:"type"`
+	Pointer string `yaml:"pointer"` // immutable | mutable
 }
 
 // ParseFile reads and parses a webgpu.yml file.

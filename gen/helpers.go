@@ -86,17 +86,51 @@ type StructMemberData struct {
 	ArrayLen   int
 }
 
-// CallbackInfoData describes an embedded C callback-info struct.
+// CallbackInfoData describes a callback type and the glue generated for it.
 type CallbackInfoData struct {
-	Name    string // e.g. DeviceLostCallbackInfo
-	CName   string // e.g. WGPUDeviceLostCallbackInfo
-	FnType  string // e.g. DeviceLostFn
-	HasMode bool   // true except uncaptured_error
+	Name       string // e.g. DeviceLostCallbackInfo
+	CName      string // e.g. WGPUDeviceLostCallbackInfo
+	FnType     string // e.g. DeviceLostFn
+	HasMode    bool   // true except uncaptured_error
+	BaseName   string // e.g. RequestAdapter (pascalCase of callback name)
+	ExportName string // e.g. goRequestAdapterCB; "" if no trampoline
+	CFnType    string // e.g. WGPURequestAdapterCallback
+	OpName     string // error op label, e.g. "Instance.RequestAdapter"
+	// Args lists every C parameter in order (status/message included).
+	Args []CallbackArgInfo
+	// HasTrampoline is true for callbacks used as function arguments
+	// (those get a //export trampoline + cgo.Handle). Embedded descriptor
+	// callbacks (device_lost, uncaptured_error) are false.
+	HasTrampoline bool
+	// Precomputed conveniences for templates.
+	StatusArg  *CallbackArgInfo
+	MessageArg *CallbackArgInfo
+	SuccessConst string       // e.g. MapAsyncStatusSuccess
+	CallArgs     []string     // Go value names passed to cb(...), incl. "err"
+}
+
+// CallbackArgInfo describes one C parameter of a callback trampoline.
+type CallbackArgInfo struct {
+	YAMLName   string // original YAML name (e.g. "type", "adapter")
+	Name       string // Go parameter name for the C value (c_type, c_adapter)
+	GoName     string // converted Go value name (typeVal, adapter)
+	CGoType    string // cgo type in //export (C.WGPUAdapter, *C.WGPUCompilationInfo)
+	ExternType string // C type in extern decl (WGPUAdapter, WGPUCompilationInfo*)
+	GoType     string // Go type of the converted value (Adapter, ErrorType)
+	Kind       string // status | message | object | enum | struct_ptr | string | value
+	IsStatus   bool
+	IsMessage  bool
 }
 
 // FuncData describes a function to generate.
 // When IsMethod is set, GoArgs[0] is the receiver and Name omits the
 // object prefix (e.g. Device.CreateBuffer, not DeviceCreateBuffer).
+// IsRelease marks the per-type Release method, which is emitted after the
+// type's other methods and has a special body (Cleanup.Stop + wgpu*Release).
+//
+// Error convention: operations that can fail return error. Handle results
+// become (T, error); status results become error (nil = success). Async
+// callbacks deliver err error instead of a status enum + message string.
 type FuncData struct {
 	Name          string
 	CName         string
@@ -104,13 +138,21 @@ type FuncData struct {
 	GoArgs        []FuncArgData
 	GoReturn      string
 	ReturnRef     string // original YAML type reference for the return type
+	RetKind       string // handle | status | pointer | wait | future | bool | value | none
+	ReturnsError  bool   // Go signature includes error
+	SuccessConst  string // e.g. StatusSuccess for status/wait kinds
+	OpName        string // error op label, e.g. "Device.CreateBuffer"
 	Doc           string
 	IsMethod      bool
+	IsRelease     bool
 	ObjName       string // receiver type name without '*', e.g. "Device"
 	HasCallback   bool
 	CallbackFn    string // Go callback type, e.g. RequestAdapterFn
 	CallbackName  string // original callback name, e.g. request_adapter
 	ReturnsFuture bool
+	// BlockResults are the non-error results of a blocking wrapper for
+	// callback APIs (e.g. [{Name:adapter, GoType:Adapter}]).
+	BlockResults []CallbackArgData
 }
 
 // FuncArgData is a function argument.
@@ -233,6 +275,8 @@ func buildTemplateData(spec *parser.Spec) *TemplateData {
 		}
 		// Only emit info types that appear as struct members or as async-arg params.
 		used := false
+		hasFn := false
+		var opName string
 		for _, s := range spec.Structs {
 			for _, m := range s.Members {
 				if m.Type == "callback."+cb.Name {
@@ -243,12 +287,20 @@ func buildTemplateData(spec *parser.Spec) *TemplateData {
 		for _, f := range spec.Functions {
 			if f.Callback == "callback."+cb.Name {
 				used = true
+				hasFn = true
+				opName = pascalCase(f.Name)
 			}
 		}
 		for _, obj := range spec.Objects {
 			for _, m := range obj.Methods {
 				if m.Callback == "callback."+cb.Name {
 					used = true
+					hasFn = true
+					methodName := pascalCase(m.Name)
+					if m.Name == "map_async" {
+						methodName = "Map"
+					}
+					opName = pascalCase(obj.Name) + "." + methodName
 				}
 			}
 		}
@@ -256,12 +308,51 @@ func buildTemplateData(spec *parser.Spec) *TemplateData {
 			continue
 		}
 		seenCB[infoName] = true
-		td.CallbackInfos = append(td.CallbackInfos, CallbackInfoData{
-			Name:    infoName,
-			CName:   "WGPU" + infoName,
-			FnType:  pascalCase(cb.Name) + "Fn",
-			HasMode: cb.Name != "uncaptured_error",
-		})
+
+		ci := CallbackInfoData{
+			Name:         infoName,
+			CName:        "WGPU" + infoName,
+			FnType:       pascalCase(cb.Name) + "Fn",
+			HasMode:      cb.Name != "uncaptured_error",
+			BaseName:     pascalCase(cb.Name),
+			OpName:       opName,
+			HasTrampoline: hasFn,
+		}
+		if hasFn {
+			ci.ExportName = "go" + pascalCase(cb.Name) + "CB"
+			ci.CFnType = "WGPU" + pascalCase(cb.Name) + "Callback"
+		}
+
+		// Classify each C parameter. Message after status is folded into err.
+		sawStatus := false
+		for _, a := range cb.Args {
+			ai := callbackArgInfo(a)
+			if ai.IsStatus {
+				sawStatus = true
+				ci.SuccessConst = pascalCase(strings.TrimPrefix(a.Type, "enum.")) + "Success"
+			}
+			if sawStatus && a.Name == "message" && isStringType(a.Type) {
+				ai.Kind = "message"
+				ai.IsMessage = true
+			}
+			ci.Args = append(ci.Args, ai)
+		}
+		// Point into the slice so the pointers stay valid.
+		for i := range ci.Args {
+			switch {
+			case ci.Args[i].IsStatus:
+				ci.StatusArg = &ci.Args[i]
+			case ci.Args[i].IsMessage:
+				ci.MessageArg = &ci.Args[i]
+			default:
+				ci.CallArgs = append(ci.CallArgs, ci.Args[i].GoName)
+			}
+		}
+		if ci.StatusArg != nil {
+			ci.CallArgs = append(ci.CallArgs, "err")
+		}
+
+		td.CallbackInfos = append(td.CallbackInfos, ci)
 	}
 
 	// Structs
@@ -356,17 +447,21 @@ func buildTemplateData(spec *parser.Spec) *TemplateData {
 	}
 	for _, obj := range spec.Objects {
 		objName := pascalCase(obj.Name)
-		// "Handle" is already defined on every handle type.
-		used := map[string]bool{"Handle": true}
+		// Reserved method names on every handle type.
+		used := map[string]bool{"Handle": true, "Release": true}
 		for _, m := range obj.Methods {
 			fd := buildFuncData(m, spec)
 			methodName := pascalCase(m.Name)
-			// C API always prefixes methods with the object name.
-			fd.CName = "wgpu" + objName + methodName
+			// MapAsync is blocking in this API; expose it as Map.
+			// Keep the C name based on the spec name.
+			fd.CName = "wgpu" + objName + pascalCase(m.Name)
+			if m.Name == "map_async" {
+				methodName = "Map"
+			}
 			// Prepend the object handle as the first argument (the receiver).
 			handleArg := FuncArgData{
 				Name:    receiverName(objName),
-				GoType:  "*" + objName,
+				GoType:  objName,
 				TypeRef: "object." + obj.Name,
 				CName:   obj.Name,
 			}
@@ -382,9 +477,30 @@ func buildTemplateData(spec *parser.Spec) *TemplateData {
 				fd.ObjName = objName
 				fd.Name = methodName
 				fd.Ident = objName + methodName
+				fd.OpName = objName + "." + methodName
 			}
 			td.Funcs = append(td.Funcs, fd)
 		}
+
+		// Release always comes last among the type's methods.
+		fd := FuncData{
+			Name:      "Release",
+			CName:     "wgpu" + objName + "Release",
+			Ident:     objName + "Release",
+			IsMethod:  true,
+			IsRelease: true,
+			ObjName:   objName,
+			OpName:    objName + ".Release",
+			RetKind:   "none",
+			Doc:       "drops this handle's reference to the native object",
+			GoArgs: []FuncArgData{{
+				Name:    receiverName(objName),
+				GoType:  objName,
+				TypeRef: "object." + obj.Name,
+				CName:   obj.Name,
+			}},
+		}
+		td.Funcs = append(td.Funcs, fd)
 	}
 
 	return td
@@ -400,14 +516,15 @@ func tryAsMethod(fd *FuncData, rawName string) bool {
 	recv := fd.GoArgs[0]
 	objName := pascalCase(strings.TrimPrefix(recv.TypeRef, "object."))
 	methodName := pascalCase(rawName)
-	// Avoid colliding with the generated Handle() method.
-	if methodName == "Handle" {
+	// Avoid colliding with generated Handle() / Release() methods.
+	if methodName == "Handle" || methodName == "Release" {
 		return false
 	}
 	fd.IsMethod = true
 	fd.ObjName = objName
 	fd.Name = methodName
 	fd.GoArgs[0].Name = receiverName(objName)
+	fd.OpName = objName + "." + methodName
 	return true
 }
 
@@ -430,14 +547,58 @@ func buildFuncData(f parser.Function, spec *parser.Spec) FuncData {
 		fd.HasCallback = true
 		fd.CallbackName = strings.TrimPrefix(f.Callback, "callback.")
 		fd.CallbackFn = pascalCase(fd.CallbackName) + "Fn"
-		// All callback-taking APIs return a Future in the C ABI.
-		fd.GoReturn = "Future"
-		fd.ReturnRef = "struct.future"
-		fd.ReturnsFuture = true
+		// Blocking Go API: the C Future/callback is an implementation detail.
+		// Results are delivered by returning them (via an internal channel).
+		fd.RetKind = "blocking"
+		fd.ReturnsError = true
+		fd.GoReturn = ""
+		fd.ReturnRef = "struct.future" // C still returns a Future we ignore
+		if spec != nil {
+			if cb := spec.GetCallback(fd.CallbackName); cb != nil {
+				for _, a := range goCallbackArgs(*cb) {
+					if a.Name == "err" {
+						continue
+					}
+					fd.BlockResults = append(fd.BlockResults, a)
+				}
+			}
+		}
+		// MapAsync is blocking in this API; expose it as Map.
+		if f.Name == "map_async" {
+			fd.Name = "Map"
+		}
 	} else if f.Returns != nil && f.Returns.Type != "" && f.Returns.Type != "void" {
-		fd.GoReturn = goTypeForRef(f.Returns.Type, spec)
 		fd.ReturnRef = f.Returns.Type
+		fd.GoReturn = goTypeForRef(f.Returns.Type, spec)
+		switch {
+		case isHandleType(f.Returns.Type):
+			fd.RetKind = "handle"
+			fd.ReturnsError = true
+		case f.Returns.Type == "enum.status":
+			fd.RetKind = "status"
+			fd.ReturnsError = true
+			fd.SuccessConst = "StatusSuccess"
+			fd.GoReturn = "" // signature is just `error`
+		case f.Returns.Type == "enum.wait_status":
+			fd.RetKind = "wait"
+			fd.ReturnsError = true
+			fd.SuccessConst = "WaitStatusSuccess"
+			fd.GoReturn = ""
+		case f.Returns.Type == "c_void_mapped_range_ptr" || strings.HasPrefix(f.Returns.Type, "c_void"):
+			fd.RetKind = "pointer"
+			fd.ReturnsError = true
+		case f.Returns.Type == "bool":
+			fd.RetKind = "bool"
+		case f.Returns.Type == "struct.future":
+			fd.RetKind = "future"
+		default:
+			fd.RetKind = "value"
+		}
+	} else {
+		fd.RetKind = "none"
 	}
+	// Op label for errors: "CreateInstance", … (method path sets "Device.CreateBuffer")
+	fd.OpName = fd.Name
 	for _, arg := range f.Args {
 		goType := goTypeForRef(arg.Type, spec)
 		isSlice := isArrayType(arg.Type)
@@ -486,6 +647,67 @@ func buildFuncData(f parser.Function, spec *parser.Spec) FuncData {
 		})
 	}
 	return fd
+}
+
+// callbackArgInfo classifies a single callback C parameter and computes
+// the names/types needed for trampoline generation.
+func callbackArgInfo(a parser.CallbackArg) CallbackArgInfo {
+	ai := CallbackArgInfo{
+		YAMLName: a.Name,
+		Name:     "c_" + camelCase(a.Name),
+		GoName:   camelCase(a.Name),
+		GoType:   goTypeForRef(a.Type, nil),
+	}
+	// C types for the extern declaration and the cgo //export signature.
+	switch {
+	case isStringType(a.Type):
+		ai.ExternType = "WGPUStringView"
+		ai.CGoType = "C.WGPUStringView"
+	case strings.HasPrefix(a.Type, "enum."):
+		n := "WGPU" + pascalCase(strings.TrimPrefix(a.Type, "enum."))
+		ai.ExternType = n
+		ai.CGoType = "C." + n
+	case strings.HasPrefix(a.Type, "object."):
+		n := "WGPU" + pascalCase(strings.TrimPrefix(a.Type, "object."))
+		ai.ExternType = n
+		ai.CGoType = "C." + n
+	case strings.HasPrefix(a.Type, "struct."):
+		n := "WGPU" + pascalCase(strings.TrimPrefix(a.Type, "struct."))
+		if a.Pointer == "immutable" || a.Pointer == "mutable" {
+			ai.ExternType = n + "*"
+			ai.CGoType = "*C." + n
+		} else {
+			ai.ExternType = n
+			ai.CGoType = "C." + n
+		}
+	default:
+		ai.ExternType = "void*"
+		ai.CGoType = "unsafe.Pointer"
+	}
+	// Kind classification.
+	switch {
+	case a.Name == "status" && strings.HasPrefix(a.Type, "enum."):
+		ai.Kind = "status"
+		ai.IsStatus = true
+		ai.GoType = pascalCase(strings.TrimPrefix(a.Type, "enum."))
+	case a.Name == "message" && isStringType(a.Type):
+		ai.Kind = "message"
+		ai.IsMessage = true
+	case strings.HasPrefix(a.Type, "object."):
+		ai.Kind = "object"
+	case strings.HasPrefix(a.Type, "struct.") && (a.Pointer == "immutable" || a.Pointer == "mutable"):
+		ai.Kind = "struct_ptr"
+		ai.GoType = pascalCase(strings.TrimPrefix(a.Type, "struct."))
+	case strings.HasPrefix(a.Type, "enum."):
+		ai.Kind = "enum"
+		ai.GoType = pascalCase(strings.TrimPrefix(a.Type, "enum."))
+	case isStringType(a.Type):
+		ai.Kind = "string"
+		ai.GoType = "string"
+	default:
+		ai.Kind = "value"
+	}
+	return ai
 }
 
 // ---------------------------------------------------------------------------
@@ -583,7 +805,8 @@ func goTypeForRef(ref string, spec *parser.Spec) string {
 		return pascalCase(strings.TrimPrefix(ref, "struct."))
 	}
 	if strings.HasPrefix(ref, "object.") {
-		return "*" + pascalCase(strings.TrimPrefix(ref, "object."))
+		// Handles are thin typed uintptr values (zero is null).
+		return pascalCase(strings.TrimPrefix(ref, "object."))
 	}
 	if strings.HasPrefix(ref, "callback.") {
 		return pascalCase(strings.TrimPrefix(ref, "callback.")) + "Fn"
@@ -856,6 +1079,52 @@ func goTypeName(ref string) string {
 	return goTypeForRef(ref, nil)
 }
 
+// CallbackArgData is one parameter of a Go callback type.
+type CallbackArgData struct {
+	Name   string
+	GoType string
+}
+
+// goCallbackArgs returns the Go parameters for a callback. Completion
+// callbacks (those with a status enum) drop the status/message pair and
+// append err error instead.
+func goCallbackArgs(cb parser.Callback) []CallbackArgData {
+	var args []CallbackArgData
+	hasStatus := false
+	for _, a := range cb.Args {
+		if a.Name == "status" && strings.HasPrefix(a.Type, "enum.") {
+			hasStatus = true
+			continue
+		}
+		if hasStatus && a.Name == "message" && isStringType(a.Type) {
+			continue // folded into err
+		}
+		args = append(args, CallbackArgData{
+			Name:   camelCase(a.Name),
+			GoType: goTypeForRef(a.Type, nil),
+		})
+	}
+	if hasStatus {
+		args = append(args, CallbackArgData{Name: "err", GoType: "error"})
+	}
+	return args
+}
+
+// goCallbackSig renders a callback func type.
+func goCallbackSig(cb parser.Callback) string {
+	var b strings.Builder
+	b.WriteString("func(")
+	args := goCallbackArgs(cb)
+	for i, a := range args {
+		if i > 0 {
+			b.WriteString(", ")
+		}
+		fmt.Fprintf(&b, "%s %s", a.Name, a.GoType)
+	}
+	b.WriteString(")")
+	return b.String()
+}
+
 // goSignature renders a complete Go func/method signature (without the body).
 func goSignature(fd FuncData) string {
 	var b strings.Builder
@@ -867,16 +1136,38 @@ func goSignature(fd FuncData) string {
 	} else {
 		fmt.Fprintf(&b, "func %s(", fd.Name)
 	}
-	for i, a := range args {
-		if i > 0 {
+	first := true
+	for _, a := range args {
+		if strings.HasPrefix(a.TypeRef, "callback.") {
+			continue // blocking wrappers own the callback
+		}
+		if !first {
 			b.WriteString(", ")
 		}
+		first = false
 		fmt.Fprintf(&b, "%s %s", a.Name, a.GoType)
 	}
 	b.WriteString(")")
-	if fd.GoReturn != "" {
-		b.WriteString(" ")
-		b.WriteString(fd.GoReturn)
+	switch {
+	case fd.RetKind == "blocking":
+		if len(fd.BlockResults) > 0 {
+			b.WriteString(" (")
+			for i, r := range fd.BlockResults {
+				if i > 0 {
+					b.WriteString(", ")
+				}
+				b.WriteString(r.GoType)
+			}
+			b.WriteString(", error)")
+		} else {
+			b.WriteString(" error")
+		}
+	case fd.ReturnsError && fd.GoReturn != "":
+		fmt.Fprintf(&b, " (%s, error)", fd.GoReturn)
+	case fd.ReturnsError:
+		b.WriteString(" error")
+	case fd.GoReturn != "":
+		fmt.Fprintf(&b, " %s", fd.GoReturn)
 	}
 	return b.String()
 }

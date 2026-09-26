@@ -24,9 +24,12 @@ var (
 	procAdapterGetFeatures                           = webgpuDLL.NewProc("wgpuAdapterGetFeatures")
 	procAdapterGetInfo                               = webgpuDLL.NewProc("wgpuAdapterGetInfo")
 	procAdapterRequestDevice                         = webgpuDLL.NewProc("wgpuAdapterRequestDevice")
+	procAdapterRelease                               = webgpuDLL.NewProc("wgpuAdapterRelease")
 	procBindGroupSetLabel                            = webgpuDLL.NewProc("wgpuBindGroupSetLabel")
+	procBindGroupRelease                             = webgpuDLL.NewProc("wgpuBindGroupRelease")
 	procBindGroupLayoutSetLabel                      = webgpuDLL.NewProc("wgpuBindGroupLayoutSetLabel")
-	procBufferMapAsync                               = webgpuDLL.NewProc("wgpuBufferMapAsync")
+	procBindGroupLayoutRelease                       = webgpuDLL.NewProc("wgpuBindGroupLayoutRelease")
+	procBufferMap                                    = webgpuDLL.NewProc("wgpuBufferMapAsync")
 	procBufferGetMappedRange                         = webgpuDLL.NewProc("wgpuBufferGetMappedRange")
 	procBufferGetConstMappedRange                    = webgpuDLL.NewProc("wgpuBufferGetConstMappedRange")
 	procBufferReadMappedRange                        = webgpuDLL.NewProc("wgpuBufferReadMappedRange")
@@ -37,7 +40,9 @@ var (
 	procBufferGetMapState                            = webgpuDLL.NewProc("wgpuBufferGetMapState")
 	procBufferUnmap                                  = webgpuDLL.NewProc("wgpuBufferUnmap")
 	procBufferDestroy                                = webgpuDLL.NewProc("wgpuBufferDestroy")
+	procBufferRelease                                = webgpuDLL.NewProc("wgpuBufferRelease")
 	procCommandBufferSetLabel                        = webgpuDLL.NewProc("wgpuCommandBufferSetLabel")
+	procCommandBufferRelease                         = webgpuDLL.NewProc("wgpuCommandBufferRelease")
 	procCommandEncoderFinish                         = webgpuDLL.NewProc("wgpuCommandEncoderFinish")
 	procCommandEncoderBeginComputePass               = webgpuDLL.NewProc("wgpuCommandEncoderBeginComputePass")
 	procCommandEncoderBeginRenderPass                = webgpuDLL.NewProc("wgpuCommandEncoderBeginRenderPass")
@@ -52,6 +57,7 @@ var (
 	procCommandEncoderResolveQuerySet                = webgpuDLL.NewProc("wgpuCommandEncoderResolveQuerySet")
 	procCommandEncoderWriteTimestamp                 = webgpuDLL.NewProc("wgpuCommandEncoderWriteTimestamp")
 	procCommandEncoderSetLabel                       = webgpuDLL.NewProc("wgpuCommandEncoderSetLabel")
+	procCommandEncoderRelease                        = webgpuDLL.NewProc("wgpuCommandEncoderRelease")
 	procComputePassEncoderInsertDebugMarker          = webgpuDLL.NewProc("wgpuComputePassEncoderInsertDebugMarker")
 	procComputePassEncoderPopDebugGroup              = webgpuDLL.NewProc("wgpuComputePassEncoderPopDebugGroup")
 	procComputePassEncoderPushDebugGroup             = webgpuDLL.NewProc("wgpuComputePassEncoderPushDebugGroup")
@@ -62,8 +68,10 @@ var (
 	procComputePassEncoderDispatchWorkgroupsIndirect = webgpuDLL.NewProc("wgpuComputePassEncoderDispatchWorkgroupsIndirect")
 	procComputePassEncoderEnd                        = webgpuDLL.NewProc("wgpuComputePassEncoderEnd")
 	procComputePassEncoderSetLabel                   = webgpuDLL.NewProc("wgpuComputePassEncoderSetLabel")
+	procComputePassEncoderRelease                    = webgpuDLL.NewProc("wgpuComputePassEncoderRelease")
 	procComputePipelineGetBindGroupLayout            = webgpuDLL.NewProc("wgpuComputePipelineGetBindGroupLayout")
 	procComputePipelineSetLabel                      = webgpuDLL.NewProc("wgpuComputePipelineSetLabel")
+	procComputePipelineRelease                       = webgpuDLL.NewProc("wgpuComputePipelineRelease")
 	procDeviceCreateBindGroup                        = webgpuDLL.NewProc("wgpuDeviceCreateBindGroup")
 	procDeviceCreateBindGroupLayout                  = webgpuDLL.NewProc("wgpuDeviceCreateBindGroupLayout")
 	procDeviceCreateBuffer                           = webgpuDLL.NewProc("wgpuDeviceCreateBuffer")
@@ -88,24 +96,31 @@ var (
 	procDevicePushErrorScope                         = webgpuDLL.NewProc("wgpuDevicePushErrorScope")
 	procDevicePopErrorScope                          = webgpuDLL.NewProc("wgpuDevicePopErrorScope")
 	procDeviceSetLabel                               = webgpuDLL.NewProc("wgpuDeviceSetLabel")
+	procDeviceRelease                                = webgpuDLL.NewProc("wgpuDeviceRelease")
 	procExternalTextureSetLabel                      = webgpuDLL.NewProc("wgpuExternalTextureSetLabel")
+	procExternalTextureRelease                       = webgpuDLL.NewProc("wgpuExternalTextureRelease")
 	procInstanceCreateSurface                        = webgpuDLL.NewProc("wgpuInstanceCreateSurface")
 	procInstanceGetWGSLLanguageFeatures              = webgpuDLL.NewProc("wgpuInstanceGetWGSLLanguageFeatures")
 	procInstanceHasWGSLLanguageFeature               = webgpuDLL.NewProc("wgpuInstanceHasWGSLLanguageFeature")
 	procInstanceProcessEvents                        = webgpuDLL.NewProc("wgpuInstanceProcessEvents")
 	procInstanceRequestAdapter                       = webgpuDLL.NewProc("wgpuInstanceRequestAdapter")
 	procInstanceWaitAny                              = webgpuDLL.NewProc("wgpuInstanceWaitAny")
+	procInstanceRelease                              = webgpuDLL.NewProc("wgpuInstanceRelease")
 	procPipelineLayoutSetLabel                       = webgpuDLL.NewProc("wgpuPipelineLayoutSetLabel")
+	procPipelineLayoutRelease                        = webgpuDLL.NewProc("wgpuPipelineLayoutRelease")
 	procQuerySetSetLabel                             = webgpuDLL.NewProc("wgpuQuerySetSetLabel")
 	procQuerySetGetType                              = webgpuDLL.NewProc("wgpuQuerySetGetType")
 	procQuerySetGetCount                             = webgpuDLL.NewProc("wgpuQuerySetGetCount")
 	procQuerySetDestroy                              = webgpuDLL.NewProc("wgpuQuerySetDestroy")
+	procQuerySetRelease                              = webgpuDLL.NewProc("wgpuQuerySetRelease")
 	procQueueSubmit                                  = webgpuDLL.NewProc("wgpuQueueSubmit")
 	procQueueOnSubmittedWorkDone                     = webgpuDLL.NewProc("wgpuQueueOnSubmittedWorkDone")
 	procQueueWriteBuffer                             = webgpuDLL.NewProc("wgpuQueueWriteBuffer")
 	procQueueWriteTexture                            = webgpuDLL.NewProc("wgpuQueueWriteTexture")
 	procQueueSetLabel                                = webgpuDLL.NewProc("wgpuQueueSetLabel")
+	procQueueRelease                                 = webgpuDLL.NewProc("wgpuQueueRelease")
 	procRenderBundleSetLabel                         = webgpuDLL.NewProc("wgpuRenderBundleSetLabel")
+	procRenderBundleRelease                          = webgpuDLL.NewProc("wgpuRenderBundleRelease")
 	procRenderBundleEncoderSetPipeline               = webgpuDLL.NewProc("wgpuRenderBundleEncoderSetPipeline")
 	procRenderBundleEncoderSetBindGroup              = webgpuDLL.NewProc("wgpuRenderBundleEncoderSetBindGroup")
 	procRenderBundleEncoderSetImmediates             = webgpuDLL.NewProc("wgpuRenderBundleEncoderSetImmediates")
@@ -120,6 +135,7 @@ var (
 	procRenderBundleEncoderSetIndexBuffer            = webgpuDLL.NewProc("wgpuRenderBundleEncoderSetIndexBuffer")
 	procRenderBundleEncoderFinish                    = webgpuDLL.NewProc("wgpuRenderBundleEncoderFinish")
 	procRenderBundleEncoderSetLabel                  = webgpuDLL.NewProc("wgpuRenderBundleEncoderSetLabel")
+	procRenderBundleEncoderRelease                   = webgpuDLL.NewProc("wgpuRenderBundleEncoderRelease")
 	procRenderPassEncoderSetPipeline                 = webgpuDLL.NewProc("wgpuRenderPassEncoderSetPipeline")
 	procRenderPassEncoderSetBindGroup                = webgpuDLL.NewProc("wgpuRenderPassEncoderSetBindGroup")
 	procRenderPassEncoderSetImmediates               = webgpuDLL.NewProc("wgpuRenderPassEncoderSetImmediates")
@@ -141,17 +157,22 @@ var (
 	procRenderPassEncoderEndOcclusionQuery           = webgpuDLL.NewProc("wgpuRenderPassEncoderEndOcclusionQuery")
 	procRenderPassEncoderEnd                         = webgpuDLL.NewProc("wgpuRenderPassEncoderEnd")
 	procRenderPassEncoderSetLabel                    = webgpuDLL.NewProc("wgpuRenderPassEncoderSetLabel")
+	procRenderPassEncoderRelease                     = webgpuDLL.NewProc("wgpuRenderPassEncoderRelease")
 	procRenderPipelineGetBindGroupLayout             = webgpuDLL.NewProc("wgpuRenderPipelineGetBindGroupLayout")
 	procRenderPipelineSetLabel                       = webgpuDLL.NewProc("wgpuRenderPipelineSetLabel")
+	procRenderPipelineRelease                        = webgpuDLL.NewProc("wgpuRenderPipelineRelease")
 	procSamplerSetLabel                              = webgpuDLL.NewProc("wgpuSamplerSetLabel")
+	procSamplerRelease                               = webgpuDLL.NewProc("wgpuSamplerRelease")
 	procShaderModuleGetCompilationInfo               = webgpuDLL.NewProc("wgpuShaderModuleGetCompilationInfo")
 	procShaderModuleSetLabel                         = webgpuDLL.NewProc("wgpuShaderModuleSetLabel")
+	procShaderModuleRelease                          = webgpuDLL.NewProc("wgpuShaderModuleRelease")
 	procSurfaceConfigure                             = webgpuDLL.NewProc("wgpuSurfaceConfigure")
 	procSurfaceGetCapabilities                       = webgpuDLL.NewProc("wgpuSurfaceGetCapabilities")
 	procSurfaceGetCurrentTexture                     = webgpuDLL.NewProc("wgpuSurfaceGetCurrentTexture")
 	procSurfacePresent                               = webgpuDLL.NewProc("wgpuSurfacePresent")
 	procSurfaceUnconfigure                           = webgpuDLL.NewProc("wgpuSurfaceUnconfigure")
 	procSurfaceSetLabel                              = webgpuDLL.NewProc("wgpuSurfaceSetLabel")
+	procSurfaceRelease                               = webgpuDLL.NewProc("wgpuSurfaceRelease")
 	procTextureCreateView                            = webgpuDLL.NewProc("wgpuTextureCreateView")
 	procTextureSetLabel                              = webgpuDLL.NewProc("wgpuTextureSetLabel")
 	procTextureGetWidth                              = webgpuDLL.NewProc("wgpuTextureGetWidth")
@@ -164,7 +185,9 @@ var (
 	procTextureGetFormat                             = webgpuDLL.NewProc("wgpuTextureGetFormat")
 	procTextureGetUsage                              = webgpuDLL.NewProc("wgpuTextureGetUsage")
 	procTextureDestroy                               = webgpuDLL.NewProc("wgpuTextureDestroy")
+	procTextureRelease                               = webgpuDLL.NewProc("wgpuTextureRelease")
 	procTextureViewSetLabel                          = webgpuDLL.NewProc("wgpuTextureViewSetLabel")
+	procTextureViewRelease                           = webgpuDLL.NewProc("wgpuTextureViewRelease")
 )
 
 // ---------------------------------------------------------------------------
@@ -189,11 +212,154 @@ func syscallStringView(s string, pinner *runtime.Pinner) wgpuStringView {
 }
 
 // ---------------------------------------------------------------------------
+// Handle release
+// ---------------------------------------------------------------------------
+
+// releaseAdapter drops one reference to a native WGPUAdapter.
+// Safe to call from any goroutine (wgpu-native refcounts are atomic).
+func releaseAdapter(inner uintptr) {
+	procAdapterRelease.Call(inner)
+}
+
+// releaseBindGroup drops one reference to a native WGPUBindGroup.
+// Safe to call from any goroutine (wgpu-native refcounts are atomic).
+func releaseBindGroup(inner uintptr) {
+	procBindGroupRelease.Call(inner)
+}
+
+// releaseBindGroupLayout drops one reference to a native WGPUBindGroupLayout.
+// Safe to call from any goroutine (wgpu-native refcounts are atomic).
+func releaseBindGroupLayout(inner uintptr) {
+	procBindGroupLayoutRelease.Call(inner)
+}
+
+// releaseBuffer drops one reference to a native WGPUBuffer.
+// Safe to call from any goroutine (wgpu-native refcounts are atomic).
+func releaseBuffer(inner uintptr) {
+	procBufferRelease.Call(inner)
+}
+
+// releaseCommandBuffer drops one reference to a native WGPUCommandBuffer.
+// Safe to call from any goroutine (wgpu-native refcounts are atomic).
+func releaseCommandBuffer(inner uintptr) {
+	procCommandBufferRelease.Call(inner)
+}
+
+// releaseCommandEncoder drops one reference to a native WGPUCommandEncoder.
+// Safe to call from any goroutine (wgpu-native refcounts are atomic).
+func releaseCommandEncoder(inner uintptr) {
+	procCommandEncoderRelease.Call(inner)
+}
+
+// releaseComputePassEncoder drops one reference to a native WGPUComputePassEncoder.
+// Safe to call from any goroutine (wgpu-native refcounts are atomic).
+func releaseComputePassEncoder(inner uintptr) {
+	procComputePassEncoderRelease.Call(inner)
+}
+
+// releaseComputePipeline drops one reference to a native WGPUComputePipeline.
+// Safe to call from any goroutine (wgpu-native refcounts are atomic).
+func releaseComputePipeline(inner uintptr) {
+	procComputePipelineRelease.Call(inner)
+}
+
+// releaseDevice drops one reference to a native WGPUDevice.
+// Safe to call from any goroutine (wgpu-native refcounts are atomic).
+func releaseDevice(inner uintptr) {
+	procDeviceRelease.Call(inner)
+}
+
+// releaseExternalTexture drops one reference to a native WGPUExternalTexture.
+// Safe to call from any goroutine (wgpu-native refcounts are atomic).
+func releaseExternalTexture(inner uintptr) {
+	procExternalTextureRelease.Call(inner)
+}
+
+// releaseInstance drops one reference to a native WGPUInstance.
+// Safe to call from any goroutine (wgpu-native refcounts are atomic).
+func releaseInstance(inner uintptr) {
+	procInstanceRelease.Call(inner)
+}
+
+// releasePipelineLayout drops one reference to a native WGPUPipelineLayout.
+// Safe to call from any goroutine (wgpu-native refcounts are atomic).
+func releasePipelineLayout(inner uintptr) {
+	procPipelineLayoutRelease.Call(inner)
+}
+
+// releaseQuerySet drops one reference to a native WGPUQuerySet.
+// Safe to call from any goroutine (wgpu-native refcounts are atomic).
+func releaseQuerySet(inner uintptr) {
+	procQuerySetRelease.Call(inner)
+}
+
+// releaseQueue drops one reference to a native WGPUQueue.
+// Safe to call from any goroutine (wgpu-native refcounts are atomic).
+func releaseQueue(inner uintptr) {
+	procQueueRelease.Call(inner)
+}
+
+// releaseRenderBundle drops one reference to a native WGPURenderBundle.
+// Safe to call from any goroutine (wgpu-native refcounts are atomic).
+func releaseRenderBundle(inner uintptr) {
+	procRenderBundleRelease.Call(inner)
+}
+
+// releaseRenderBundleEncoder drops one reference to a native WGPURenderBundleEncoder.
+// Safe to call from any goroutine (wgpu-native refcounts are atomic).
+func releaseRenderBundleEncoder(inner uintptr) {
+	procRenderBundleEncoderRelease.Call(inner)
+}
+
+// releaseRenderPassEncoder drops one reference to a native WGPURenderPassEncoder.
+// Safe to call from any goroutine (wgpu-native refcounts are atomic).
+func releaseRenderPassEncoder(inner uintptr) {
+	procRenderPassEncoderRelease.Call(inner)
+}
+
+// releaseRenderPipeline drops one reference to a native WGPURenderPipeline.
+// Safe to call from any goroutine (wgpu-native refcounts are atomic).
+func releaseRenderPipeline(inner uintptr) {
+	procRenderPipelineRelease.Call(inner)
+}
+
+// releaseSampler drops one reference to a native WGPUSampler.
+// Safe to call from any goroutine (wgpu-native refcounts are atomic).
+func releaseSampler(inner uintptr) {
+	procSamplerRelease.Call(inner)
+}
+
+// releaseShaderModule drops one reference to a native WGPUShaderModule.
+// Safe to call from any goroutine (wgpu-native refcounts are atomic).
+func releaseShaderModule(inner uintptr) {
+	procShaderModuleRelease.Call(inner)
+}
+
+// releaseSurface drops one reference to a native WGPUSurface.
+// Safe to call from any goroutine (wgpu-native refcounts are atomic).
+func releaseSurface(inner uintptr) {
+	procSurfaceRelease.Call(inner)
+}
+
+// releaseTexture drops one reference to a native WGPUTexture.
+// Safe to call from any goroutine (wgpu-native refcounts are atomic).
+func releaseTexture(inner uintptr) {
+	procTextureRelease.Call(inner)
+}
+
+// releaseTextureView drops one reference to a native WGPUTextureView.
+// Safe to call from any goroutine (wgpu-native refcounts are atomic).
+func releaseTextureView(inner uintptr) {
+	procTextureViewRelease.Call(inner)
+}
+
+// ---------------------------------------------------------------------------
 // Syscall-based function implementations
 // ---------------------------------------------------------------------------
 
 // CreateInstance calls wgpuCreateInstance via syscall.
-func CreateInstance(descriptor InstanceDescriptor) *Instance {
+// Blocks until the operation completes.
+func CreateInstance(descriptor InstanceDescriptor) (Instance, error) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
@@ -202,10 +368,15 @@ func CreateInstance(descriptor InstanceDescriptor) *Instance {
 	}
 	descriptor_v := uintptr(unsafe.Pointer(&descriptor))
 	r1, _, _ := procCreateInstance.Call(descriptor_v)
-	return &Instance{inner: r1}
+	_result := wrapInstance(r1)
+	if _result == 0 {
+		return 0, newError("CreateInstance", "", 0)
+	}
+	return _result, nil
 }
 
 // GetInstanceFeatures calls wgpuGetInstanceFeatures via syscall.
+// Blocks until the operation completes.
 func GetInstanceFeatures(features SupportedInstanceFeatures) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
@@ -218,16 +389,21 @@ func GetInstanceFeatures(features SupportedInstanceFeatures) {
 }
 
 // GetInstanceLimits calls wgpuGetInstanceLimits via syscall.
-func GetInstanceLimits(limits InstanceLimits) Status {
+// Blocks until the operation completes.
+func GetInstanceLimits(limits InstanceLimits) error {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&limits)
 	limits_v := uintptr(unsafe.Pointer(&limits))
 	r1, _, _ := procGetInstanceLimits.Call(limits_v)
-	return (Status)(r1)
+	if Status(r1) != StatusSuccess {
+		return newError("GetInstanceLimits", "", uint32(r1))
+	}
+	return nil
 }
 
 // HasInstanceFeature calls wgpuHasInstanceFeature via syscall.
+// Blocks until the operation completes.
 func HasInstanceFeature(feature InstanceFeatureName) bool {
 	feature_v := uintptr(feature)
 	r1, _, _ := procHasInstanceFeature.Call(feature_v)
@@ -235,57 +411,76 @@ func HasInstanceFeature(feature InstanceFeatureName) bool {
 }
 
 // GetLimits calls wgpuAdapterGetLimits via syscall.
-func (a *Adapter) GetLimits(limits Limits) Status {
+// Blocks until the operation completes.
+func (a Adapter) GetLimits(limits Limits) error {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&limits)
-	a_v := uintptr(a.inner)
+	a_v := uintptr(a.Handle())
 	limits_v := uintptr(unsafe.Pointer(&limits))
 	r1, _, _ := procAdapterGetLimits.Call(a_v, limits_v)
-	return (Status)(r1)
+	if Status(r1) != StatusSuccess {
+		return newError("Adapter.GetLimits", "", uint32(r1))
+	}
+	return nil
 }
 
 // HasFeature calls wgpuAdapterHasFeature via syscall.
-func (a *Adapter) HasFeature(feature FeatureName) bool {
-	a_v := uintptr(a.inner)
+// Blocks until the operation completes.
+func (a Adapter) HasFeature(feature FeatureName) bool {
+	a_v := uintptr(a.Handle())
 	feature_v := uintptr(feature)
 	r1, _, _ := procAdapterHasFeature.Call(a_v, feature_v)
 	return r1 != 0
 }
 
 // GetFeatures calls wgpuAdapterGetFeatures via syscall.
-func (a *Adapter) GetFeatures(features SupportedFeatures) {
+// Blocks until the operation completes.
+func (a Adapter) GetFeatures(features SupportedFeatures) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&features)
 	if features.Features != nil {
 		pinner.Pin(features.Features)
 	}
-	a_v := uintptr(a.inner)
+	a_v := uintptr(a.Handle())
 	features_v := uintptr(unsafe.Pointer(&features))
 	procAdapterGetFeatures.Call(a_v, features_v)
 }
 
 // GetInfo calls wgpuAdapterGetInfo via syscall.
-func (a *Adapter) GetInfo(info AdapterInfo) Status {
+// Blocks until the operation completes.
+func (a Adapter) GetInfo(info AdapterInfo) error {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&info)
-	a_v := uintptr(a.inner)
+	a_v := uintptr(a.Handle())
 	info_v := uintptr(unsafe.Pointer(&info))
 	r1, _, _ := procAdapterGetInfo.Call(a_v, info_v)
-	return (Status)(r1)
+	if Status(r1) != StatusSuccess {
+		return newError("Adapter.GetInfo", "", uint32(r1))
+	}
+	return nil
 }
 
 // RequestDevice calls wgpuAdapterRequestDevice via syscall.
-func (a *Adapter) RequestDevice(descriptor DeviceDescriptor, callback RequestDeviceFn) Future {
+// Blocks until the operation completes.
+func (a Adapter) RequestDevice(descriptor DeviceDescriptor) (Device, error) {
+	type _res struct {
+		r0  Device
+		err error
+	}
+	_ch := make(chan _res, 1)
+	callback := RequestDeviceFn(func(r0 Device, err error) {
+		_ch <- _res{r0, err}
+	})
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
 	if descriptor.RequiredFeatures != nil {
 		pinner.Pin(descriptor.RequiredFeatures)
 	}
-	a_v := uintptr(a.inner)
+	a_v := uintptr(a.Handle())
 	descriptor_v := uintptr(unsafe.Pointer(&descriptor))
 	_cbInfo := struct {
 		next     uintptr
@@ -295,50 +490,90 @@ func (a *Adapter) RequestDevice(descriptor DeviceDescriptor, callback RequestDev
 		ud2      uintptr
 	}{}
 	_cbInfo.mode = uint32(CallbackModeAllowProcessEvents)
-	_cbInfo.callback = syscall.NewCallback(func(status, device, msg, ud1, ud2 uintptr) {
+	_cbInfo.callback = syscall.NewCallback(func(c_status, c_device, c_message, ud1, ud2 uintptr) {
+		var device Device
+		if c_device != 0 {
+			device = Device(c_device)
+		}
 		var s string
-		if msg != 0 {
-			sv := (*wgpuStringView)(unsafe.Pointer(msg))
+		if c_message != 0 {
+			sv := (*wgpuStringView)(unsafe.Pointer(c_message))
 			if sv.data != nil && sv.length > 0 {
 				s = unsafe.String(sv.data, int(sv.length))
 			}
 		}
-		var h *Device
-		if device != 0 {
-			h = &Device{inner: device}
-		}
 		if fn := callback; fn != nil {
-			fn(RequestDeviceStatus(status), h, s)
+			var err error
+			if RequestDeviceStatus(c_status) != RequestDeviceStatusSuccess {
+				err = newError("Adapter.RequestDevice", s, uint32(c_status))
+			}
+			fn(device, err)
 		}
 	})
 	_cbInfo_v := uintptr(unsafe.Pointer(&_cbInfo))
 	r1, _, _ := procAdapterRequestDevice.Call(a_v, descriptor_v, _cbInfo_v)
-	return Future{Id: uint64(r1)}
+	_ = r1
+	_out := waitRecv(_ch)
+	return _out.r0, _out.err
+}
+
+// Release drops this handle's reference to the native Adapter.
+// Do not use the handle after calling Release.
+func (a Adapter) Release() {
+	if a != 0 {
+		releaseAdapter(a.Handle())
+	}
 }
 
 // SetLabel calls wgpuBindGroupSetLabel via syscall.
-func (b *BindGroup) SetLabel(label string) {
+// Blocks until the operation completes.
+func (b BindGroup) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	b_v := uintptr(b.inner)
+	b_v := uintptr(b.Handle())
 	label_sv := syscallStringView(label, &pinner)
 	label_v := uintptr(unsafe.Pointer(&label_sv))
 	procBindGroupSetLabel.Call(b_v, label_v)
 }
 
+// Release drops this handle's reference to the native BindGroup.
+// Do not use the handle after calling Release.
+func (b BindGroup) Release() {
+	if b != 0 {
+		releaseBindGroup(b.Handle())
+	}
+}
+
 // SetLabel calls wgpuBindGroupLayoutSetLabel via syscall.
-func (b *BindGroupLayout) SetLabel(label string) {
+// Blocks until the operation completes.
+func (b BindGroupLayout) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	b_v := uintptr(b.inner)
+	b_v := uintptr(b.Handle())
 	label_sv := syscallStringView(label, &pinner)
 	label_v := uintptr(unsafe.Pointer(&label_sv))
 	procBindGroupLayoutSetLabel.Call(b_v, label_v)
 }
 
-// MapAsync calls wgpuBufferMapAsync via syscall.
-func (b *Buffer) MapAsync(mode MapMode, offset uintptr, size uintptr, callback BufferMapFn) Future {
-	b_v := uintptr(b.inner)
+// Release drops this handle's reference to the native BindGroupLayout.
+// Do not use the handle after calling Release.
+func (b BindGroupLayout) Release() {
+	if b != 0 {
+		releaseBindGroupLayout(b.Handle())
+	}
+}
+
+// Map calls wgpuBufferMapAsync via syscall.
+// Blocks until the operation completes.
+func (b Buffer) Map(mode MapMode, offset uintptr, size uintptr) error {
+	type _res struct {
+		err error
+	}
+	_ch := make(chan _res, 1)
+	callback := BufferMapFn(func(err error) {
+		_ch <- _res{err}
+	})
+	b_v := uintptr(b.Handle())
 	mode_v := uintptr(mode)
 	offset_v := uintptr(offset)
 	size_v := uintptr(size)
@@ -350,169 +585,233 @@ func (b *Buffer) MapAsync(mode MapMode, offset uintptr, size uintptr, callback B
 		ud2      uintptr
 	}{}
 	_cbInfo.mode = uint32(CallbackModeAllowProcessEvents)
-	_cbInfo.callback = syscall.NewCallback(func(status, msg, ud1, ud2, ud3 uintptr) {
+	_cbInfo.callback = syscall.NewCallback(func(c_status, c_message, ud1, ud2 uintptr) {
 		var s string
-		if msg != 0 {
-			sv := (*wgpuStringView)(unsafe.Pointer(msg))
+		if c_message != 0 {
+			sv := (*wgpuStringView)(unsafe.Pointer(c_message))
 			if sv.data != nil && sv.length > 0 {
 				s = unsafe.String(sv.data, int(sv.length))
 			}
 		}
 		if fn := callback; fn != nil {
-			fn(MapAsyncStatus(status), s)
+			var err error
+			if MapAsyncStatus(c_status) != MapAsyncStatusSuccess {
+				err = newError("Buffer.Map", s, uint32(c_status))
+			}
+			fn(err)
 		}
 	})
 	_cbInfo_v := uintptr(unsafe.Pointer(&_cbInfo))
-	r1, _, _ := procBufferMapAsync.Call(b_v, mode_v, offset_v, size_v, _cbInfo_v)
-	return Future{Id: uint64(r1)}
+	r1, _, _ := procBufferMap.Call(b_v, mode_v, offset_v, size_v, _cbInfo_v)
+	_ = r1
+	_out := waitRecv(_ch)
+	return _out.err
 }
 
 // GetMappedRange calls wgpuBufferGetMappedRange via syscall.
-func (b *Buffer) GetMappedRange(offset uintptr, size uintptr) unsafe.Pointer {
-	b_v := uintptr(b.inner)
+// Blocks until the operation completes.
+func (b Buffer) GetMappedRange(offset uintptr, size uintptr) (unsafe.Pointer, error) {
+	b_v := uintptr(b.Handle())
 	offset_v := uintptr(offset)
 	size_v := uintptr(size)
 	r1, _, _ := procBufferGetMappedRange.Call(b_v, offset_v, size_v)
-	return (unsafe.Pointer)(r1)
+	_result := unsafe.Pointer(r1)
+	if _result == nil {
+		return nil, newError("Buffer.GetMappedRange", "", 0)
+	}
+	return _result, nil
 }
 
 // GetConstMappedRange calls wgpuBufferGetConstMappedRange via syscall.
-func (b *Buffer) GetConstMappedRange(offset uintptr, size uintptr) unsafe.Pointer {
-	b_v := uintptr(b.inner)
+// Blocks until the operation completes.
+func (b Buffer) GetConstMappedRange(offset uintptr, size uintptr) (unsafe.Pointer, error) {
+	b_v := uintptr(b.Handle())
 	offset_v := uintptr(offset)
 	size_v := uintptr(size)
 	r1, _, _ := procBufferGetConstMappedRange.Call(b_v, offset_v, size_v)
-	return (unsafe.Pointer)(r1)
+	_result := unsafe.Pointer(r1)
+	if _result == nil {
+		return nil, newError("Buffer.GetConstMappedRange", "", 0)
+	}
+	return _result, nil
 }
 
 // ReadMappedRange calls wgpuBufferReadMappedRange via syscall.
-func (b *Buffer) ReadMappedRange(offset uintptr, data unsafe.Pointer, size uintptr) Status {
-	b_v := uintptr(b.inner)
+// Blocks until the operation completes.
+func (b Buffer) ReadMappedRange(offset uintptr, data unsafe.Pointer, size uintptr) error {
+	b_v := uintptr(b.Handle())
 	offset_v := uintptr(offset)
 	data_v := uintptr(data)
 	size_v := uintptr(size)
 	r1, _, _ := procBufferReadMappedRange.Call(b_v, offset_v, data_v, size_v)
-	return (Status)(r1)
+	if Status(r1) != StatusSuccess {
+		return newError("Buffer.ReadMappedRange", "", uint32(r1))
+	}
+	return nil
 }
 
 // WriteMappedRange calls wgpuBufferWriteMappedRange via syscall.
-func (b *Buffer) WriteMappedRange(offset uintptr, data unsafe.Pointer, size uintptr) Status {
-	b_v := uintptr(b.inner)
+// Blocks until the operation completes.
+func (b Buffer) WriteMappedRange(offset uintptr, data unsafe.Pointer, size uintptr) error {
+	b_v := uintptr(b.Handle())
 	offset_v := uintptr(offset)
 	data_v := uintptr(data)
 	size_v := uintptr(size)
 	r1, _, _ := procBufferWriteMappedRange.Call(b_v, offset_v, data_v, size_v)
-	return (Status)(r1)
+	if Status(r1) != StatusSuccess {
+		return newError("Buffer.WriteMappedRange", "", uint32(r1))
+	}
+	return nil
 }
 
 // SetLabel calls wgpuBufferSetLabel via syscall.
-func (b *Buffer) SetLabel(label string) {
+// Blocks until the operation completes.
+func (b Buffer) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	b_v := uintptr(b.inner)
+	b_v := uintptr(b.Handle())
 	label_sv := syscallStringView(label, &pinner)
 	label_v := uintptr(unsafe.Pointer(&label_sv))
 	procBufferSetLabel.Call(b_v, label_v)
 }
 
 // GetUsage calls wgpuBufferGetUsage via syscall.
-func (b *Buffer) GetUsage() BufferUsage {
-	b_v := uintptr(b.inner)
+// Blocks until the operation completes.
+func (b Buffer) GetUsage() BufferUsage {
+	b_v := uintptr(b.Handle())
 	r1, _, _ := procBufferGetUsage.Call(b_v)
 	return (BufferUsage)(r1)
 }
 
 // GetSize calls wgpuBufferGetSize via syscall.
-func (b *Buffer) GetSize() uint64 {
-	b_v := uintptr(b.inner)
+// Blocks until the operation completes.
+func (b Buffer) GetSize() uint64 {
+	b_v := uintptr(b.Handle())
 	r1, _, _ := procBufferGetSize.Call(b_v)
 	return (uint64)(r1)
 }
 
 // GetMapState calls wgpuBufferGetMapState via syscall.
-func (b *Buffer) GetMapState() BufferMapState {
-	b_v := uintptr(b.inner)
+// Blocks until the operation completes.
+func (b Buffer) GetMapState() BufferMapState {
+	b_v := uintptr(b.Handle())
 	r1, _, _ := procBufferGetMapState.Call(b_v)
 	return (BufferMapState)(r1)
 }
 
 // Unmap calls wgpuBufferUnmap via syscall.
-func (b *Buffer) Unmap() {
-	b_v := uintptr(b.inner)
+// Blocks until the operation completes.
+func (b Buffer) Unmap() {
+	b_v := uintptr(b.Handle())
 	procBufferUnmap.Call(b_v)
 }
 
 // Destroy calls wgpuBufferDestroy via syscall.
-func (b *Buffer) Destroy() {
-	b_v := uintptr(b.inner)
+// Blocks until the operation completes.
+func (b Buffer) Destroy() {
+	b_v := uintptr(b.Handle())
 	procBufferDestroy.Call(b_v)
 }
 
+// Release drops this handle's reference to the native Buffer.
+// Do not use the handle after calling Release.
+func (b Buffer) Release() {
+	if b != 0 {
+		releaseBuffer(b.Handle())
+	}
+}
+
 // SetLabel calls wgpuCommandBufferSetLabel via syscall.
-func (c *CommandBuffer) SetLabel(label string) {
+// Blocks until the operation completes.
+func (c CommandBuffer) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_v := uintptr(c.inner)
+	c_v := uintptr(c.Handle())
 	label_sv := syscallStringView(label, &pinner)
 	label_v := uintptr(unsafe.Pointer(&label_sv))
 	procCommandBufferSetLabel.Call(c_v, label_v)
 }
 
+// Release drops this handle's reference to the native CommandBuffer.
+// Do not use the handle after calling Release.
+func (c CommandBuffer) Release() {
+	if c != 0 {
+		releaseCommandBuffer(c.Handle())
+	}
+}
+
 // Finish calls wgpuCommandEncoderFinish via syscall.
-func (c *CommandEncoder) Finish(descriptor CommandBufferDescriptor) *CommandBuffer {
+// Blocks until the operation completes.
+func (c CommandEncoder) Finish(descriptor CommandBufferDescriptor) (CommandBuffer, error) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
-	c_v := uintptr(c.inner)
+	c_v := uintptr(c.Handle())
 	descriptor_v := uintptr(unsafe.Pointer(&descriptor))
 	r1, _, _ := procCommandEncoderFinish.Call(c_v, descriptor_v)
-	return &CommandBuffer{inner: r1}
+	_result := CommandBuffer(r1)
+	if _result == 0 {
+		return 0, newError("CommandEncoder.Finish", "", 0)
+	}
+	return _result, nil
 }
 
 // BeginComputePass calls wgpuCommandEncoderBeginComputePass via syscall.
-func (c *CommandEncoder) BeginComputePass(descriptor ComputePassDescriptor) *ComputePassEncoder {
+// Blocks until the operation completes.
+func (c CommandEncoder) BeginComputePass(descriptor ComputePassDescriptor) (ComputePassEncoder, error) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
-	c_v := uintptr(c.inner)
+	c_v := uintptr(c.Handle())
 	descriptor_v := uintptr(unsafe.Pointer(&descriptor))
 	r1, _, _ := procCommandEncoderBeginComputePass.Call(c_v, descriptor_v)
-	return &ComputePassEncoder{inner: r1}
+	_result := ComputePassEncoder(r1)
+	if _result == 0 {
+		return 0, newError("CommandEncoder.BeginComputePass", "", 0)
+	}
+	return _result, nil
 }
 
 // BeginRenderPass calls wgpuCommandEncoderBeginRenderPass via syscall.
-func (c *CommandEncoder) BeginRenderPass(descriptor RenderPassDescriptor) *RenderPassEncoder {
+// Blocks until the operation completes.
+func (c CommandEncoder) BeginRenderPass(descriptor RenderPassDescriptor) (RenderPassEncoder, error) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
 	if descriptor.ColorAttachments != nil {
 		pinner.Pin(descriptor.ColorAttachments)
 	}
-	c_v := uintptr(c.inner)
+	c_v := uintptr(c.Handle())
 	descriptor_v := uintptr(unsafe.Pointer(&descriptor))
 	r1, _, _ := procCommandEncoderBeginRenderPass.Call(c_v, descriptor_v)
-	return &RenderPassEncoder{inner: r1}
+	_result := RenderPassEncoder(r1)
+	if _result == 0 {
+		return 0, newError("CommandEncoder.BeginRenderPass", "", 0)
+	}
+	return _result, nil
 }
 
 // CopyBufferToBuffer calls wgpuCommandEncoderCopyBufferToBuffer via syscall.
-func (c *CommandEncoder) CopyBufferToBuffer(source *Buffer, sourceOffset uint64, destination *Buffer, destinationOffset uint64, size uint64) {
-	c_v := uintptr(c.inner)
-	source_v := uintptr(source.inner)
+// Blocks until the operation completes.
+func (c CommandEncoder) CopyBufferToBuffer(source Buffer, sourceOffset uint64, destination Buffer, destinationOffset uint64, size uint64) {
+	c_v := uintptr(c.Handle())
+	source_v := uintptr(source.Handle())
 	sourceOffset_v := uintptr(sourceOffset)
-	destination_v := uintptr(destination.inner)
+	destination_v := uintptr(destination.Handle())
 	destinationOffset_v := uintptr(destinationOffset)
 	size_v := uintptr(size)
 	procCommandEncoderCopyBufferToBuffer.Call(c_v, source_v, sourceOffset_v, destination_v, destinationOffset_v, size_v)
 }
 
 // CopyBufferToTexture calls wgpuCommandEncoderCopyBufferToTexture via syscall.
-func (c *CommandEncoder) CopyBufferToTexture(source TexelCopyBufferInfo, destination TexelCopyTextureInfo, copySize Extent3D) {
+// Blocks until the operation completes.
+func (c CommandEncoder) CopyBufferToTexture(source TexelCopyBufferInfo, destination TexelCopyTextureInfo, copySize Extent3D) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&source)
 	pinner.Pin(&destination)
 	pinner.Pin(&copySize)
-	c_v := uintptr(c.inner)
+	c_v := uintptr(c.Handle())
 	source_v := uintptr(unsafe.Pointer(&source))
 	destination_v := uintptr(unsafe.Pointer(&destination))
 	copySize_v := uintptr(unsafe.Pointer(&copySize))
@@ -520,13 +819,14 @@ func (c *CommandEncoder) CopyBufferToTexture(source TexelCopyBufferInfo, destina
 }
 
 // CopyTextureToBuffer calls wgpuCommandEncoderCopyTextureToBuffer via syscall.
-func (c *CommandEncoder) CopyTextureToBuffer(source TexelCopyTextureInfo, destination TexelCopyBufferInfo, copySize Extent3D) {
+// Blocks until the operation completes.
+func (c CommandEncoder) CopyTextureToBuffer(source TexelCopyTextureInfo, destination TexelCopyBufferInfo, copySize Extent3D) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&source)
 	pinner.Pin(&destination)
 	pinner.Pin(&copySize)
-	c_v := uintptr(c.inner)
+	c_v := uintptr(c.Handle())
 	source_v := uintptr(unsafe.Pointer(&source))
 	destination_v := uintptr(unsafe.Pointer(&destination))
 	copySize_v := uintptr(unsafe.Pointer(&copySize))
@@ -534,13 +834,14 @@ func (c *CommandEncoder) CopyTextureToBuffer(source TexelCopyTextureInfo, destin
 }
 
 // CopyTextureToTexture calls wgpuCommandEncoderCopyTextureToTexture via syscall.
-func (c *CommandEncoder) CopyTextureToTexture(source TexelCopyTextureInfo, destination TexelCopyTextureInfo, copySize Extent3D) {
+// Blocks until the operation completes.
+func (c CommandEncoder) CopyTextureToTexture(source TexelCopyTextureInfo, destination TexelCopyTextureInfo, copySize Extent3D) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&source)
 	pinner.Pin(&destination)
 	pinner.Pin(&copySize)
-	c_v := uintptr(c.inner)
+	c_v := uintptr(c.Handle())
 	source_v := uintptr(unsafe.Pointer(&source))
 	destination_v := uintptr(unsafe.Pointer(&destination))
 	copySize_v := uintptr(unsafe.Pointer(&copySize))
@@ -548,112 +849,132 @@ func (c *CommandEncoder) CopyTextureToTexture(source TexelCopyTextureInfo, desti
 }
 
 // ClearBuffer calls wgpuCommandEncoderClearBuffer via syscall.
-func (c *CommandEncoder) ClearBuffer(buffer *Buffer, offset uint64, size uint64) {
-	c_v := uintptr(c.inner)
-	buffer_v := uintptr(buffer.inner)
+// Blocks until the operation completes.
+func (c CommandEncoder) ClearBuffer(buffer Buffer, offset uint64, size uint64) {
+	c_v := uintptr(c.Handle())
+	buffer_v := uintptr(buffer.Handle())
 	offset_v := uintptr(offset)
 	size_v := uintptr(size)
 	procCommandEncoderClearBuffer.Call(c_v, buffer_v, offset_v, size_v)
 }
 
 // InsertDebugMarker calls wgpuCommandEncoderInsertDebugMarker via syscall.
-func (c *CommandEncoder) InsertDebugMarker(markerLabel string) {
+// Blocks until the operation completes.
+func (c CommandEncoder) InsertDebugMarker(markerLabel string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_v := uintptr(c.inner)
+	c_v := uintptr(c.Handle())
 	markerLabel_sv := syscallStringView(markerLabel, &pinner)
 	markerLabel_v := uintptr(unsafe.Pointer(&markerLabel_sv))
 	procCommandEncoderInsertDebugMarker.Call(c_v, markerLabel_v)
 }
 
 // PopDebugGroup calls wgpuCommandEncoderPopDebugGroup via syscall.
-func (c *CommandEncoder) PopDebugGroup() {
-	c_v := uintptr(c.inner)
+// Blocks until the operation completes.
+func (c CommandEncoder) PopDebugGroup() {
+	c_v := uintptr(c.Handle())
 	procCommandEncoderPopDebugGroup.Call(c_v)
 }
 
 // PushDebugGroup calls wgpuCommandEncoderPushDebugGroup via syscall.
-func (c *CommandEncoder) PushDebugGroup(groupLabel string) {
+// Blocks until the operation completes.
+func (c CommandEncoder) PushDebugGroup(groupLabel string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_v := uintptr(c.inner)
+	c_v := uintptr(c.Handle())
 	groupLabel_sv := syscallStringView(groupLabel, &pinner)
 	groupLabel_v := uintptr(unsafe.Pointer(&groupLabel_sv))
 	procCommandEncoderPushDebugGroup.Call(c_v, groupLabel_v)
 }
 
 // ResolveQuerySet calls wgpuCommandEncoderResolveQuerySet via syscall.
-func (c *CommandEncoder) ResolveQuerySet(querySet *QuerySet, firstQuery uint32, queryCount uint32, destination *Buffer, destinationOffset uint64) {
-	c_v := uintptr(c.inner)
-	querySet_v := uintptr(querySet.inner)
+// Blocks until the operation completes.
+func (c CommandEncoder) ResolveQuerySet(querySet QuerySet, firstQuery uint32, queryCount uint32, destination Buffer, destinationOffset uint64) {
+	c_v := uintptr(c.Handle())
+	querySet_v := uintptr(querySet.Handle())
 	firstQuery_v := uintptr(firstQuery)
 	queryCount_v := uintptr(queryCount)
-	destination_v := uintptr(destination.inner)
+	destination_v := uintptr(destination.Handle())
 	destinationOffset_v := uintptr(destinationOffset)
 	procCommandEncoderResolveQuerySet.Call(c_v, querySet_v, firstQuery_v, queryCount_v, destination_v, destinationOffset_v)
 }
 
 // WriteTimestamp calls wgpuCommandEncoderWriteTimestamp via syscall.
-func (c *CommandEncoder) WriteTimestamp(querySet *QuerySet, queryIndex uint32) {
-	c_v := uintptr(c.inner)
-	querySet_v := uintptr(querySet.inner)
+// Blocks until the operation completes.
+func (c CommandEncoder) WriteTimestamp(querySet QuerySet, queryIndex uint32) {
+	c_v := uintptr(c.Handle())
+	querySet_v := uintptr(querySet.Handle())
 	queryIndex_v := uintptr(queryIndex)
 	procCommandEncoderWriteTimestamp.Call(c_v, querySet_v, queryIndex_v)
 }
 
 // SetLabel calls wgpuCommandEncoderSetLabel via syscall.
-func (c *CommandEncoder) SetLabel(label string) {
+// Blocks until the operation completes.
+func (c CommandEncoder) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_v := uintptr(c.inner)
+	c_v := uintptr(c.Handle())
 	label_sv := syscallStringView(label, &pinner)
 	label_v := uintptr(unsafe.Pointer(&label_sv))
 	procCommandEncoderSetLabel.Call(c_v, label_v)
 }
 
+// Release drops this handle's reference to the native CommandEncoder.
+// Do not use the handle after calling Release.
+func (c CommandEncoder) Release() {
+	if c != 0 {
+		releaseCommandEncoder(c.Handle())
+	}
+}
+
 // InsertDebugMarker calls wgpuComputePassEncoderInsertDebugMarker via syscall.
-func (c *ComputePassEncoder) InsertDebugMarker(markerLabel string) {
+// Blocks until the operation completes.
+func (c ComputePassEncoder) InsertDebugMarker(markerLabel string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_v := uintptr(c.inner)
+	c_v := uintptr(c.Handle())
 	markerLabel_sv := syscallStringView(markerLabel, &pinner)
 	markerLabel_v := uintptr(unsafe.Pointer(&markerLabel_sv))
 	procComputePassEncoderInsertDebugMarker.Call(c_v, markerLabel_v)
 }
 
 // PopDebugGroup calls wgpuComputePassEncoderPopDebugGroup via syscall.
-func (c *ComputePassEncoder) PopDebugGroup() {
-	c_v := uintptr(c.inner)
+// Blocks until the operation completes.
+func (c ComputePassEncoder) PopDebugGroup() {
+	c_v := uintptr(c.Handle())
 	procComputePassEncoderPopDebugGroup.Call(c_v)
 }
 
 // PushDebugGroup calls wgpuComputePassEncoderPushDebugGroup via syscall.
-func (c *ComputePassEncoder) PushDebugGroup(groupLabel string) {
+// Blocks until the operation completes.
+func (c ComputePassEncoder) PushDebugGroup(groupLabel string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_v := uintptr(c.inner)
+	c_v := uintptr(c.Handle())
 	groupLabel_sv := syscallStringView(groupLabel, &pinner)
 	groupLabel_v := uintptr(unsafe.Pointer(&groupLabel_sv))
 	procComputePassEncoderPushDebugGroup.Call(c_v, groupLabel_v)
 }
 
 // SetPipeline calls wgpuComputePassEncoderSetPipeline via syscall.
-func (c *ComputePassEncoder) SetPipeline(pipeline *ComputePipeline) {
-	c_v := uintptr(c.inner)
-	pipeline_v := uintptr(pipeline.inner)
+// Blocks until the operation completes.
+func (c ComputePassEncoder) SetPipeline(pipeline ComputePipeline) {
+	c_v := uintptr(c.Handle())
+	pipeline_v := uintptr(pipeline.Handle())
 	procComputePassEncoderSetPipeline.Call(c_v, pipeline_v)
 }
 
 // SetBindGroup calls wgpuComputePassEncoderSetBindGroup via syscall.
-func (c *ComputePassEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, dynamicOffsets []uint32) {
+// Blocks until the operation completes.
+func (c ComputePassEncoder) SetBindGroup(groupIndex uint32, group BindGroup, dynamicOffsets []uint32) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	if len(dynamicOffsets) > 0 {
 		pinner.Pin(&dynamicOffsets[0])
 	}
-	c_v := uintptr(c.inner)
+	c_v := uintptr(c.Handle())
 	groupIndex_v := uintptr(groupIndex)
-	group_v := uintptr(group.inner)
+	group_v := uintptr(group.Handle())
 	var dynamicOffsets_ptr uintptr
 	if len(dynamicOffsets) > 0 {
 		dynamicOffsets_ptr = uintptr(unsafe.Pointer(&dynamicOffsets[0]))
@@ -663,8 +984,9 @@ func (c *ComputePassEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, d
 }
 
 // SetImmediates calls wgpuComputePassEncoderSetImmediates via syscall.
-func (c *ComputePassEncoder) SetImmediates(offset uint32, data unsafe.Pointer, size uintptr) {
-	c_v := uintptr(c.inner)
+// Blocks until the operation completes.
+func (c ComputePassEncoder) SetImmediates(offset uint32, data unsafe.Pointer, size uintptr) {
+	c_v := uintptr(c.Handle())
 	offset_v := uintptr(offset)
 	data_v := uintptr(data)
 	size_v := uintptr(size)
@@ -672,8 +994,9 @@ func (c *ComputePassEncoder) SetImmediates(offset uint32, data unsafe.Pointer, s
 }
 
 // DispatchWorkgroups calls wgpuComputePassEncoderDispatchWorkgroups via syscall.
-func (c *ComputePassEncoder) DispatchWorkgroups(workgroupCountX uint32, workgroupCountY uint32, workgroupCountZ uint32) {
-	c_v := uintptr(c.inner)
+// Blocks until the operation completes.
+func (c ComputePassEncoder) DispatchWorkgroups(workgroupCountX uint32, workgroupCountY uint32, workgroupCountZ uint32) {
+	c_v := uintptr(c.Handle())
 	workgroupCountX_v := uintptr(workgroupCountX)
 	workgroupCountY_v := uintptr(workgroupCountY)
 	workgroupCountZ_v := uintptr(workgroupCountZ)
@@ -681,114 +1004,173 @@ func (c *ComputePassEncoder) DispatchWorkgroups(workgroupCountX uint32, workgrou
 }
 
 // DispatchWorkgroupsIndirect calls wgpuComputePassEncoderDispatchWorkgroupsIndirect via syscall.
-func (c *ComputePassEncoder) DispatchWorkgroupsIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
-	c_v := uintptr(c.inner)
-	indirectBuffer_v := uintptr(indirectBuffer.inner)
+// Blocks until the operation completes.
+func (c ComputePassEncoder) DispatchWorkgroupsIndirect(indirectBuffer Buffer, indirectOffset uint64) {
+	c_v := uintptr(c.Handle())
+	indirectBuffer_v := uintptr(indirectBuffer.Handle())
 	indirectOffset_v := uintptr(indirectOffset)
 	procComputePassEncoderDispatchWorkgroupsIndirect.Call(c_v, indirectBuffer_v, indirectOffset_v)
 }
 
 // End calls wgpuComputePassEncoderEnd via syscall.
-func (c *ComputePassEncoder) End() {
-	c_v := uintptr(c.inner)
+// Blocks until the operation completes.
+func (c ComputePassEncoder) End() {
+	c_v := uintptr(c.Handle())
 	procComputePassEncoderEnd.Call(c_v)
 }
 
 // SetLabel calls wgpuComputePassEncoderSetLabel via syscall.
-func (c *ComputePassEncoder) SetLabel(label string) {
+// Blocks until the operation completes.
+func (c ComputePassEncoder) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_v := uintptr(c.inner)
+	c_v := uintptr(c.Handle())
 	label_sv := syscallStringView(label, &pinner)
 	label_v := uintptr(unsafe.Pointer(&label_sv))
 	procComputePassEncoderSetLabel.Call(c_v, label_v)
 }
 
+// Release drops this handle's reference to the native ComputePassEncoder.
+// Do not use the handle after calling Release.
+func (c ComputePassEncoder) Release() {
+	if c != 0 {
+		releaseComputePassEncoder(c.Handle())
+	}
+}
+
 // GetBindGroupLayout calls wgpuComputePipelineGetBindGroupLayout via syscall.
-func (c *ComputePipeline) GetBindGroupLayout(groupIndex uint32) *BindGroupLayout {
-	c_v := uintptr(c.inner)
+// Blocks until the operation completes.
+func (c ComputePipeline) GetBindGroupLayout(groupIndex uint32) (BindGroupLayout, error) {
+	c_v := uintptr(c.Handle())
 	groupIndex_v := uintptr(groupIndex)
 	r1, _, _ := procComputePipelineGetBindGroupLayout.Call(c_v, groupIndex_v)
-	return &BindGroupLayout{inner: r1}
+	_result := BindGroupLayout(r1)
+	if _result == 0 {
+		return 0, newError("ComputePipeline.GetBindGroupLayout", "", 0)
+	}
+	return _result, nil
 }
 
 // SetLabel calls wgpuComputePipelineSetLabel via syscall.
-func (c *ComputePipeline) SetLabel(label string) {
+// Blocks until the operation completes.
+func (c ComputePipeline) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	c_v := uintptr(c.inner)
+	c_v := uintptr(c.Handle())
 	label_sv := syscallStringView(label, &pinner)
 	label_v := uintptr(unsafe.Pointer(&label_sv))
 	procComputePipelineSetLabel.Call(c_v, label_v)
 }
 
+// Release drops this handle's reference to the native ComputePipeline.
+// Do not use the handle after calling Release.
+func (c ComputePipeline) Release() {
+	if c != 0 {
+		releaseComputePipeline(c.Handle())
+	}
+}
+
 // CreateBindGroup calls wgpuDeviceCreateBindGroup via syscall.
-func (d *Device) CreateBindGroup(descriptor BindGroupDescriptor) *BindGroup {
+// Blocks until the operation completes.
+func (d Device) CreateBindGroup(descriptor BindGroupDescriptor) (BindGroup, error) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
 	if descriptor.Entries != nil {
 		pinner.Pin(descriptor.Entries)
 	}
-	d_v := uintptr(d.inner)
+	d_v := uintptr(d.Handle())
 	descriptor_v := uintptr(unsafe.Pointer(&descriptor))
 	r1, _, _ := procDeviceCreateBindGroup.Call(d_v, descriptor_v)
-	return &BindGroup{inner: r1}
+	_result := BindGroup(r1)
+	if _result == 0 {
+		return 0, newError("Device.CreateBindGroup", "", 0)
+	}
+	return _result, nil
 }
 
 // CreateBindGroupLayout calls wgpuDeviceCreateBindGroupLayout via syscall.
-func (d *Device) CreateBindGroupLayout(descriptor BindGroupLayoutDescriptor) *BindGroupLayout {
+// Blocks until the operation completes.
+func (d Device) CreateBindGroupLayout(descriptor BindGroupLayoutDescriptor) (BindGroupLayout, error) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
 	if descriptor.Entries != nil {
 		pinner.Pin(descriptor.Entries)
 	}
-	d_v := uintptr(d.inner)
+	d_v := uintptr(d.Handle())
 	descriptor_v := uintptr(unsafe.Pointer(&descriptor))
 	r1, _, _ := procDeviceCreateBindGroupLayout.Call(d_v, descriptor_v)
-	return &BindGroupLayout{inner: r1}
+	_result := BindGroupLayout(r1)
+	if _result == 0 {
+		return 0, newError("Device.CreateBindGroupLayout", "", 0)
+	}
+	return _result, nil
 }
 
 // CreateBuffer calls wgpuDeviceCreateBuffer via syscall.
-func (d *Device) CreateBuffer(descriptor BufferDescriptor) *Buffer {
+// Blocks until the operation completes.
+func (d Device) CreateBuffer(descriptor BufferDescriptor) (Buffer, error) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
-	d_v := uintptr(d.inner)
+	d_v := uintptr(d.Handle())
 	descriptor_v := uintptr(unsafe.Pointer(&descriptor))
 	r1, _, _ := procDeviceCreateBuffer.Call(d_v, descriptor_v)
-	return &Buffer{inner: r1}
+	_result := Buffer(r1)
+	if _result == 0 {
+		return 0, newError("Device.CreateBuffer", "", 0)
+	}
+	return _result, nil
 }
 
 // CreateCommandEncoder calls wgpuDeviceCreateCommandEncoder via syscall.
-func (d *Device) CreateCommandEncoder(descriptor CommandEncoderDescriptor) *CommandEncoder {
+// Blocks until the operation completes.
+func (d Device) CreateCommandEncoder(descriptor CommandEncoderDescriptor) (CommandEncoder, error) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
-	d_v := uintptr(d.inner)
+	d_v := uintptr(d.Handle())
 	descriptor_v := uintptr(unsafe.Pointer(&descriptor))
 	r1, _, _ := procDeviceCreateCommandEncoder.Call(d_v, descriptor_v)
-	return &CommandEncoder{inner: r1}
+	_result := CommandEncoder(r1)
+	if _result == 0 {
+		return 0, newError("Device.CreateCommandEncoder", "", 0)
+	}
+	return _result, nil
 }
 
 // CreateComputePipeline calls wgpuDeviceCreateComputePipeline via syscall.
-func (d *Device) CreateComputePipeline(descriptor ComputePipelineDescriptor) *ComputePipeline {
+// Blocks until the operation completes.
+func (d Device) CreateComputePipeline(descriptor ComputePipelineDescriptor) (ComputePipeline, error) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
-	d_v := uintptr(d.inner)
+	d_v := uintptr(d.Handle())
 	descriptor_v := uintptr(unsafe.Pointer(&descriptor))
 	r1, _, _ := procDeviceCreateComputePipeline.Call(d_v, descriptor_v)
-	return &ComputePipeline{inner: r1}
+	_result := ComputePipeline(r1)
+	if _result == 0 {
+		return 0, newError("Device.CreateComputePipeline", "", 0)
+	}
+	return _result, nil
 }
 
 // CreateComputePipelineAsync calls wgpuDeviceCreateComputePipelineAsync via syscall.
-func (d *Device) CreateComputePipelineAsync(descriptor ComputePipelineDescriptor, callback CreateComputePipelineAsyncFn) Future {
+// Blocks until the operation completes.
+func (d Device) CreateComputePipelineAsync(descriptor ComputePipelineDescriptor) (ComputePipeline, error) {
+	type _res struct {
+		r0  ComputePipeline
+		err error
+	}
+	_ch := make(chan _res, 1)
+	callback := CreateComputePipelineAsyncFn(func(r0 ComputePipeline, err error) {
+		_ch <- _res{r0, err}
+	})
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
-	d_v := uintptr(d.inner)
+	d_v := uintptr(d.Handle())
 	descriptor_v := uintptr(unsafe.Pointer(&descriptor))
 	_cbInfo := struct {
 		next     uintptr
@@ -798,42 +1180,83 @@ func (d *Device) CreateComputePipelineAsync(descriptor ComputePipelineDescriptor
 		ud2      uintptr
 	}{}
 	_cbInfo.mode = uint32(CallbackModeAllowProcessEvents)
+	_cbInfo.callback = syscall.NewCallback(func(c_status, c_pipeline, c_message, ud1, ud2 uintptr) {
+		var pipeline ComputePipeline
+		if c_pipeline != 0 {
+			pipeline = ComputePipeline(c_pipeline)
+		}
+		var s string
+		if c_message != 0 {
+			sv := (*wgpuStringView)(unsafe.Pointer(c_message))
+			if sv.data != nil && sv.length > 0 {
+				s = unsafe.String(sv.data, int(sv.length))
+			}
+		}
+		if fn := callback; fn != nil {
+			var err error
+			if CreatePipelineAsyncStatus(c_status) != CreatePipelineAsyncStatusSuccess {
+				err = newError("Device.CreateComputePipelineAsync", s, uint32(c_status))
+			}
+			fn(pipeline, err)
+		}
+	})
 	_cbInfo_v := uintptr(unsafe.Pointer(&_cbInfo))
 	r1, _, _ := procDeviceCreateComputePipelineAsync.Call(d_v, descriptor_v, _cbInfo_v)
-	return Future{Id: uint64(r1)}
+	_ = r1
+	_out := waitRecv(_ch)
+	return _out.r0, _out.err
 }
 
 // CreatePipelineLayout calls wgpuDeviceCreatePipelineLayout via syscall.
-func (d *Device) CreatePipelineLayout(descriptor PipelineLayoutDescriptor) *PipelineLayout {
+// Blocks until the operation completes.
+func (d Device) CreatePipelineLayout(descriptor PipelineLayoutDescriptor) (PipelineLayout, error) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
 	if descriptor.BindGroupLayouts != nil {
 		pinner.Pin(descriptor.BindGroupLayouts)
 	}
-	d_v := uintptr(d.inner)
+	d_v := uintptr(d.Handle())
 	descriptor_v := uintptr(unsafe.Pointer(&descriptor))
 	r1, _, _ := procDeviceCreatePipelineLayout.Call(d_v, descriptor_v)
-	return &PipelineLayout{inner: r1}
+	_result := PipelineLayout(r1)
+	if _result == 0 {
+		return 0, newError("Device.CreatePipelineLayout", "", 0)
+	}
+	return _result, nil
 }
 
 // CreateQuerySet calls wgpuDeviceCreateQuerySet via syscall.
-func (d *Device) CreateQuerySet(descriptor QuerySetDescriptor) *QuerySet {
+// Blocks until the operation completes.
+func (d Device) CreateQuerySet(descriptor QuerySetDescriptor) (QuerySet, error) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
-	d_v := uintptr(d.inner)
+	d_v := uintptr(d.Handle())
 	descriptor_v := uintptr(unsafe.Pointer(&descriptor))
 	r1, _, _ := procDeviceCreateQuerySet.Call(d_v, descriptor_v)
-	return &QuerySet{inner: r1}
+	_result := QuerySet(r1)
+	if _result == 0 {
+		return 0, newError("Device.CreateQuerySet", "", 0)
+	}
+	return _result, nil
 }
 
 // CreateRenderPipelineAsync calls wgpuDeviceCreateRenderPipelineAsync via syscall.
-func (d *Device) CreateRenderPipelineAsync(descriptor RenderPipelineDescriptor, callback CreateRenderPipelineAsyncFn) Future {
+// Blocks until the operation completes.
+func (d Device) CreateRenderPipelineAsync(descriptor RenderPipelineDescriptor) (RenderPipeline, error) {
+	type _res struct {
+		r0  RenderPipeline
+		err error
+	}
+	_ch := make(chan _res, 1)
+	callback := CreateRenderPipelineAsyncFn(func(r0 RenderPipeline, err error) {
+		_ch <- _res{r0, err}
+	})
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
-	d_v := uintptr(d.inner)
+	d_v := uintptr(d.Handle())
 	descriptor_v := uintptr(unsafe.Pointer(&descriptor))
 	_cbInfo := struct {
 		next     uintptr
@@ -843,145 +1266,219 @@ func (d *Device) CreateRenderPipelineAsync(descriptor RenderPipelineDescriptor, 
 		ud2      uintptr
 	}{}
 	_cbInfo.mode = uint32(CallbackModeAllowProcessEvents)
+	_cbInfo.callback = syscall.NewCallback(func(c_status, c_pipeline, c_message, ud1, ud2 uintptr) {
+		var pipeline RenderPipeline
+		if c_pipeline != 0 {
+			pipeline = RenderPipeline(c_pipeline)
+		}
+		var s string
+		if c_message != 0 {
+			sv := (*wgpuStringView)(unsafe.Pointer(c_message))
+			if sv.data != nil && sv.length > 0 {
+				s = unsafe.String(sv.data, int(sv.length))
+			}
+		}
+		if fn := callback; fn != nil {
+			var err error
+			if CreatePipelineAsyncStatus(c_status) != CreatePipelineAsyncStatusSuccess {
+				err = newError("Device.CreateRenderPipelineAsync", s, uint32(c_status))
+			}
+			fn(pipeline, err)
+		}
+	})
 	_cbInfo_v := uintptr(unsafe.Pointer(&_cbInfo))
 	r1, _, _ := procDeviceCreateRenderPipelineAsync.Call(d_v, descriptor_v, _cbInfo_v)
-	return Future{Id: uint64(r1)}
+	_ = r1
+	_out := waitRecv(_ch)
+	return _out.r0, _out.err
 }
 
 // CreateRenderBundleEncoder calls wgpuDeviceCreateRenderBundleEncoder via syscall.
-func (d *Device) CreateRenderBundleEncoder(descriptor RenderBundleEncoderDescriptor) *RenderBundleEncoder {
+// Blocks until the operation completes.
+func (d Device) CreateRenderBundleEncoder(descriptor RenderBundleEncoderDescriptor) (RenderBundleEncoder, error) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
 	if descriptor.ColorFormats != nil {
 		pinner.Pin(descriptor.ColorFormats)
 	}
-	d_v := uintptr(d.inner)
+	d_v := uintptr(d.Handle())
 	descriptor_v := uintptr(unsafe.Pointer(&descriptor))
 	r1, _, _ := procDeviceCreateRenderBundleEncoder.Call(d_v, descriptor_v)
-	return &RenderBundleEncoder{inner: r1}
+	_result := RenderBundleEncoder(r1)
+	if _result == 0 {
+		return 0, newError("Device.CreateRenderBundleEncoder", "", 0)
+	}
+	return _result, nil
 }
 
 // CreateRenderPipeline calls wgpuDeviceCreateRenderPipeline via syscall.
-func (d *Device) CreateRenderPipeline(descriptor RenderPipelineDescriptor) *RenderPipeline {
+// Blocks until the operation completes.
+func (d Device) CreateRenderPipeline(descriptor RenderPipelineDescriptor) (RenderPipeline, error) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
-	d_v := uintptr(d.inner)
+	d_v := uintptr(d.Handle())
 	descriptor_v := uintptr(unsafe.Pointer(&descriptor))
 	r1, _, _ := procDeviceCreateRenderPipeline.Call(d_v, descriptor_v)
-	return &RenderPipeline{inner: r1}
+	_result := RenderPipeline(r1)
+	if _result == 0 {
+		return 0, newError("Device.CreateRenderPipeline", "", 0)
+	}
+	return _result, nil
 }
 
 // CreateSampler calls wgpuDeviceCreateSampler via syscall.
-func (d *Device) CreateSampler(descriptor SamplerDescriptor) *Sampler {
+// Blocks until the operation completes.
+func (d Device) CreateSampler(descriptor SamplerDescriptor) (Sampler, error) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
-	d_v := uintptr(d.inner)
+	d_v := uintptr(d.Handle())
 	descriptor_v := uintptr(unsafe.Pointer(&descriptor))
 	r1, _, _ := procDeviceCreateSampler.Call(d_v, descriptor_v)
-	return &Sampler{inner: r1}
+	_result := Sampler(r1)
+	if _result == 0 {
+		return 0, newError("Device.CreateSampler", "", 0)
+	}
+	return _result, nil
 }
 
 // CreateShaderModule calls wgpuDeviceCreateShaderModule via syscall.
-func (d *Device) CreateShaderModule(descriptor ShaderModuleDescriptor) *ShaderModule {
+// Blocks until the operation completes.
+func (d Device) CreateShaderModule(descriptor ShaderModuleDescriptor) (ShaderModule, error) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
-	d_v := uintptr(d.inner)
+	d_v := uintptr(d.Handle())
 	descriptor_v := uintptr(unsafe.Pointer(&descriptor))
 	r1, _, _ := procDeviceCreateShaderModule.Call(d_v, descriptor_v)
-	return &ShaderModule{inner: r1}
+	_result := ShaderModule(r1)
+	if _result == 0 {
+		return 0, newError("Device.CreateShaderModule", "", 0)
+	}
+	return _result, nil
 }
 
 // CreateTexture calls wgpuDeviceCreateTexture via syscall.
-func (d *Device) CreateTexture(descriptor TextureDescriptor) *Texture {
+// Blocks until the operation completes.
+func (d Device) CreateTexture(descriptor TextureDescriptor) (Texture, error) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
 	if descriptor.ViewFormats != nil {
 		pinner.Pin(descriptor.ViewFormats)
 	}
-	d_v := uintptr(d.inner)
+	d_v := uintptr(d.Handle())
 	descriptor_v := uintptr(unsafe.Pointer(&descriptor))
 	r1, _, _ := procDeviceCreateTexture.Call(d_v, descriptor_v)
-	return &Texture{inner: r1}
+	_result := Texture(r1)
+	if _result == 0 {
+		return 0, newError("Device.CreateTexture", "", 0)
+	}
+	return _result, nil
 }
 
 // Destroy calls wgpuDeviceDestroy via syscall.
-func (d *Device) Destroy() {
-	d_v := uintptr(d.inner)
+// Blocks until the operation completes.
+func (d Device) Destroy() {
+	d_v := uintptr(d.Handle())
 	procDeviceDestroy.Call(d_v)
 }
 
 // GetLostFuture calls wgpuDeviceGetLostFuture via syscall.
-func (d *Device) GetLostFuture() Future {
-	d_v := uintptr(d.inner)
+// Blocks until the operation completes.
+func (d Device) GetLostFuture() Future {
+	d_v := uintptr(d.Handle())
 	r1, _, _ := procDeviceGetLostFuture.Call(d_v)
 	return Future{Id: uint64(r1)}
 }
 
 // GetLimits calls wgpuDeviceGetLimits via syscall.
-func (d *Device) GetLimits(limits Limits) Status {
+// Blocks until the operation completes.
+func (d Device) GetLimits(limits Limits) error {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&limits)
-	d_v := uintptr(d.inner)
+	d_v := uintptr(d.Handle())
 	limits_v := uintptr(unsafe.Pointer(&limits))
 	r1, _, _ := procDeviceGetLimits.Call(d_v, limits_v)
-	return (Status)(r1)
+	if Status(r1) != StatusSuccess {
+		return newError("Device.GetLimits", "", uint32(r1))
+	}
+	return nil
 }
 
 // HasFeature calls wgpuDeviceHasFeature via syscall.
-func (d *Device) HasFeature(feature FeatureName) bool {
-	d_v := uintptr(d.inner)
+// Blocks until the operation completes.
+func (d Device) HasFeature(feature FeatureName) bool {
+	d_v := uintptr(d.Handle())
 	feature_v := uintptr(feature)
 	r1, _, _ := procDeviceHasFeature.Call(d_v, feature_v)
 	return r1 != 0
 }
 
 // GetFeatures calls wgpuDeviceGetFeatures via syscall.
-func (d *Device) GetFeatures(features SupportedFeatures) {
+// Blocks until the operation completes.
+func (d Device) GetFeatures(features SupportedFeatures) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&features)
 	if features.Features != nil {
 		pinner.Pin(features.Features)
 	}
-	d_v := uintptr(d.inner)
+	d_v := uintptr(d.Handle())
 	features_v := uintptr(unsafe.Pointer(&features))
 	procDeviceGetFeatures.Call(d_v, features_v)
 }
 
 // GetAdapterInfo calls wgpuDeviceGetAdapterInfo via syscall.
-func (d *Device) GetAdapterInfo(adapterInfo AdapterInfo) Status {
+// Blocks until the operation completes.
+func (d Device) GetAdapterInfo(adapterInfo AdapterInfo) error {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&adapterInfo)
-	d_v := uintptr(d.inner)
+	d_v := uintptr(d.Handle())
 	adapterInfo_v := uintptr(unsafe.Pointer(&adapterInfo))
 	r1, _, _ := procDeviceGetAdapterInfo.Call(d_v, adapterInfo_v)
-	return (Status)(r1)
+	if Status(r1) != StatusSuccess {
+		return newError("Device.GetAdapterInfo", "", uint32(r1))
+	}
+	return nil
 }
 
 // GetQueue calls wgpuDeviceGetQueue via syscall.
-func (d *Device) GetQueue() *Queue {
-	d_v := uintptr(d.inner)
+// Blocks until the operation completes.
+func (d Device) GetQueue() (Queue, error) {
+	d_v := uintptr(d.Handle())
 	r1, _, _ := procDeviceGetQueue.Call(d_v)
-	return &Queue{inner: r1}
+	_result := Queue(r1)
+	if _result == 0 {
+		return 0, newError("Device.GetQueue", "", 0)
+	}
+	return _result, nil
 }
 
 // PushErrorScope calls wgpuDevicePushErrorScope via syscall.
-func (d *Device) PushErrorScope(filter ErrorFilter) {
-	d_v := uintptr(d.inner)
+// Blocks until the operation completes.
+func (d Device) PushErrorScope(filter ErrorFilter) {
+	d_v := uintptr(d.Handle())
 	filter_v := uintptr(filter)
 	procDevicePushErrorScope.Call(d_v, filter_v)
 }
 
 // PopErrorScope calls wgpuDevicePopErrorScope via syscall.
-func (d *Device) PopErrorScope(callback PopErrorScopeFn) Future {
-	d_v := uintptr(d.inner)
+// Blocks until the operation completes.
+func (d Device) PopErrorScope() (ErrorType, error) {
+	type _res struct {
+		r0  ErrorType
+		err error
+	}
+	_ch := make(chan _res, 1)
+	callback := PopErrorScopeFn(func(r0 ErrorType, err error) {
+		_ch <- _res{r0, err}
+	})
+	d_v := uintptr(d.Handle())
 	_cbInfo := struct {
 		next     uintptr
 		mode     uint32
@@ -990,75 +1487,129 @@ func (d *Device) PopErrorScope(callback PopErrorScopeFn) Future {
 		ud2      uintptr
 	}{}
 	_cbInfo.mode = uint32(CallbackModeAllowProcessEvents)
+	_cbInfo.callback = syscall.NewCallback(func(c_status, c_typeVal, c_message, ud1, ud2 uintptr) {
+		typeVal := ErrorType(c_typeVal)
+		var s string
+		if c_message != 0 {
+			sv := (*wgpuStringView)(unsafe.Pointer(c_message))
+			if sv.data != nil && sv.length > 0 {
+				s = unsafe.String(sv.data, int(sv.length))
+			}
+		}
+		if fn := callback; fn != nil {
+			var err error
+			if PopErrorScopeStatus(c_status) != PopErrorScopeStatusSuccess {
+				err = newError("Device.PopErrorScope", s, uint32(c_status))
+			}
+			fn(typeVal, err)
+		}
+	})
 	_cbInfo_v := uintptr(unsafe.Pointer(&_cbInfo))
 	r1, _, _ := procDevicePopErrorScope.Call(d_v, _cbInfo_v)
-	return Future{Id: uint64(r1)}
+	_ = r1
+	_out := waitRecv(_ch)
+	return _out.r0, _out.err
 }
 
 // SetLabel calls wgpuDeviceSetLabel via syscall.
-func (d *Device) SetLabel(label string) {
+// Blocks until the operation completes.
+func (d Device) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	d_v := uintptr(d.inner)
+	d_v := uintptr(d.Handle())
 	label_sv := syscallStringView(label, &pinner)
 	label_v := uintptr(unsafe.Pointer(&label_sv))
 	procDeviceSetLabel.Call(d_v, label_v)
 }
 
+// Release drops this handle's reference to the native Device.
+// Do not use the handle after calling Release.
+func (d Device) Release() {
+	if d != 0 {
+		releaseDevice(d.Handle())
+	}
+}
+
 // SetLabel calls wgpuExternalTextureSetLabel via syscall.
-func (e *ExternalTexture) SetLabel(label string) {
+// Blocks until the operation completes.
+func (e ExternalTexture) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	e_v := uintptr(e.inner)
+	e_v := uintptr(e.Handle())
 	label_sv := syscallStringView(label, &pinner)
 	label_v := uintptr(unsafe.Pointer(&label_sv))
 	procExternalTextureSetLabel.Call(e_v, label_v)
 }
 
+// Release drops this handle's reference to the native ExternalTexture.
+// Do not use the handle after calling Release.
+func (e ExternalTexture) Release() {
+	if e != 0 {
+		releaseExternalTexture(e.Handle())
+	}
+}
+
 // CreateSurface calls wgpuInstanceCreateSurface via syscall.
-func (i *Instance) CreateSurface(descriptor SurfaceDescriptor) *Surface {
+// Blocks until the operation completes.
+func (i Instance) CreateSurface(descriptor SurfaceDescriptor) (Surface, error) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
-	i_v := uintptr(i.inner)
+	i_v := uintptr(i.Handle())
 	descriptor_v := uintptr(unsafe.Pointer(&descriptor))
 	r1, _, _ := procInstanceCreateSurface.Call(i_v, descriptor_v)
-	return &Surface{inner: r1}
+	_result := Surface(r1)
+	if _result == 0 {
+		return 0, newError("Instance.CreateSurface", "", 0)
+	}
+	return _result, nil
 }
 
 // GetWGSLLanguageFeatures calls wgpuInstanceGetWGSLLanguageFeatures via syscall.
-func (i *Instance) GetWGSLLanguageFeatures(features SupportedWGSLLanguageFeatures) {
+// Blocks until the operation completes.
+func (i Instance) GetWGSLLanguageFeatures(features SupportedWGSLLanguageFeatures) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&features)
 	if features.Features != nil {
 		pinner.Pin(features.Features)
 	}
-	i_v := uintptr(i.inner)
+	i_v := uintptr(i.Handle())
 	features_v := uintptr(unsafe.Pointer(&features))
 	procInstanceGetWGSLLanguageFeatures.Call(i_v, features_v)
 }
 
 // HasWGSLLanguageFeature calls wgpuInstanceHasWGSLLanguageFeature via syscall.
-func (i *Instance) HasWGSLLanguageFeature(feature WGSLLanguageFeatureName) bool {
-	i_v := uintptr(i.inner)
+// Blocks until the operation completes.
+func (i Instance) HasWGSLLanguageFeature(feature WGSLLanguageFeatureName) bool {
+	i_v := uintptr(i.Handle())
 	feature_v := uintptr(feature)
 	r1, _, _ := procInstanceHasWGSLLanguageFeature.Call(i_v, feature_v)
 	return r1 != 0
 }
 
 // ProcessEvents calls wgpuInstanceProcessEvents via syscall.
-func (i *Instance) ProcessEvents() {
-	i_v := uintptr(i.inner)
+// Blocks until the operation completes.
+func (i Instance) ProcessEvents() {
+	i_v := uintptr(i.Handle())
 	procInstanceProcessEvents.Call(i_v)
 }
 
 // RequestAdapter calls wgpuInstanceRequestAdapter via syscall.
-func (i *Instance) RequestAdapter(options RequestAdapterOptions, callback RequestAdapterFn) Future {
+// Blocks until the operation completes.
+func (i Instance) RequestAdapter(options RequestAdapterOptions) (Adapter, error) {
+	type _res struct {
+		r0  Adapter
+		err error
+	}
+	_ch := make(chan _res, 1)
+	callback := RequestAdapterFn(func(r0 Adapter, err error) {
+		_ch <- _res{r0, err}
+	})
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&options)
-	i_v := uintptr(i.inner)
+	i_v := uintptr(i.Handle())
 	options_v := uintptr(unsafe.Pointer(&options))
 	_cbInfo := struct {
 		next     uintptr
@@ -1068,91 +1619,132 @@ func (i *Instance) RequestAdapter(options RequestAdapterOptions, callback Reques
 		ud2      uintptr
 	}{}
 	_cbInfo.mode = uint32(CallbackModeAllowProcessEvents)
-	_cbInfo.callback = syscall.NewCallback(func(status, adapter, msg, ud1, ud2 uintptr) {
+	_cbInfo.callback = syscall.NewCallback(func(c_status, c_adapter, c_message, ud1, ud2 uintptr) {
+		var adapter Adapter
+		if c_adapter != 0 {
+			adapter = Adapter(c_adapter)
+		}
 		var s string
-		if msg != 0 {
-			sv := (*wgpuStringView)(unsafe.Pointer(msg))
+		if c_message != 0 {
+			sv := (*wgpuStringView)(unsafe.Pointer(c_message))
 			if sv.data != nil && sv.length > 0 {
 				s = unsafe.String(sv.data, int(sv.length))
 			}
 		}
-		var h *Adapter
-		if adapter != 0 {
-			h = &Adapter{inner: adapter}
-		}
 		if fn := callback; fn != nil {
-			fn(RequestAdapterStatus(status), h, s)
+			var err error
+			if RequestAdapterStatus(c_status) != RequestAdapterStatusSuccess {
+				err = newError("Instance.RequestAdapter", s, uint32(c_status))
+			}
+			fn(adapter, err)
 		}
 	})
 	_cbInfo_v := uintptr(unsafe.Pointer(&_cbInfo))
 	r1, _, _ := procInstanceRequestAdapter.Call(i_v, options_v, _cbInfo_v)
-	return Future{Id: uint64(r1)}
+	_ = r1
+	_out := waitRecv(_ch)
+	return _out.r0, _out.err
 }
 
 // WaitAny calls wgpuInstanceWaitAny via syscall.
-func (i *Instance) WaitAny(futureCount uintptr, futures FutureWaitInfo, timeoutNS uint64) WaitStatus {
+// Blocks until the operation completes.
+func (i Instance) WaitAny(futureCount uintptr, futures FutureWaitInfo, timeoutNS uint64) error {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&futures)
-	i_v := uintptr(i.inner)
+	i_v := uintptr(i.Handle())
 	futureCount_v := uintptr(futureCount)
 	futures_v := uintptr(unsafe.Pointer(&futures))
 	timeoutNS_v := uintptr(timeoutNS)
 	r1, _, _ := procInstanceWaitAny.Call(i_v, futureCount_v, futures_v, timeoutNS_v)
-	return (WaitStatus)(r1)
+	if WaitStatus(r1) != WaitStatusSuccess {
+		return newError("Instance.WaitAny", "", uint32(r1))
+	}
+	return nil
+}
+
+// Release drops this handle's reference to the native Instance.
+// Do not use the handle after calling Release.
+func (i Instance) Release() {
+	if i != 0 {
+		removeInstance(i)
+		releaseInstance(i.Handle())
+	}
 }
 
 // SetLabel calls wgpuPipelineLayoutSetLabel via syscall.
-func (p *PipelineLayout) SetLabel(label string) {
+// Blocks until the operation completes.
+func (p PipelineLayout) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	p_v := uintptr(p.inner)
+	p_v := uintptr(p.Handle())
 	label_sv := syscallStringView(label, &pinner)
 	label_v := uintptr(unsafe.Pointer(&label_sv))
 	procPipelineLayoutSetLabel.Call(p_v, label_v)
 }
 
+// Release drops this handle's reference to the native PipelineLayout.
+// Do not use the handle after calling Release.
+func (p PipelineLayout) Release() {
+	if p != 0 {
+		releasePipelineLayout(p.Handle())
+	}
+}
+
 // SetLabel calls wgpuQuerySetSetLabel via syscall.
-func (q *QuerySet) SetLabel(label string) {
+// Blocks until the operation completes.
+func (q QuerySet) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	q_v := uintptr(q.inner)
+	q_v := uintptr(q.Handle())
 	label_sv := syscallStringView(label, &pinner)
 	label_v := uintptr(unsafe.Pointer(&label_sv))
 	procQuerySetSetLabel.Call(q_v, label_v)
 }
 
 // GetType calls wgpuQuerySetGetType via syscall.
-func (q *QuerySet) GetType() QueryType {
-	q_v := uintptr(q.inner)
+// Blocks until the operation completes.
+func (q QuerySet) GetType() QueryType {
+	q_v := uintptr(q.Handle())
 	r1, _, _ := procQuerySetGetType.Call(q_v)
 	return (QueryType)(r1)
 }
 
 // GetCount calls wgpuQuerySetGetCount via syscall.
-func (q *QuerySet) GetCount() uint32 {
-	q_v := uintptr(q.inner)
+// Blocks until the operation completes.
+func (q QuerySet) GetCount() uint32 {
+	q_v := uintptr(q.Handle())
 	r1, _, _ := procQuerySetGetCount.Call(q_v)
 	return (uint32)(r1)
 }
 
 // Destroy calls wgpuQuerySetDestroy via syscall.
-func (q *QuerySet) Destroy() {
-	q_v := uintptr(q.inner)
+// Blocks until the operation completes.
+func (q QuerySet) Destroy() {
+	q_v := uintptr(q.Handle())
 	procQuerySetDestroy.Call(q_v)
 }
 
+// Release drops this handle's reference to the native QuerySet.
+// Do not use the handle after calling Release.
+func (q QuerySet) Release() {
+	if q != 0 {
+		releaseQuerySet(q.Handle())
+	}
+}
+
 // Submit calls wgpuQueueSubmit via syscall.
-func (q *Queue) Submit(commands []*CommandBuffer) {
+// Blocks until the operation completes.
+func (q Queue) Submit(commands []CommandBuffer) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	if len(commands) > 0 {
 		pinner.Pin(&commands[0])
 	}
-	q_v := uintptr(q.inner)
+	q_v := uintptr(q.Handle())
 	commands_handles := make([]uintptr, len(commands))
 	for i, v := range commands {
-		commands_handles[i] = v.inner
+		commands_handles[i] = v.Handle()
 	}
 	var commands_ptr uintptr
 	if len(commands) > 0 {
@@ -1163,8 +1755,16 @@ func (q *Queue) Submit(commands []*CommandBuffer) {
 }
 
 // OnSubmittedWorkDone calls wgpuQueueOnSubmittedWorkDone via syscall.
-func (q *Queue) OnSubmittedWorkDone(callback QueueWorkDoneFn) Future {
-	q_v := uintptr(q.inner)
+// Blocks until the operation completes.
+func (q Queue) OnSubmittedWorkDone() error {
+	type _res struct {
+		err error
+	}
+	_ch := make(chan _res, 1)
+	callback := QueueWorkDoneFn(func(err error) {
+		_ch <- _res{err}
+	})
+	q_v := uintptr(q.Handle())
 	_cbInfo := struct {
 		next     uintptr
 		mode     uint32
@@ -1173,27 +1773,34 @@ func (q *Queue) OnSubmittedWorkDone(callback QueueWorkDoneFn) Future {
 		ud2      uintptr
 	}{}
 	_cbInfo.mode = uint32(CallbackModeAllowProcessEvents)
-	_cbInfo.callback = syscall.NewCallback(func(status, msg, ud1, ud2, ud3 uintptr) {
+	_cbInfo.callback = syscall.NewCallback(func(c_status, c_message, ud1, ud2 uintptr) {
 		var s string
-		if msg != 0 {
-			sv := (*wgpuStringView)(unsafe.Pointer(msg))
+		if c_message != 0 {
+			sv := (*wgpuStringView)(unsafe.Pointer(c_message))
 			if sv.data != nil && sv.length > 0 {
 				s = unsafe.String(sv.data, int(sv.length))
 			}
 		}
 		if fn := callback; fn != nil {
-			fn(QueueWorkDoneStatus(status), s)
+			var err error
+			if QueueWorkDoneStatus(c_status) != QueueWorkDoneStatusSuccess {
+				err = newError("Queue.OnSubmittedWorkDone", s, uint32(c_status))
+			}
+			fn(err)
 		}
 	})
 	_cbInfo_v := uintptr(unsafe.Pointer(&_cbInfo))
 	r1, _, _ := procQueueOnSubmittedWorkDone.Call(q_v, _cbInfo_v)
-	return Future{Id: uint64(r1)}
+	_ = r1
+	_out := waitRecv(_ch)
+	return _out.err
 }
 
 // WriteBuffer calls wgpuQueueWriteBuffer via syscall.
-func (q *Queue) WriteBuffer(buffer *Buffer, bufferOffset uint64, data unsafe.Pointer, size uintptr) {
-	q_v := uintptr(q.inner)
-	buffer_v := uintptr(buffer.inner)
+// Blocks until the operation completes.
+func (q Queue) WriteBuffer(buffer Buffer, bufferOffset uint64, data unsafe.Pointer, size uintptr) {
+	q_v := uintptr(q.Handle())
+	buffer_v := uintptr(buffer.Handle())
 	bufferOffset_v := uintptr(bufferOffset)
 	data_v := uintptr(data)
 	size_v := uintptr(size)
@@ -1201,13 +1808,14 @@ func (q *Queue) WriteBuffer(buffer *Buffer, bufferOffset uint64, data unsafe.Poi
 }
 
 // WriteTexture calls wgpuQueueWriteTexture via syscall.
-func (q *Queue) WriteTexture(destination TexelCopyTextureInfo, data unsafe.Pointer, dataSize uintptr, dataLayout TexelCopyBufferLayout, writeSize Extent3D) {
+// Blocks until the operation completes.
+func (q Queue) WriteTexture(destination TexelCopyTextureInfo, data unsafe.Pointer, dataSize uintptr, dataLayout TexelCopyBufferLayout, writeSize Extent3D) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&destination)
 	pinner.Pin(&dataLayout)
 	pinner.Pin(&writeSize)
-	q_v := uintptr(q.inner)
+	q_v := uintptr(q.Handle())
 	destination_v := uintptr(unsafe.Pointer(&destination))
 	data_v := uintptr(data)
 	dataSize_v := uintptr(dataSize)
@@ -1217,42 +1825,62 @@ func (q *Queue) WriteTexture(destination TexelCopyTextureInfo, data unsafe.Point
 }
 
 // SetLabel calls wgpuQueueSetLabel via syscall.
-func (q *Queue) SetLabel(label string) {
+// Blocks until the operation completes.
+func (q Queue) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	q_v := uintptr(q.inner)
+	q_v := uintptr(q.Handle())
 	label_sv := syscallStringView(label, &pinner)
 	label_v := uintptr(unsafe.Pointer(&label_sv))
 	procQueueSetLabel.Call(q_v, label_v)
 }
 
+// Release drops this handle's reference to the native Queue.
+// Do not use the handle after calling Release.
+func (q Queue) Release() {
+	if q != 0 {
+		releaseQueue(q.Handle())
+	}
+}
+
 // SetLabel calls wgpuRenderBundleSetLabel via syscall.
-func (r *RenderBundle) SetLabel(label string) {
+// Blocks until the operation completes.
+func (r RenderBundle) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	r_v := uintptr(r.inner)
+	r_v := uintptr(r.Handle())
 	label_sv := syscallStringView(label, &pinner)
 	label_v := uintptr(unsafe.Pointer(&label_sv))
 	procRenderBundleSetLabel.Call(r_v, label_v)
 }
 
+// Release drops this handle's reference to the native RenderBundle.
+// Do not use the handle after calling Release.
+func (r RenderBundle) Release() {
+	if r != 0 {
+		releaseRenderBundle(r.Handle())
+	}
+}
+
 // SetPipeline calls wgpuRenderBundleEncoderSetPipeline via syscall.
-func (r *RenderBundleEncoder) SetPipeline(pipeline *RenderPipeline) {
-	r_v := uintptr(r.inner)
-	pipeline_v := uintptr(pipeline.inner)
+// Blocks until the operation completes.
+func (r RenderBundleEncoder) SetPipeline(pipeline RenderPipeline) {
+	r_v := uintptr(r.Handle())
+	pipeline_v := uintptr(pipeline.Handle())
 	procRenderBundleEncoderSetPipeline.Call(r_v, pipeline_v)
 }
 
 // SetBindGroup calls wgpuRenderBundleEncoderSetBindGroup via syscall.
-func (r *RenderBundleEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, dynamicOffsets []uint32) {
+// Blocks until the operation completes.
+func (r RenderBundleEncoder) SetBindGroup(groupIndex uint32, group BindGroup, dynamicOffsets []uint32) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	if len(dynamicOffsets) > 0 {
 		pinner.Pin(&dynamicOffsets[0])
 	}
-	r_v := uintptr(r.inner)
+	r_v := uintptr(r.Handle())
 	groupIndex_v := uintptr(groupIndex)
-	group_v := uintptr(group.inner)
+	group_v := uintptr(group.Handle())
 	var dynamicOffsets_ptr uintptr
 	if len(dynamicOffsets) > 0 {
 		dynamicOffsets_ptr = uintptr(unsafe.Pointer(&dynamicOffsets[0]))
@@ -1262,8 +1890,9 @@ func (r *RenderBundleEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, 
 }
 
 // SetImmediates calls wgpuRenderBundleEncoderSetImmediates via syscall.
-func (r *RenderBundleEncoder) SetImmediates(offset uint32, data unsafe.Pointer, size uintptr) {
-	r_v := uintptr(r.inner)
+// Blocks until the operation completes.
+func (r RenderBundleEncoder) SetImmediates(offset uint32, data unsafe.Pointer, size uintptr) {
+	r_v := uintptr(r.Handle())
 	offset_v := uintptr(offset)
 	data_v := uintptr(data)
 	size_v := uintptr(size)
@@ -1271,8 +1900,9 @@ func (r *RenderBundleEncoder) SetImmediates(offset uint32, data unsafe.Pointer, 
 }
 
 // Draw calls wgpuRenderBundleEncoderDraw via syscall.
-func (r *RenderBundleEncoder) Draw(vertexCount uint32, instanceCount uint32, firstVertex uint32, firstInstance uint32) {
-	r_v := uintptr(r.inner)
+// Blocks until the operation completes.
+func (r RenderBundleEncoder) Draw(vertexCount uint32, instanceCount uint32, firstVertex uint32, firstInstance uint32) {
+	r_v := uintptr(r.Handle())
 	vertexCount_v := uintptr(vertexCount)
 	instanceCount_v := uintptr(instanceCount)
 	firstVertex_v := uintptr(firstVertex)
@@ -1281,8 +1911,9 @@ func (r *RenderBundleEncoder) Draw(vertexCount uint32, instanceCount uint32, fir
 }
 
 // DrawIndexed calls wgpuRenderBundleEncoderDrawIndexed via syscall.
-func (r *RenderBundleEncoder) DrawIndexed(indexCount uint32, instanceCount uint32, firstIndex uint32, baseVertex int32, firstInstance uint32) {
-	r_v := uintptr(r.inner)
+// Blocks until the operation completes.
+func (r RenderBundleEncoder) DrawIndexed(indexCount uint32, instanceCount uint32, firstIndex uint32, baseVertex int32, firstInstance uint32) {
+	r_v := uintptr(r.Handle())
 	indexCount_v := uintptr(indexCount)
 	instanceCount_v := uintptr(instanceCount)
 	firstIndex_v := uintptr(firstIndex)
@@ -1292,61 +1923,68 @@ func (r *RenderBundleEncoder) DrawIndexed(indexCount uint32, instanceCount uint3
 }
 
 // DrawIndirect calls wgpuRenderBundleEncoderDrawIndirect via syscall.
-func (r *RenderBundleEncoder) DrawIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
-	r_v := uintptr(r.inner)
-	indirectBuffer_v := uintptr(indirectBuffer.inner)
+// Blocks until the operation completes.
+func (r RenderBundleEncoder) DrawIndirect(indirectBuffer Buffer, indirectOffset uint64) {
+	r_v := uintptr(r.Handle())
+	indirectBuffer_v := uintptr(indirectBuffer.Handle())
 	indirectOffset_v := uintptr(indirectOffset)
 	procRenderBundleEncoderDrawIndirect.Call(r_v, indirectBuffer_v, indirectOffset_v)
 }
 
 // DrawIndexedIndirect calls wgpuRenderBundleEncoderDrawIndexedIndirect via syscall.
-func (r *RenderBundleEncoder) DrawIndexedIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
-	r_v := uintptr(r.inner)
-	indirectBuffer_v := uintptr(indirectBuffer.inner)
+// Blocks until the operation completes.
+func (r RenderBundleEncoder) DrawIndexedIndirect(indirectBuffer Buffer, indirectOffset uint64) {
+	r_v := uintptr(r.Handle())
+	indirectBuffer_v := uintptr(indirectBuffer.Handle())
 	indirectOffset_v := uintptr(indirectOffset)
 	procRenderBundleEncoderDrawIndexedIndirect.Call(r_v, indirectBuffer_v, indirectOffset_v)
 }
 
 // InsertDebugMarker calls wgpuRenderBundleEncoderInsertDebugMarker via syscall.
-func (r *RenderBundleEncoder) InsertDebugMarker(markerLabel string) {
+// Blocks until the operation completes.
+func (r RenderBundleEncoder) InsertDebugMarker(markerLabel string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	r_v := uintptr(r.inner)
+	r_v := uintptr(r.Handle())
 	markerLabel_sv := syscallStringView(markerLabel, &pinner)
 	markerLabel_v := uintptr(unsafe.Pointer(&markerLabel_sv))
 	procRenderBundleEncoderInsertDebugMarker.Call(r_v, markerLabel_v)
 }
 
 // PopDebugGroup calls wgpuRenderBundleEncoderPopDebugGroup via syscall.
-func (r *RenderBundleEncoder) PopDebugGroup() {
-	r_v := uintptr(r.inner)
+// Blocks until the operation completes.
+func (r RenderBundleEncoder) PopDebugGroup() {
+	r_v := uintptr(r.Handle())
 	procRenderBundleEncoderPopDebugGroup.Call(r_v)
 }
 
 // PushDebugGroup calls wgpuRenderBundleEncoderPushDebugGroup via syscall.
-func (r *RenderBundleEncoder) PushDebugGroup(groupLabel string) {
+// Blocks until the operation completes.
+func (r RenderBundleEncoder) PushDebugGroup(groupLabel string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	r_v := uintptr(r.inner)
+	r_v := uintptr(r.Handle())
 	groupLabel_sv := syscallStringView(groupLabel, &pinner)
 	groupLabel_v := uintptr(unsafe.Pointer(&groupLabel_sv))
 	procRenderBundleEncoderPushDebugGroup.Call(r_v, groupLabel_v)
 }
 
 // SetVertexBuffer calls wgpuRenderBundleEncoderSetVertexBuffer via syscall.
-func (r *RenderBundleEncoder) SetVertexBuffer(slot uint32, buffer *Buffer, offset uint64, size uint64) {
-	r_v := uintptr(r.inner)
+// Blocks until the operation completes.
+func (r RenderBundleEncoder) SetVertexBuffer(slot uint32, buffer Buffer, offset uint64, size uint64) {
+	r_v := uintptr(r.Handle())
 	slot_v := uintptr(slot)
-	buffer_v := uintptr(buffer.inner)
+	buffer_v := uintptr(buffer.Handle())
 	offset_v := uintptr(offset)
 	size_v := uintptr(size)
 	procRenderBundleEncoderSetVertexBuffer.Call(r_v, slot_v, buffer_v, offset_v, size_v)
 }
 
 // SetIndexBuffer calls wgpuRenderBundleEncoderSetIndexBuffer via syscall.
-func (r *RenderBundleEncoder) SetIndexBuffer(buffer *Buffer, format IndexFormat, offset uint64, size uint64) {
-	r_v := uintptr(r.inner)
-	buffer_v := uintptr(buffer.inner)
+// Blocks until the operation completes.
+func (r RenderBundleEncoder) SetIndexBuffer(buffer Buffer, format IndexFormat, offset uint64, size uint64) {
+	r_v := uintptr(r.Handle())
+	buffer_v := uintptr(buffer.Handle())
 	format_v := uintptr(format)
 	offset_v := uintptr(offset)
 	size_v := uintptr(size)
@@ -1354,43 +1992,59 @@ func (r *RenderBundleEncoder) SetIndexBuffer(buffer *Buffer, format IndexFormat,
 }
 
 // Finish calls wgpuRenderBundleEncoderFinish via syscall.
-func (r *RenderBundleEncoder) Finish(descriptor RenderBundleDescriptor) *RenderBundle {
+// Blocks until the operation completes.
+func (r RenderBundleEncoder) Finish(descriptor RenderBundleDescriptor) (RenderBundle, error) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
-	r_v := uintptr(r.inner)
+	r_v := uintptr(r.Handle())
 	descriptor_v := uintptr(unsafe.Pointer(&descriptor))
 	r1, _, _ := procRenderBundleEncoderFinish.Call(r_v, descriptor_v)
-	return &RenderBundle{inner: r1}
+	_result := RenderBundle(r1)
+	if _result == 0 {
+		return 0, newError("RenderBundleEncoder.Finish", "", 0)
+	}
+	return _result, nil
 }
 
 // SetLabel calls wgpuRenderBundleEncoderSetLabel via syscall.
-func (r *RenderBundleEncoder) SetLabel(label string) {
+// Blocks until the operation completes.
+func (r RenderBundleEncoder) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	r_v := uintptr(r.inner)
+	r_v := uintptr(r.Handle())
 	label_sv := syscallStringView(label, &pinner)
 	label_v := uintptr(unsafe.Pointer(&label_sv))
 	procRenderBundleEncoderSetLabel.Call(r_v, label_v)
 }
 
+// Release drops this handle's reference to the native RenderBundleEncoder.
+// Do not use the handle after calling Release.
+func (r RenderBundleEncoder) Release() {
+	if r != 0 {
+		releaseRenderBundleEncoder(r.Handle())
+	}
+}
+
 // SetPipeline calls wgpuRenderPassEncoderSetPipeline via syscall.
-func (r *RenderPassEncoder) SetPipeline(pipeline *RenderPipeline) {
-	r_v := uintptr(r.inner)
-	pipeline_v := uintptr(pipeline.inner)
+// Blocks until the operation completes.
+func (r RenderPassEncoder) SetPipeline(pipeline RenderPipeline) {
+	r_v := uintptr(r.Handle())
+	pipeline_v := uintptr(pipeline.Handle())
 	procRenderPassEncoderSetPipeline.Call(r_v, pipeline_v)
 }
 
 // SetBindGroup calls wgpuRenderPassEncoderSetBindGroup via syscall.
-func (r *RenderPassEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, dynamicOffsets []uint32) {
+// Blocks until the operation completes.
+func (r RenderPassEncoder) SetBindGroup(groupIndex uint32, group BindGroup, dynamicOffsets []uint32) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	if len(dynamicOffsets) > 0 {
 		pinner.Pin(&dynamicOffsets[0])
 	}
-	r_v := uintptr(r.inner)
+	r_v := uintptr(r.Handle())
 	groupIndex_v := uintptr(groupIndex)
-	group_v := uintptr(group.inner)
+	group_v := uintptr(group.Handle())
 	var dynamicOffsets_ptr uintptr
 	if len(dynamicOffsets) > 0 {
 		dynamicOffsets_ptr = uintptr(unsafe.Pointer(&dynamicOffsets[0]))
@@ -1400,8 +2054,9 @@ func (r *RenderPassEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, dy
 }
 
 // SetImmediates calls wgpuRenderPassEncoderSetImmediates via syscall.
-func (r *RenderPassEncoder) SetImmediates(offset uint32, data unsafe.Pointer, size uintptr) {
-	r_v := uintptr(r.inner)
+// Blocks until the operation completes.
+func (r RenderPassEncoder) SetImmediates(offset uint32, data unsafe.Pointer, size uintptr) {
+	r_v := uintptr(r.Handle())
 	offset_v := uintptr(offset)
 	data_v := uintptr(data)
 	size_v := uintptr(size)
@@ -1409,8 +2064,9 @@ func (r *RenderPassEncoder) SetImmediates(offset uint32, data unsafe.Pointer, si
 }
 
 // Draw calls wgpuRenderPassEncoderDraw via syscall.
-func (r *RenderPassEncoder) Draw(vertexCount uint32, instanceCount uint32, firstVertex uint32, firstInstance uint32) {
-	r_v := uintptr(r.inner)
+// Blocks until the operation completes.
+func (r RenderPassEncoder) Draw(vertexCount uint32, instanceCount uint32, firstVertex uint32, firstInstance uint32) {
+	r_v := uintptr(r.Handle())
 	vertexCount_v := uintptr(vertexCount)
 	instanceCount_v := uintptr(instanceCount)
 	firstVertex_v := uintptr(firstVertex)
@@ -1419,8 +2075,9 @@ func (r *RenderPassEncoder) Draw(vertexCount uint32, instanceCount uint32, first
 }
 
 // DrawIndexed calls wgpuRenderPassEncoderDrawIndexed via syscall.
-func (r *RenderPassEncoder) DrawIndexed(indexCount uint32, instanceCount uint32, firstIndex uint32, baseVertex int32, firstInstance uint32) {
-	r_v := uintptr(r.inner)
+// Blocks until the operation completes.
+func (r RenderPassEncoder) DrawIndexed(indexCount uint32, instanceCount uint32, firstIndex uint32, baseVertex int32, firstInstance uint32) {
+	r_v := uintptr(r.Handle())
 	indexCount_v := uintptr(indexCount)
 	instanceCount_v := uintptr(instanceCount)
 	firstIndex_v := uintptr(firstIndex)
@@ -1430,32 +2087,35 @@ func (r *RenderPassEncoder) DrawIndexed(indexCount uint32, instanceCount uint32,
 }
 
 // DrawIndirect calls wgpuRenderPassEncoderDrawIndirect via syscall.
-func (r *RenderPassEncoder) DrawIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
-	r_v := uintptr(r.inner)
-	indirectBuffer_v := uintptr(indirectBuffer.inner)
+// Blocks until the operation completes.
+func (r RenderPassEncoder) DrawIndirect(indirectBuffer Buffer, indirectOffset uint64) {
+	r_v := uintptr(r.Handle())
+	indirectBuffer_v := uintptr(indirectBuffer.Handle())
 	indirectOffset_v := uintptr(indirectOffset)
 	procRenderPassEncoderDrawIndirect.Call(r_v, indirectBuffer_v, indirectOffset_v)
 }
 
 // DrawIndexedIndirect calls wgpuRenderPassEncoderDrawIndexedIndirect via syscall.
-func (r *RenderPassEncoder) DrawIndexedIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
-	r_v := uintptr(r.inner)
-	indirectBuffer_v := uintptr(indirectBuffer.inner)
+// Blocks until the operation completes.
+func (r RenderPassEncoder) DrawIndexedIndirect(indirectBuffer Buffer, indirectOffset uint64) {
+	r_v := uintptr(r.Handle())
+	indirectBuffer_v := uintptr(indirectBuffer.Handle())
 	indirectOffset_v := uintptr(indirectOffset)
 	procRenderPassEncoderDrawIndexedIndirect.Call(r_v, indirectBuffer_v, indirectOffset_v)
 }
 
 // ExecuteBundles calls wgpuRenderPassEncoderExecuteBundles via syscall.
-func (r *RenderPassEncoder) ExecuteBundles(bundles []*RenderBundle) {
+// Blocks until the operation completes.
+func (r RenderPassEncoder) ExecuteBundles(bundles []RenderBundle) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	if len(bundles) > 0 {
 		pinner.Pin(&bundles[0])
 	}
-	r_v := uintptr(r.inner)
+	r_v := uintptr(r.Handle())
 	bundles_handles := make([]uintptr, len(bundles))
 	for i, v := range bundles {
-		bundles_handles[i] = v.inner
+		bundles_handles[i] = v.Handle()
 	}
 	var bundles_ptr uintptr
 	if len(bundles) > 0 {
@@ -1466,51 +2126,57 @@ func (r *RenderPassEncoder) ExecuteBundles(bundles []*RenderBundle) {
 }
 
 // InsertDebugMarker calls wgpuRenderPassEncoderInsertDebugMarker via syscall.
-func (r *RenderPassEncoder) InsertDebugMarker(markerLabel string) {
+// Blocks until the operation completes.
+func (r RenderPassEncoder) InsertDebugMarker(markerLabel string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	r_v := uintptr(r.inner)
+	r_v := uintptr(r.Handle())
 	markerLabel_sv := syscallStringView(markerLabel, &pinner)
 	markerLabel_v := uintptr(unsafe.Pointer(&markerLabel_sv))
 	procRenderPassEncoderInsertDebugMarker.Call(r_v, markerLabel_v)
 }
 
 // PopDebugGroup calls wgpuRenderPassEncoderPopDebugGroup via syscall.
-func (r *RenderPassEncoder) PopDebugGroup() {
-	r_v := uintptr(r.inner)
+// Blocks until the operation completes.
+func (r RenderPassEncoder) PopDebugGroup() {
+	r_v := uintptr(r.Handle())
 	procRenderPassEncoderPopDebugGroup.Call(r_v)
 }
 
 // PushDebugGroup calls wgpuRenderPassEncoderPushDebugGroup via syscall.
-func (r *RenderPassEncoder) PushDebugGroup(groupLabel string) {
+// Blocks until the operation completes.
+func (r RenderPassEncoder) PushDebugGroup(groupLabel string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	r_v := uintptr(r.inner)
+	r_v := uintptr(r.Handle())
 	groupLabel_sv := syscallStringView(groupLabel, &pinner)
 	groupLabel_v := uintptr(unsafe.Pointer(&groupLabel_sv))
 	procRenderPassEncoderPushDebugGroup.Call(r_v, groupLabel_v)
 }
 
 // SetStencilReference calls wgpuRenderPassEncoderSetStencilReference via syscall.
-func (r *RenderPassEncoder) SetStencilReference(reference uint32) {
-	r_v := uintptr(r.inner)
+// Blocks until the operation completes.
+func (r RenderPassEncoder) SetStencilReference(reference uint32) {
+	r_v := uintptr(r.Handle())
 	reference_v := uintptr(reference)
 	procRenderPassEncoderSetStencilReference.Call(r_v, reference_v)
 }
 
 // SetBlendConstant calls wgpuRenderPassEncoderSetBlendConstant via syscall.
-func (r *RenderPassEncoder) SetBlendConstant(color Color) {
+// Blocks until the operation completes.
+func (r RenderPassEncoder) SetBlendConstant(color Color) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&color)
-	r_v := uintptr(r.inner)
+	r_v := uintptr(r.Handle())
 	color_v := uintptr(unsafe.Pointer(&color))
 	procRenderPassEncoderSetBlendConstant.Call(r_v, color_v)
 }
 
 // SetViewport calls wgpuRenderPassEncoderSetViewport via syscall.
-func (r *RenderPassEncoder) SetViewport(x float32, y float32, width float32, height float32, minDepth float32, maxDepth float32) {
-	r_v := uintptr(r.inner)
+// Blocks until the operation completes.
+func (r RenderPassEncoder) SetViewport(x float32, y float32, width float32, height float32, minDepth float32, maxDepth float32) {
+	r_v := uintptr(r.Handle())
 	x_v := uintptr(x)
 	y_v := uintptr(y)
 	width_v := uintptr(width)
@@ -1521,8 +2187,9 @@ func (r *RenderPassEncoder) SetViewport(x float32, y float32, width float32, hei
 }
 
 // SetScissorRect calls wgpuRenderPassEncoderSetScissorRect via syscall.
-func (r *RenderPassEncoder) SetScissorRect(x uint32, y uint32, width uint32, height uint32) {
-	r_v := uintptr(r.inner)
+// Blocks until the operation completes.
+func (r RenderPassEncoder) SetScissorRect(x uint32, y uint32, width uint32, height uint32) {
+	r_v := uintptr(r.Handle())
 	x_v := uintptr(x)
 	y_v := uintptr(y)
 	width_v := uintptr(width)
@@ -1531,19 +2198,21 @@ func (r *RenderPassEncoder) SetScissorRect(x uint32, y uint32, width uint32, hei
 }
 
 // SetVertexBuffer calls wgpuRenderPassEncoderSetVertexBuffer via syscall.
-func (r *RenderPassEncoder) SetVertexBuffer(slot uint32, buffer *Buffer, offset uint64, size uint64) {
-	r_v := uintptr(r.inner)
+// Blocks until the operation completes.
+func (r RenderPassEncoder) SetVertexBuffer(slot uint32, buffer Buffer, offset uint64, size uint64) {
+	r_v := uintptr(r.Handle())
 	slot_v := uintptr(slot)
-	buffer_v := uintptr(buffer.inner)
+	buffer_v := uintptr(buffer.Handle())
 	offset_v := uintptr(offset)
 	size_v := uintptr(size)
 	procRenderPassEncoderSetVertexBuffer.Call(r_v, slot_v, buffer_v, offset_v, size_v)
 }
 
 // SetIndexBuffer calls wgpuRenderPassEncoderSetIndexBuffer via syscall.
-func (r *RenderPassEncoder) SetIndexBuffer(buffer *Buffer, format IndexFormat, offset uint64, size uint64) {
-	r_v := uintptr(r.inner)
-	buffer_v := uintptr(buffer.inner)
+// Blocks until the operation completes.
+func (r RenderPassEncoder) SetIndexBuffer(buffer Buffer, format IndexFormat, offset uint64, size uint64) {
+	r_v := uintptr(r.Handle())
+	buffer_v := uintptr(buffer.Handle())
 	format_v := uintptr(format)
 	offset_v := uintptr(offset)
 	size_v := uintptr(size)
@@ -1551,65 +2220,109 @@ func (r *RenderPassEncoder) SetIndexBuffer(buffer *Buffer, format IndexFormat, o
 }
 
 // BeginOcclusionQuery calls wgpuRenderPassEncoderBeginOcclusionQuery via syscall.
-func (r *RenderPassEncoder) BeginOcclusionQuery(queryIndex uint32) {
-	r_v := uintptr(r.inner)
+// Blocks until the operation completes.
+func (r RenderPassEncoder) BeginOcclusionQuery(queryIndex uint32) {
+	r_v := uintptr(r.Handle())
 	queryIndex_v := uintptr(queryIndex)
 	procRenderPassEncoderBeginOcclusionQuery.Call(r_v, queryIndex_v)
 }
 
 // EndOcclusionQuery calls wgpuRenderPassEncoderEndOcclusionQuery via syscall.
-func (r *RenderPassEncoder) EndOcclusionQuery() {
-	r_v := uintptr(r.inner)
+// Blocks until the operation completes.
+func (r RenderPassEncoder) EndOcclusionQuery() {
+	r_v := uintptr(r.Handle())
 	procRenderPassEncoderEndOcclusionQuery.Call(r_v)
 }
 
 // End calls wgpuRenderPassEncoderEnd via syscall.
-func (r *RenderPassEncoder) End() {
-	r_v := uintptr(r.inner)
+// Blocks until the operation completes.
+func (r RenderPassEncoder) End() {
+	r_v := uintptr(r.Handle())
 	procRenderPassEncoderEnd.Call(r_v)
 }
 
 // SetLabel calls wgpuRenderPassEncoderSetLabel via syscall.
-func (r *RenderPassEncoder) SetLabel(label string) {
+// Blocks until the operation completes.
+func (r RenderPassEncoder) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	r_v := uintptr(r.inner)
+	r_v := uintptr(r.Handle())
 	label_sv := syscallStringView(label, &pinner)
 	label_v := uintptr(unsafe.Pointer(&label_sv))
 	procRenderPassEncoderSetLabel.Call(r_v, label_v)
 }
 
+// Release drops this handle's reference to the native RenderPassEncoder.
+// Do not use the handle after calling Release.
+func (r RenderPassEncoder) Release() {
+	if r != 0 {
+		releaseRenderPassEncoder(r.Handle())
+	}
+}
+
 // GetBindGroupLayout calls wgpuRenderPipelineGetBindGroupLayout via syscall.
-func (r *RenderPipeline) GetBindGroupLayout(groupIndex uint32) *BindGroupLayout {
-	r_v := uintptr(r.inner)
+// Blocks until the operation completes.
+func (r RenderPipeline) GetBindGroupLayout(groupIndex uint32) (BindGroupLayout, error) {
+	r_v := uintptr(r.Handle())
 	groupIndex_v := uintptr(groupIndex)
 	r1, _, _ := procRenderPipelineGetBindGroupLayout.Call(r_v, groupIndex_v)
-	return &BindGroupLayout{inner: r1}
+	_result := BindGroupLayout(r1)
+	if _result == 0 {
+		return 0, newError("RenderPipeline.GetBindGroupLayout", "", 0)
+	}
+	return _result, nil
 }
 
 // SetLabel calls wgpuRenderPipelineSetLabel via syscall.
-func (r *RenderPipeline) SetLabel(label string) {
+// Blocks until the operation completes.
+func (r RenderPipeline) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	r_v := uintptr(r.inner)
+	r_v := uintptr(r.Handle())
 	label_sv := syscallStringView(label, &pinner)
 	label_v := uintptr(unsafe.Pointer(&label_sv))
 	procRenderPipelineSetLabel.Call(r_v, label_v)
 }
 
+// Release drops this handle's reference to the native RenderPipeline.
+// Do not use the handle after calling Release.
+func (r RenderPipeline) Release() {
+	if r != 0 {
+		releaseRenderPipeline(r.Handle())
+	}
+}
+
 // SetLabel calls wgpuSamplerSetLabel via syscall.
-func (s *Sampler) SetLabel(label string) {
+// Blocks until the operation completes.
+func (s Sampler) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	s_v := uintptr(s.inner)
+	s_v := uintptr(s.Handle())
 	label_sv := syscallStringView(label, &pinner)
 	label_v := uintptr(unsafe.Pointer(&label_sv))
 	procSamplerSetLabel.Call(s_v, label_v)
 }
 
+// Release drops this handle's reference to the native Sampler.
+// Do not use the handle after calling Release.
+func (s Sampler) Release() {
+	if s != 0 {
+		releaseSampler(s.Handle())
+	}
+}
+
 // GetCompilationInfo calls wgpuShaderModuleGetCompilationInfo via syscall.
-func (s *ShaderModule) GetCompilationInfo(callback CompilationInfoFn) Future {
-	s_v := uintptr(s.inner)
+// Blocks until the operation completes.
+func (s ShaderModule) GetCompilationInfo() (CompilationInfo, error) {
+	type _res struct {
+		r0  CompilationInfo
+		err error
+	}
+	_ch := make(chan _res, 1)
+	callback := CompilationInfoFn(func(r0 CompilationInfo, err error) {
+		_ch <- _res{r0, err}
+	})
+	s_v := uintptr(s.Handle())
 	_cbInfo := struct {
 		next     uintptr
 		mode     uint32
@@ -1618,36 +2331,62 @@ func (s *ShaderModule) GetCompilationInfo(callback CompilationInfoFn) Future {
 		ud2      uintptr
 	}{}
 	_cbInfo.mode = uint32(CallbackModeAllowProcessEvents)
+	_cbInfo.callback = syscall.NewCallback(func(c_status, c_compilationInfo, ud1, ud2 uintptr) {
+		var compilationInfo CompilationInfo
+		if c_compilationInfo != 0 {
+			compilationInfo = *(*CompilationInfo)(unsafe.Pointer(c_compilationInfo))
+		}
+		if fn := callback; fn != nil {
+			var err error
+			if CompilationInfoRequestStatus(c_status) != CompilationInfoRequestStatusSuccess {
+				err = newError("ShaderModule.GetCompilationInfo", "", uint32(c_status))
+			}
+			fn(compilationInfo, err)
+		}
+	})
 	_cbInfo_v := uintptr(unsafe.Pointer(&_cbInfo))
 	r1, _, _ := procShaderModuleGetCompilationInfo.Call(s_v, _cbInfo_v)
-	return Future{Id: uint64(r1)}
+	_ = r1
+	_out := waitRecv(_ch)
+	return _out.r0, _out.err
 }
 
 // SetLabel calls wgpuShaderModuleSetLabel via syscall.
-func (s *ShaderModule) SetLabel(label string) {
+// Blocks until the operation completes.
+func (s ShaderModule) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	s_v := uintptr(s.inner)
+	s_v := uintptr(s.Handle())
 	label_sv := syscallStringView(label, &pinner)
 	label_v := uintptr(unsafe.Pointer(&label_sv))
 	procShaderModuleSetLabel.Call(s_v, label_v)
 }
 
+// Release drops this handle's reference to the native ShaderModule.
+// Do not use the handle after calling Release.
+func (s ShaderModule) Release() {
+	if s != 0 {
+		releaseShaderModule(s.Handle())
+	}
+}
+
 // Configure calls wgpuSurfaceConfigure via syscall.
-func (s *Surface) Configure(config SurfaceConfiguration) {
+// Blocks until the operation completes.
+func (s Surface) Configure(config SurfaceConfiguration) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&config)
 	if config.ViewFormats != nil {
 		pinner.Pin(config.ViewFormats)
 	}
-	s_v := uintptr(s.inner)
+	s_v := uintptr(s.Handle())
 	config_v := uintptr(unsafe.Pointer(&config))
 	procSurfaceConfigure.Call(s_v, config_v)
 }
 
 // GetCapabilities calls wgpuSurfaceGetCapabilities via syscall.
-func (s *Surface) GetCapabilities(adapter *Adapter, capabilities SurfaceCapabilities) Status {
+// Blocks until the operation completes.
+func (s Surface) GetCapabilities(adapter Adapter, capabilities SurfaceCapabilities) error {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&capabilities)
@@ -1660,142 +2399,193 @@ func (s *Surface) GetCapabilities(adapter *Adapter, capabilities SurfaceCapabili
 	if capabilities.AlphaModes != nil {
 		pinner.Pin(capabilities.AlphaModes)
 	}
-	s_v := uintptr(s.inner)
-	adapter_v := uintptr(adapter.inner)
+	s_v := uintptr(s.Handle())
+	adapter_v := uintptr(adapter.Handle())
 	capabilities_v := uintptr(unsafe.Pointer(&capabilities))
 	r1, _, _ := procSurfaceGetCapabilities.Call(s_v, adapter_v, capabilities_v)
-	return (Status)(r1)
+	if Status(r1) != StatusSuccess {
+		return newError("Surface.GetCapabilities", "", uint32(r1))
+	}
+	return nil
 }
 
 // GetCurrentTexture calls wgpuSurfaceGetCurrentTexture via syscall.
-func (s *Surface) GetCurrentTexture(surfaceTexture SurfaceTexture) {
+// Blocks until the operation completes.
+func (s Surface) GetCurrentTexture(surfaceTexture SurfaceTexture) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&surfaceTexture)
-	s_v := uintptr(s.inner)
+	s_v := uintptr(s.Handle())
 	surfaceTexture_v := uintptr(unsafe.Pointer(&surfaceTexture))
 	procSurfaceGetCurrentTexture.Call(s_v, surfaceTexture_v)
 }
 
 // Present calls wgpuSurfacePresent via syscall.
-func (s *Surface) Present() Status {
-	s_v := uintptr(s.inner)
+// Blocks until the operation completes.
+func (s Surface) Present() error {
+	s_v := uintptr(s.Handle())
 	r1, _, _ := procSurfacePresent.Call(s_v)
-	return (Status)(r1)
+	if Status(r1) != StatusSuccess {
+		return newError("Surface.Present", "", uint32(r1))
+	}
+	return nil
 }
 
 // Unconfigure calls wgpuSurfaceUnconfigure via syscall.
-func (s *Surface) Unconfigure() {
-	s_v := uintptr(s.inner)
+// Blocks until the operation completes.
+func (s Surface) Unconfigure() {
+	s_v := uintptr(s.Handle())
 	procSurfaceUnconfigure.Call(s_v)
 }
 
 // SetLabel calls wgpuSurfaceSetLabel via syscall.
-func (s *Surface) SetLabel(label string) {
+// Blocks until the operation completes.
+func (s Surface) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	s_v := uintptr(s.inner)
+	s_v := uintptr(s.Handle())
 	label_sv := syscallStringView(label, &pinner)
 	label_v := uintptr(unsafe.Pointer(&label_sv))
 	procSurfaceSetLabel.Call(s_v, label_v)
 }
 
+// Release drops this handle's reference to the native Surface.
+// Do not use the handle after calling Release.
+func (s Surface) Release() {
+	if s != 0 {
+		releaseSurface(s.Handle())
+	}
+}
+
 // CreateView calls wgpuTextureCreateView via syscall.
-func (t *Texture) CreateView(descriptor TextureViewDescriptor) *TextureView {
+// Blocks until the operation completes.
+func (t Texture) CreateView(descriptor TextureViewDescriptor) (TextureView, error) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	pinner.Pin(&descriptor)
-	t_v := uintptr(t.inner)
+	t_v := uintptr(t.Handle())
 	descriptor_v := uintptr(unsafe.Pointer(&descriptor))
 	r1, _, _ := procTextureCreateView.Call(t_v, descriptor_v)
-	return &TextureView{inner: r1}
+	_result := TextureView(r1)
+	if _result == 0 {
+		return 0, newError("Texture.CreateView", "", 0)
+	}
+	return _result, nil
 }
 
 // SetLabel calls wgpuTextureSetLabel via syscall.
-func (t *Texture) SetLabel(label string) {
+// Blocks until the operation completes.
+func (t Texture) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	t_v := uintptr(t.inner)
+	t_v := uintptr(t.Handle())
 	label_sv := syscallStringView(label, &pinner)
 	label_v := uintptr(unsafe.Pointer(&label_sv))
 	procTextureSetLabel.Call(t_v, label_v)
 }
 
 // GetWidth calls wgpuTextureGetWidth via syscall.
-func (t *Texture) GetWidth() uint32 {
-	t_v := uintptr(t.inner)
+// Blocks until the operation completes.
+func (t Texture) GetWidth() uint32 {
+	t_v := uintptr(t.Handle())
 	r1, _, _ := procTextureGetWidth.Call(t_v)
 	return (uint32)(r1)
 }
 
 // GetHeight calls wgpuTextureGetHeight via syscall.
-func (t *Texture) GetHeight() uint32 {
-	t_v := uintptr(t.inner)
+// Blocks until the operation completes.
+func (t Texture) GetHeight() uint32 {
+	t_v := uintptr(t.Handle())
 	r1, _, _ := procTextureGetHeight.Call(t_v)
 	return (uint32)(r1)
 }
 
 // GetDepthOrArrayLayers calls wgpuTextureGetDepthOrArrayLayers via syscall.
-func (t *Texture) GetDepthOrArrayLayers() uint32 {
-	t_v := uintptr(t.inner)
+// Blocks until the operation completes.
+func (t Texture) GetDepthOrArrayLayers() uint32 {
+	t_v := uintptr(t.Handle())
 	r1, _, _ := procTextureGetDepthOrArrayLayers.Call(t_v)
 	return (uint32)(r1)
 }
 
 // GetMipLevelCount calls wgpuTextureGetMipLevelCount via syscall.
-func (t *Texture) GetMipLevelCount() uint32 {
-	t_v := uintptr(t.inner)
+// Blocks until the operation completes.
+func (t Texture) GetMipLevelCount() uint32 {
+	t_v := uintptr(t.Handle())
 	r1, _, _ := procTextureGetMipLevelCount.Call(t_v)
 	return (uint32)(r1)
 }
 
 // GetSampleCount calls wgpuTextureGetSampleCount via syscall.
-func (t *Texture) GetSampleCount() uint32 {
-	t_v := uintptr(t.inner)
+// Blocks until the operation completes.
+func (t Texture) GetSampleCount() uint32 {
+	t_v := uintptr(t.Handle())
 	r1, _, _ := procTextureGetSampleCount.Call(t_v)
 	return (uint32)(r1)
 }
 
 // GetDimension calls wgpuTextureGetDimension via syscall.
-func (t *Texture) GetDimension() TextureDimension {
-	t_v := uintptr(t.inner)
+// Blocks until the operation completes.
+func (t Texture) GetDimension() TextureDimension {
+	t_v := uintptr(t.Handle())
 	r1, _, _ := procTextureGetDimension.Call(t_v)
 	return (TextureDimension)(r1)
 }
 
 // GetTextureBindingViewDimension calls wgpuTextureGetTextureBindingViewDimension via syscall.
-func (t *Texture) GetTextureBindingViewDimension() TextureViewDimension {
-	t_v := uintptr(t.inner)
+// Blocks until the operation completes.
+func (t Texture) GetTextureBindingViewDimension() TextureViewDimension {
+	t_v := uintptr(t.Handle())
 	r1, _, _ := procTextureGetTextureBindingViewDimension.Call(t_v)
 	return (TextureViewDimension)(r1)
 }
 
 // GetFormat calls wgpuTextureGetFormat via syscall.
-func (t *Texture) GetFormat() TextureFormat {
-	t_v := uintptr(t.inner)
+// Blocks until the operation completes.
+func (t Texture) GetFormat() TextureFormat {
+	t_v := uintptr(t.Handle())
 	r1, _, _ := procTextureGetFormat.Call(t_v)
 	return (TextureFormat)(r1)
 }
 
 // GetUsage calls wgpuTextureGetUsage via syscall.
-func (t *Texture) GetUsage() TextureUsage {
-	t_v := uintptr(t.inner)
+// Blocks until the operation completes.
+func (t Texture) GetUsage() TextureUsage {
+	t_v := uintptr(t.Handle())
 	r1, _, _ := procTextureGetUsage.Call(t_v)
 	return (TextureUsage)(r1)
 }
 
 // Destroy calls wgpuTextureDestroy via syscall.
-func (t *Texture) Destroy() {
-	t_v := uintptr(t.inner)
+// Blocks until the operation completes.
+func (t Texture) Destroy() {
+	t_v := uintptr(t.Handle())
 	procTextureDestroy.Call(t_v)
 }
 
+// Release drops this handle's reference to the native Texture.
+// Do not use the handle after calling Release.
+func (t Texture) Release() {
+	if t != 0 {
+		releaseTexture(t.Handle())
+	}
+}
+
 // SetLabel calls wgpuTextureViewSetLabel via syscall.
-func (t *TextureView) SetLabel(label string) {
+// Blocks until the operation completes.
+func (t TextureView) SetLabel(label string) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
-	t_v := uintptr(t.inner)
+	t_v := uintptr(t.Handle())
 	label_sv := syscallStringView(label, &pinner)
 	label_v := uintptr(unsafe.Pointer(&label_sv))
 	procTextureViewSetLabel.Call(t_v, label_v)
+}
+
+// Release drops this handle's reference to the native TextureView.
+// Do not use the handle after calling Release.
+func (t TextureView) Release() {
+	if t != 0 {
+		releaseTextureView(t.Handle())
+	}
 }
