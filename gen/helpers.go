@@ -179,7 +179,10 @@ type FuncArgData struct {
 	IsOptional  bool
 	IsSlice     bool
 	IsStr       bool
+	HasChain    bool     // struct has a NextInChain field (must be pinned)
 	SliceFields []string // Go field names of slice members (for struct args needing pin)
+	StrFields   []string // expressions of string members (pin unsafe.StringData)
+	PtrFields   []string // expressions of pointer members (pin pointee)
 	SliceCPtr   string   // cgo pointer type for slice data, e.g. *C.uint32_t
 }
 
@@ -668,18 +671,15 @@ func buildFuncData(f parser.Function, spec *parser.Spec) FuncData {
 			IsStr:      isStringType(arg.Type),
 			SliceCPtr:  fadSliceCPtr,
 		}
-		// For struct args, precompute slice fields that need pinning.
-		// Store full expressions like "descriptor.Entries" for template use.
+		// For struct args, precompute nested Go pointers that need pinning
+		// (strings, pointer fields, arrays) and whether the struct is chained.
 		if isStructType(arg.Type) && spec != nil {
 			argName := camelCase(arg.Name)
 			structName := pascalCase(strings.TrimPrefix(arg.Type, "struct."))
 			for _, s := range spec.Structs {
 				if pascalCase(s.Name) == structName {
-					for _, m := range s.Members {
-						if isArrayType(m.Type) {
-							fad.SliceFields = append(fad.SliceFields, argName+"."+pascalCase(m.Name))
-						}
-					}
+					fad.HasChain = s.Type == "extensible" || s.Type == "extensible_callback_arg" || s.Type == "extension"
+					collectStructPins(spec, arg.Type, argName, &fad.StrFields, &fad.PtrFields, &fad.SliceFields, 0)
 					break
 				}
 			}
@@ -965,6 +965,39 @@ func isStringType(ref string) bool {
 
 func isStructType(ref string) bool {
 	return strings.HasPrefix(ref, "struct.")
+}
+
+// collectStructPins walks a struct type and records expressions of members
+// that hold Go pointers (strings, arrays, optional/pointer fields) so the
+// generated wrappers can pin them before passing the struct to C.
+// By-value nested structs are walked recursively; pointer fields are pinned
+// at one level (their pointees are assumed free of Go pointers).
+func collectStructPins(spec *parser.Spec, typeRef, expr string, strFields, ptrFields, sliceFields *[]string, depth int) {
+	if spec == nil || depth > 8 {
+		return
+	}
+	structName := pascalCase(strings.TrimPrefix(typeRef, "struct."))
+	for _, s := range spec.Structs {
+		if pascalCase(s.Name) != structName {
+			continue
+		}
+		for _, m := range s.Members {
+			field := expr + "." + pascalCase(m.Name)
+			switch {
+			case isStringType(m.Type):
+				*strFields = append(*strFields, field)
+			case isArrayType(m.Type):
+				*sliceFields = append(*sliceFields, field)
+			case isStructType(m.Type):
+				if m.Pointer == "immutable" || m.Pointer == "mutable" || m.Optional {
+					*ptrFields = append(*ptrFields, field)
+				} else {
+					collectStructPins(spec, m.Type, field, strFields, ptrFields, sliceFields, depth+1)
+				}
+			}
+		}
+		return
+	}
 }
 
 func isPrimitiveGoType(t string) bool {

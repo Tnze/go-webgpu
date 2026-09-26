@@ -306,6 +306,12 @@ func CreateInstance(descriptor *InstanceDescriptor) Instance {
 	defer pinner.Unpin()
 	if descriptor != nil {
 		pinner.Pin(descriptor)
+		if descriptor.NextInChain != nil {
+			pinner.Pin(descriptor.NextInChain)
+		}
+		if descriptor.RequiredLimits != nil {
+			pinner.Pin(descriptor.RequiredLimits)
+		}
 		if descriptor.RequiredFeatures != nil {
 			pinner.Pin(descriptor.RequiredFeatures)
 		}
@@ -337,6 +343,9 @@ func GetInstanceLimits(limits *InstanceLimits) Status {
 	defer pinner.Unpin()
 	if limits != nil {
 		pinner.Pin(limits)
+		if limits.NextInChain != nil {
+			pinner.Pin(limits.NextInChain)
+		}
 	}
 	c_limits := (*C.WGPUInstanceLimits)(unsafe.Pointer(limits))
 	c_result := C.wgpuGetInstanceLimits(c_limits)
@@ -358,6 +367,9 @@ func (a Adapter) GetLimits(limits *Limits) Status {
 	defer pinner.Unpin()
 	if limits != nil {
 		pinner.Pin(limits)
+		if limits.NextInChain != nil {
+			pinner.Pin(limits.NextInChain)
+		}
 	}
 	c_a := (C.WGPUAdapter)(unsafe.Pointer(a.Handle()))
 	c_limits := (*C.WGPULimits)(unsafe.Pointer(limits))
@@ -397,6 +409,21 @@ func (a Adapter) GetInfo(info *AdapterInfo) Status {
 	defer pinner.Unpin()
 	if info != nil {
 		pinner.Pin(info)
+		if info.NextInChain != nil {
+			pinner.Pin(info.NextInChain)
+		}
+		if len(info.Vendor) > 0 {
+			pinner.Pin(unsafe.StringData(info.Vendor))
+		}
+		if len(info.Architecture) > 0 {
+			pinner.Pin(unsafe.StringData(info.Architecture))
+		}
+		if len(info.Device) > 0 {
+			pinner.Pin(unsafe.StringData(info.Device))
+		}
+		if len(info.Description) > 0 {
+			pinner.Pin(unsafe.StringData(info.Description))
+		}
 	}
 	c_a := (C.WGPUAdapter)(unsafe.Pointer(a.Handle()))
 	c_info := (*C.WGPUAdapterInfo)(unsafe.Pointer(info))
@@ -420,6 +447,18 @@ func (a Adapter) RequestDevice(descriptor *DeviceDescriptor) (Device, RequestDev
 	defer pinner.Unpin()
 	if descriptor != nil {
 		pinner.Pin(descriptor)
+		if descriptor.NextInChain != nil {
+			pinner.Pin(descriptor.NextInChain)
+		}
+		if len(descriptor.Label) > 0 {
+			pinner.Pin(unsafe.StringData(descriptor.Label))
+		}
+		if len(descriptor.DefaultQueue.Label) > 0 {
+			pinner.Pin(unsafe.StringData(descriptor.DefaultQueue.Label))
+		}
+		if descriptor.RequiredLimits != nil {
+			pinner.Pin(descriptor.RequiredLimits)
+		}
 		if descriptor.RequiredFeatures != nil {
 			pinner.Pin(descriptor.RequiredFeatures)
 		}
@@ -632,6 +671,12 @@ func (c CommandEncoder) Finish(descriptor *CommandBufferDescriptor) CommandBuffe
 	defer pinner.Unpin()
 	if descriptor != nil {
 		pinner.Pin(descriptor)
+		if descriptor.NextInChain != nil {
+			pinner.Pin(descriptor.NextInChain)
+		}
+		if len(descriptor.Label) > 0 {
+			pinner.Pin(unsafe.StringData(descriptor.Label))
+		}
 	}
 	c_c := (C.WGPUCommandEncoder)(unsafe.Pointer(c.Handle()))
 	c_descriptor := (*C.WGPUCommandBufferDescriptor)(unsafe.Pointer(descriptor))
@@ -646,6 +691,15 @@ func (c CommandEncoder) BeginComputePass(descriptor *ComputePassDescriptor) Comp
 	defer pinner.Unpin()
 	if descriptor != nil {
 		pinner.Pin(descriptor)
+		if descriptor.NextInChain != nil {
+			pinner.Pin(descriptor.NextInChain)
+		}
+		if len(descriptor.Label) > 0 {
+			pinner.Pin(unsafe.StringData(descriptor.Label))
+		}
+		if descriptor.TimestampWrites != nil {
+			pinner.Pin(descriptor.TimestampWrites)
+		}
 	}
 	c_c := (C.WGPUCommandEncoder)(unsafe.Pointer(c.Handle()))
 	c_descriptor := (*C.WGPUComputePassDescriptor)(unsafe.Pointer(descriptor))
@@ -660,6 +714,18 @@ func (c CommandEncoder) BeginRenderPass(descriptor *RenderPassDescriptor) Render
 	defer pinner.Unpin()
 	if descriptor != nil {
 		pinner.Pin(descriptor)
+		if descriptor.NextInChain != nil {
+			pinner.Pin(descriptor.NextInChain)
+		}
+		if len(descriptor.Label) > 0 {
+			pinner.Pin(unsafe.StringData(descriptor.Label))
+		}
+		if descriptor.DepthStencilAttachment != nil {
+			pinner.Pin(descriptor.DepthStencilAttachment)
+		}
+		if descriptor.TimestampWrites != nil {
+			pinner.Pin(descriptor.TimestampWrites)
+		}
 		if descriptor.ColorAttachments != nil {
 			pinner.Pin(descriptor.ColorAttachments)
 		}
@@ -963,6 +1029,12 @@ func (d Device) CreateBindGroup(descriptor *BindGroupDescriptor) BindGroup {
 	defer pinner.Unpin()
 	if descriptor != nil {
 		pinner.Pin(descriptor)
+		if descriptor.NextInChain != nil {
+			pinner.Pin(descriptor.NextInChain)
+		}
+		if len(descriptor.Label) > 0 {
+			pinner.Pin(unsafe.StringData(descriptor.Label))
+		}
 		if descriptor.Entries != nil {
 			pinner.Pin(descriptor.Entries)
 		}
@@ -980,6 +1052,12 @@ func (d Device) CreateBindGroupLayout(descriptor *BindGroupLayoutDescriptor) Bin
 	defer pinner.Unpin()
 	if descriptor != nil {
 		pinner.Pin(descriptor)
+		if descriptor.NextInChain != nil {
+			pinner.Pin(descriptor.NextInChain)
+		}
+		if len(descriptor.Label) > 0 {
+			pinner.Pin(unsafe.StringData(descriptor.Label))
+		}
 		if descriptor.Entries != nil {
 			pinner.Pin(descriptor.Entries)
 		}
@@ -997,6 +1075,12 @@ func (d Device) CreateBuffer(descriptor *BufferDescriptor) Buffer {
 	defer pinner.Unpin()
 	if descriptor != nil {
 		pinner.Pin(descriptor)
+		if descriptor.NextInChain != nil {
+			pinner.Pin(descriptor.NextInChain)
+		}
+		if len(descriptor.Label) > 0 {
+			pinner.Pin(unsafe.StringData(descriptor.Label))
+		}
 	}
 	c_d := (C.WGPUDevice)(unsafe.Pointer(d.Handle()))
 	c_descriptor := (*C.WGPUBufferDescriptor)(unsafe.Pointer(descriptor))
@@ -1011,6 +1095,12 @@ func (d Device) CreateCommandEncoder(descriptor *CommandEncoderDescriptor) Comma
 	defer pinner.Unpin()
 	if descriptor != nil {
 		pinner.Pin(descriptor)
+		if descriptor.NextInChain != nil {
+			pinner.Pin(descriptor.NextInChain)
+		}
+		if len(descriptor.Label) > 0 {
+			pinner.Pin(unsafe.StringData(descriptor.Label))
+		}
 	}
 	c_d := (C.WGPUDevice)(unsafe.Pointer(d.Handle()))
 	c_descriptor := (*C.WGPUCommandEncoderDescriptor)(unsafe.Pointer(descriptor))
@@ -1025,6 +1115,18 @@ func (d Device) CreateComputePipeline(descriptor *ComputePipelineDescriptor) Com
 	defer pinner.Unpin()
 	if descriptor != nil {
 		pinner.Pin(descriptor)
+		if descriptor.NextInChain != nil {
+			pinner.Pin(descriptor.NextInChain)
+		}
+		if len(descriptor.Label) > 0 {
+			pinner.Pin(unsafe.StringData(descriptor.Label))
+		}
+		if len(descriptor.Compute.EntryPoint) > 0 {
+			pinner.Pin(unsafe.StringData(descriptor.Compute.EntryPoint))
+		}
+		if descriptor.Compute.Constants != nil {
+			pinner.Pin(descriptor.Compute.Constants)
+		}
 	}
 	c_d := (C.WGPUDevice)(unsafe.Pointer(d.Handle()))
 	c_descriptor := (*C.WGPUComputePipelineDescriptor)(unsafe.Pointer(descriptor))
@@ -1048,6 +1150,18 @@ func (d Device) CreateComputePipelineAsync(descriptor *ComputePipelineDescriptor
 	defer pinner.Unpin()
 	if descriptor != nil {
 		pinner.Pin(descriptor)
+		if descriptor.NextInChain != nil {
+			pinner.Pin(descriptor.NextInChain)
+		}
+		if len(descriptor.Label) > 0 {
+			pinner.Pin(unsafe.StringData(descriptor.Label))
+		}
+		if len(descriptor.Compute.EntryPoint) > 0 {
+			pinner.Pin(unsafe.StringData(descriptor.Compute.EntryPoint))
+		}
+		if descriptor.Compute.Constants != nil {
+			pinner.Pin(descriptor.Compute.Constants)
+		}
 	}
 	c_d := (C.WGPUDevice)(unsafe.Pointer(d.Handle()))
 	c_descriptor := (*C.WGPUComputePipelineDescriptor)(unsafe.Pointer(descriptor))
@@ -1070,6 +1184,12 @@ func (d Device) CreatePipelineLayout(descriptor *PipelineLayoutDescriptor) Pipel
 	defer pinner.Unpin()
 	if descriptor != nil {
 		pinner.Pin(descriptor)
+		if descriptor.NextInChain != nil {
+			pinner.Pin(descriptor.NextInChain)
+		}
+		if len(descriptor.Label) > 0 {
+			pinner.Pin(unsafe.StringData(descriptor.Label))
+		}
 		if descriptor.BindGroupLayouts != nil {
 			pinner.Pin(descriptor.BindGroupLayouts)
 		}
@@ -1087,6 +1207,12 @@ func (d Device) CreateQuerySet(descriptor *QuerySetDescriptor) QuerySet {
 	defer pinner.Unpin()
 	if descriptor != nil {
 		pinner.Pin(descriptor)
+		if descriptor.NextInChain != nil {
+			pinner.Pin(descriptor.NextInChain)
+		}
+		if len(descriptor.Label) > 0 {
+			pinner.Pin(unsafe.StringData(descriptor.Label))
+		}
 	}
 	c_d := (C.WGPUDevice)(unsafe.Pointer(d.Handle()))
 	c_descriptor := (*C.WGPUQuerySetDescriptor)(unsafe.Pointer(descriptor))
@@ -1110,6 +1236,27 @@ func (d Device) CreateRenderPipelineAsync(descriptor *RenderPipelineDescriptor) 
 	defer pinner.Unpin()
 	if descriptor != nil {
 		pinner.Pin(descriptor)
+		if descriptor.NextInChain != nil {
+			pinner.Pin(descriptor.NextInChain)
+		}
+		if len(descriptor.Label) > 0 {
+			pinner.Pin(unsafe.StringData(descriptor.Label))
+		}
+		if len(descriptor.Vertex.EntryPoint) > 0 {
+			pinner.Pin(unsafe.StringData(descriptor.Vertex.EntryPoint))
+		}
+		if descriptor.DepthStencil != nil {
+			pinner.Pin(descriptor.DepthStencil)
+		}
+		if descriptor.Fragment != nil {
+			pinner.Pin(descriptor.Fragment)
+		}
+		if descriptor.Vertex.Constants != nil {
+			pinner.Pin(descriptor.Vertex.Constants)
+		}
+		if descriptor.Vertex.Buffers != nil {
+			pinner.Pin(descriptor.Vertex.Buffers)
+		}
 	}
 	c_d := (C.WGPUDevice)(unsafe.Pointer(d.Handle()))
 	c_descriptor := (*C.WGPURenderPipelineDescriptor)(unsafe.Pointer(descriptor))
@@ -1132,6 +1279,12 @@ func (d Device) CreateRenderBundleEncoder(descriptor *RenderBundleEncoderDescrip
 	defer pinner.Unpin()
 	if descriptor != nil {
 		pinner.Pin(descriptor)
+		if descriptor.NextInChain != nil {
+			pinner.Pin(descriptor.NextInChain)
+		}
+		if len(descriptor.Label) > 0 {
+			pinner.Pin(unsafe.StringData(descriptor.Label))
+		}
 		if descriptor.ColorFormats != nil {
 			pinner.Pin(descriptor.ColorFormats)
 		}
@@ -1149,6 +1302,27 @@ func (d Device) CreateRenderPipeline(descriptor *RenderPipelineDescriptor) Rende
 	defer pinner.Unpin()
 	if descriptor != nil {
 		pinner.Pin(descriptor)
+		if descriptor.NextInChain != nil {
+			pinner.Pin(descriptor.NextInChain)
+		}
+		if len(descriptor.Label) > 0 {
+			pinner.Pin(unsafe.StringData(descriptor.Label))
+		}
+		if len(descriptor.Vertex.EntryPoint) > 0 {
+			pinner.Pin(unsafe.StringData(descriptor.Vertex.EntryPoint))
+		}
+		if descriptor.DepthStencil != nil {
+			pinner.Pin(descriptor.DepthStencil)
+		}
+		if descriptor.Fragment != nil {
+			pinner.Pin(descriptor.Fragment)
+		}
+		if descriptor.Vertex.Constants != nil {
+			pinner.Pin(descriptor.Vertex.Constants)
+		}
+		if descriptor.Vertex.Buffers != nil {
+			pinner.Pin(descriptor.Vertex.Buffers)
+		}
 	}
 	c_d := (C.WGPUDevice)(unsafe.Pointer(d.Handle()))
 	c_descriptor := (*C.WGPURenderPipelineDescriptor)(unsafe.Pointer(descriptor))
@@ -1163,6 +1337,12 @@ func (d Device) CreateSampler(descriptor *SamplerDescriptor) Sampler {
 	defer pinner.Unpin()
 	if descriptor != nil {
 		pinner.Pin(descriptor)
+		if descriptor.NextInChain != nil {
+			pinner.Pin(descriptor.NextInChain)
+		}
+		if len(descriptor.Label) > 0 {
+			pinner.Pin(unsafe.StringData(descriptor.Label))
+		}
 	}
 	c_d := (C.WGPUDevice)(unsafe.Pointer(d.Handle()))
 	c_descriptor := (*C.WGPUSamplerDescriptor)(unsafe.Pointer(descriptor))
@@ -1177,6 +1357,12 @@ func (d Device) CreateShaderModule(descriptor *ShaderModuleDescriptor) ShaderMod
 	defer pinner.Unpin()
 	if descriptor != nil {
 		pinner.Pin(descriptor)
+		if descriptor.NextInChain != nil {
+			pinner.Pin(descriptor.NextInChain)
+		}
+		if len(descriptor.Label) > 0 {
+			pinner.Pin(unsafe.StringData(descriptor.Label))
+		}
 	}
 	c_d := (C.WGPUDevice)(unsafe.Pointer(d.Handle()))
 	c_descriptor := (*C.WGPUShaderModuleDescriptor)(unsafe.Pointer(descriptor))
@@ -1191,6 +1377,12 @@ func (d Device) CreateTexture(descriptor *TextureDescriptor) Texture {
 	defer pinner.Unpin()
 	if descriptor != nil {
 		pinner.Pin(descriptor)
+		if descriptor.NextInChain != nil {
+			pinner.Pin(descriptor.NextInChain)
+		}
+		if len(descriptor.Label) > 0 {
+			pinner.Pin(unsafe.StringData(descriptor.Label))
+		}
 		if descriptor.ViewFormats != nil {
 			pinner.Pin(descriptor.ViewFormats)
 		}
@@ -1223,6 +1415,9 @@ func (d Device) GetLimits(limits *Limits) Status {
 	defer pinner.Unpin()
 	if limits != nil {
 		pinner.Pin(limits)
+		if limits.NextInChain != nil {
+			pinner.Pin(limits.NextInChain)
+		}
 	}
 	c_d := (C.WGPUDevice)(unsafe.Pointer(d.Handle()))
 	c_limits := (*C.WGPULimits)(unsafe.Pointer(limits))
@@ -1262,6 +1457,21 @@ func (d Device) GetAdapterInfo(adapterInfo *AdapterInfo) Status {
 	defer pinner.Unpin()
 	if adapterInfo != nil {
 		pinner.Pin(adapterInfo)
+		if adapterInfo.NextInChain != nil {
+			pinner.Pin(adapterInfo.NextInChain)
+		}
+		if len(adapterInfo.Vendor) > 0 {
+			pinner.Pin(unsafe.StringData(adapterInfo.Vendor))
+		}
+		if len(adapterInfo.Architecture) > 0 {
+			pinner.Pin(unsafe.StringData(adapterInfo.Architecture))
+		}
+		if len(adapterInfo.Device) > 0 {
+			pinner.Pin(unsafe.StringData(adapterInfo.Device))
+		}
+		if len(adapterInfo.Description) > 0 {
+			pinner.Pin(unsafe.StringData(adapterInfo.Description))
+		}
 	}
 	c_d := (C.WGPUDevice)(unsafe.Pointer(d.Handle()))
 	c_adapterInfo := (*C.WGPUAdapterInfo)(unsafe.Pointer(adapterInfo))
@@ -1352,6 +1562,12 @@ func (i Instance) CreateSurface(descriptor *SurfaceDescriptor) Surface {
 	defer pinner.Unpin()
 	if descriptor != nil {
 		pinner.Pin(descriptor)
+		if descriptor.NextInChain != nil {
+			pinner.Pin(descriptor.NextInChain)
+		}
+		if len(descriptor.Label) > 0 {
+			pinner.Pin(unsafe.StringData(descriptor.Label))
+		}
 	}
 	c_i := (C.WGPUInstance)(unsafe.Pointer(i.Handle()))
 	c_descriptor := (*C.WGPUSurfaceDescriptor)(unsafe.Pointer(descriptor))
@@ -1407,6 +1623,9 @@ func (i Instance) RequestAdapter(options *RequestAdapterOptions) (Adapter, Reque
 	defer pinner.Unpin()
 	if options != nil {
 		pinner.Pin(options)
+		if options.NextInChain != nil {
+			pinner.Pin(options.NextInChain)
+		}
 	}
 	c_i := (C.WGPUInstance)(unsafe.Pointer(i.Handle()))
 	c_options := (*C.WGPURequestAdapterOptions)(unsafe.Pointer(options))
@@ -1755,6 +1974,12 @@ func (r RenderBundleEncoder) Finish(descriptor *RenderBundleDescriptor) RenderBu
 	defer pinner.Unpin()
 	if descriptor != nil {
 		pinner.Pin(descriptor)
+		if descriptor.NextInChain != nil {
+			pinner.Pin(descriptor.NextInChain)
+		}
+		if len(descriptor.Label) > 0 {
+			pinner.Pin(unsafe.StringData(descriptor.Label))
+		}
 	}
 	c_r := (C.WGPURenderBundleEncoder)(unsafe.Pointer(r.Handle()))
 	c_descriptor := (*C.WGPURenderBundleDescriptor)(unsafe.Pointer(descriptor))
@@ -2107,6 +2332,9 @@ func (s Surface) Configure(config *SurfaceConfiguration) {
 	defer pinner.Unpin()
 	if config != nil {
 		pinner.Pin(config)
+		if config.NextInChain != nil {
+			pinner.Pin(config.NextInChain)
+		}
 		if config.ViewFormats != nil {
 			pinner.Pin(config.ViewFormats)
 		}
@@ -2123,6 +2351,9 @@ func (s Surface) GetCapabilities(adapter Adapter, capabilities *SurfaceCapabilit
 	defer pinner.Unpin()
 	if capabilities != nil {
 		pinner.Pin(capabilities)
+		if capabilities.NextInChain != nil {
+			pinner.Pin(capabilities.NextInChain)
+		}
 		if capabilities.Formats != nil {
 			pinner.Pin(capabilities.Formats)
 		}
@@ -2147,6 +2378,9 @@ func (s Surface) GetCurrentTexture(surfaceTexture *SurfaceTexture) {
 	defer pinner.Unpin()
 	if surfaceTexture != nil {
 		pinner.Pin(surfaceTexture)
+		if surfaceTexture.NextInChain != nil {
+			pinner.Pin(surfaceTexture.NextInChain)
+		}
 	}
 	c_s := (C.WGPUSurface)(unsafe.Pointer(s.Handle()))
 	c_surfaceTexture := (*C.WGPUSurfaceTexture)(unsafe.Pointer(surfaceTexture))
@@ -2193,6 +2427,12 @@ func (t Texture) CreateView(descriptor *TextureViewDescriptor) TextureView {
 	defer pinner.Unpin()
 	if descriptor != nil {
 		pinner.Pin(descriptor)
+		if descriptor.NextInChain != nil {
+			pinner.Pin(descriptor.NextInChain)
+		}
+		if len(descriptor.Label) > 0 {
+			pinner.Pin(unsafe.StringData(descriptor.Label))
+		}
 	}
 	c_t := (C.WGPUTexture)(unsafe.Pointer(t.Handle()))
 	c_descriptor := (*C.WGPUTextureViewDescriptor)(unsafe.Pointer(descriptor))

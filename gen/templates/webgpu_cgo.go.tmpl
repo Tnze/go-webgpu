@@ -140,6 +140,21 @@ func release{{ .Name }}(inner uintptr) {
 {{- if .IsPtr }}
 	if {{ .Name }} != nil {
 		pinner.Pin({{ .Name }})
+		{{- if .HasChain }}
+		if {{ .Name }}.NextInChain != nil {
+			pinner.Pin({{ .Name }}.NextInChain)
+		}
+		{{- end }}
+{{- range .StrFields }}
+		if len({{ . }}) > 0 {
+			pinner.Pin(unsafe.StringData({{ . }}))
+		}
+{{- end }}
+{{- range .PtrFields }}
+		if {{ . }} != nil {
+			pinner.Pin({{ . }})
+		}
+{{- end }}
 {{- range .SliceFields }}
 		if {{ . }} != nil {
 			pinner.Pin({{ . }})
@@ -148,6 +163,21 @@ func release{{ .Name }}(inner uintptr) {
 	}
 {{- else }}
 	pinner.Pin(&{{ .Name }})
+	{{- if .HasChain }}
+	if {{ .Name }}.NextInChain != nil {
+		pinner.Pin({{ .Name }}.NextInChain)
+	}
+	{{- end }}
+{{- range .StrFields }}
+	if len({{ . }}) > 0 {
+		pinner.Pin(unsafe.StringData({{ . }}))
+	}
+{{- end }}
+{{- range .PtrFields }}
+	if {{ . }} != nil {
+		pinner.Pin({{ . }})
+	}
+{{- end }}
 {{- range .SliceFields }}
 	if {{ . }} != nil {
 		pinner.Pin({{ . }})
