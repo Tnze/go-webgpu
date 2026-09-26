@@ -32,21 +32,21 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
 `
 
 func main() {
-	instance := webgpu.CreateInstance(webgpu.InstanceDescriptor{})
+	instance := webgpu.CreateInstance(&webgpu.InstanceDescriptor{})
 	if instance == 0 {
 		log.Fatal("create instance failed")
 	}
 	defer instance.Release()
 
-	adapter, adapterStatus := instance.RequestAdapter(webgpu.RequestAdapterOptions{})
+	adapter, adapterStatus, adapterMsg := instance.RequestAdapter(&webgpu.RequestAdapterOptions{})
 	if adapterStatus != webgpu.RequestAdapterStatusSuccess {
-		log.Fatalf("request adapter: status %d", adapterStatus)
+		log.Fatalf("request adapter: status %d: %s", adapterStatus, adapterMsg)
 	}
 	defer adapter.Release()
 
-	device, deviceStatus := adapter.RequestDevice(webgpu.DeviceDescriptor{})
+	device, deviceStatus, deviceMsg := adapter.RequestDevice(&webgpu.DeviceDescriptor{})
 	if deviceStatus != webgpu.RequestDeviceStatusSuccess {
-		log.Fatalf("request device: status %d", deviceStatus)
+		log.Fatalf("request device: status %d: %s", deviceStatus, deviceMsg)
 	}
 	defer device.Release()
 
@@ -57,7 +57,7 @@ func main() {
 	defer queue.Release()
 
 	// Storage buffer: written from the queue, read/written by the shader, copied out.
-	storage := device.CreateBuffer(webgpu.BufferDescriptor{
+	storage := device.CreateBuffer(&webgpu.BufferDescriptor{
 		Label: "storage",
 		Usage: webgpu.BufferUsageStorage | webgpu.BufferUsageCopySrc | webgpu.BufferUsageCopyDst,
 		Size:  storageBytes,
@@ -69,7 +69,7 @@ func main() {
 	defer storage.Destroy()
 
 	// MAP_READ pairs with COPY_DST.
-	readback := device.CreateBuffer(webgpu.BufferDescriptor{
+	readback := device.CreateBuffer(&webgpu.BufferDescriptor{
 		Label: "readback",
 		Usage: webgpu.BufferUsageMapRead | webgpu.BufferUsageCopyDst,
 		Size:  storageBytes,
@@ -96,7 +96,7 @@ func main() {
 	src.Code = wgsl
 	pinner.Pin(&src)
 	pinner.Pin(unsafe.StringData(src.Code))
-	module := device.CreateShaderModule(webgpu.ShaderModuleDescriptor{
+	module := device.CreateShaderModule(&webgpu.ShaderModuleDescriptor{
 		Label:       "compute",
 		NextInChain: unsafe.Pointer(&src),
 	})
@@ -106,7 +106,7 @@ func main() {
 	defer module.Release()
 
 	// Layout 0 = auto: the pipeline derives its bind group layout from the shader.
-	pipeline := device.CreateComputePipeline(webgpu.ComputePipelineDescriptor{
+	pipeline := device.CreateComputePipeline(&webgpu.ComputePipelineDescriptor{
 		Label: "compute",
 		Compute: webgpu.ComputeState{
 			Module:     module.Handle(),
@@ -129,7 +129,7 @@ func main() {
 		Buffer:  storage.Handle(),
 		Size:    webgpu.WholeSize,
 	}}
-	bindGroup := device.CreateBindGroup(webgpu.BindGroupDescriptor{
+	bindGroup := device.CreateBindGroup(&webgpu.BindGroupDescriptor{
 		Label:        "bind-group",
 		Layout:       bgLayout.Handle(),
 		EntriesCount: 1,
@@ -141,13 +141,13 @@ func main() {
 	}
 	defer bindGroup.Release()
 
-	enc := device.CreateCommandEncoder(webgpu.CommandEncoderDescriptor{})
+	enc := device.CreateCommandEncoder(&webgpu.CommandEncoderDescriptor{})
 	if enc == 0 {
 		log.Fatal("create command encoder failed")
 	}
 	defer enc.Release()
 
-	pass := enc.BeginComputePass(webgpu.ComputePassDescriptor{Label: "compute"})
+	pass := enc.BeginComputePass(&webgpu.ComputePassDescriptor{Label: "compute"})
 	if pass == 0 {
 		log.Fatal("begin compute pass failed")
 	}
@@ -158,7 +158,7 @@ func main() {
 	pass.Release()
 
 	enc.CopyBufferToBuffer(storage, 0, readback, 0, storageBytes)
-	cmd := enc.Finish(webgpu.CommandBufferDescriptor{})
+	cmd := enc.Finish(&webgpu.CommandBufferDescriptor{})
 	if cmd == 0 {
 		log.Fatal("finish command buffer failed")
 	}
@@ -166,8 +166,8 @@ func main() {
 
 	queue.Submit([]webgpu.CommandBuffer{cmd})
 
-	if status := readback.Map(webgpu.MapModeRead, 0, storageBytes); status != webgpu.MapAsyncStatusSuccess {
-		log.Fatalf("map readback: status %d", status)
+	if status, msg := readback.Map(webgpu.MapModeRead, 0, storageBytes); status != webgpu.MapAsyncStatusSuccess {
+		log.Fatalf("map readback: status %d: %s", status, msg)
 	}
 	ptr := readback.GetConstMappedRange(0, storageBytes)
 	if ptr == nil {

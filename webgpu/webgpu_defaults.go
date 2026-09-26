@@ -23,7 +23,7 @@ func NewBindGroupLayoutEntry() BindGroupLayoutEntry {
 // NewBufferBindingLayout returns a BufferBindingLayout with default values.
 func NewBufferBindingLayout() BufferBindingLayout {
 	return BufferBindingLayout{
-		HasDynamicOffset: 0,
+		HasDynamicOffset: False,
 		MinBindingSize:   0,
 	}
 }
@@ -32,7 +32,7 @@ func NewBufferBindingLayout() BufferBindingLayout {
 func NewBufferDescriptor() BufferDescriptor {
 	return BufferDescriptor{
 		Usage:            BufferUsageNone,
-		MappedAtCreation: 0,
+		MappedAtCreation: False,
 	}
 }
 
@@ -130,7 +130,7 @@ func NewMultisampleState() MultisampleState {
 	return MultisampleState{
 		Count:                  1,
 		Mask:                   0xFFFFFFFF,
-		AlphaToCoverageEnabled: 0,
+		AlphaToCoverageEnabled: False,
 	}
 }
 
@@ -161,7 +161,7 @@ func NewPipelineLayoutDescriptor() PipelineLayoutDescriptor {
 // NewPrimitiveState returns a PrimitiveState with default values.
 func NewPrimitiveState() PrimitiveState {
 	return PrimitiveState{
-		UnclippedDepth: 0,
+		UnclippedDepth: False,
 	}
 }
 
@@ -169,8 +169,8 @@ func NewPrimitiveState() PrimitiveState {
 func NewRenderBundleEncoderDescriptor() RenderBundleEncoderDescriptor {
 	return RenderBundleEncoderDescriptor{
 		SampleCount:     1,
-		DepthReadOnly:   0,
-		StencilReadOnly: 0,
+		DepthReadOnly:   False,
+		StencilReadOnly: False,
 	}
 }
 
@@ -185,8 +185,8 @@ func NewRenderPassColorAttachment() RenderPassColorAttachment {
 func NewRenderPassDepthStencilAttachment() RenderPassDepthStencilAttachment {
 	return RenderPassDepthStencilAttachment{
 		DepthClearValue: &DepthClearValueUndefined,
-		DepthReadOnly:   0,
-		StencilReadOnly: 0,
+		DepthReadOnly:   False,
+		StencilReadOnly: False,
 	}
 }
 
@@ -201,7 +201,7 @@ func NewRenderPassMaxDrawCount() RenderPassMaxDrawCount {
 // NewRequestAdapterOptions returns a RequestAdapterOptions with default values.
 func NewRequestAdapterOptions() RequestAdapterOptions {
 	return RequestAdapterOptions{
-		ForceFallbackAdapter: 0,
+		ForceFallbackAdapter: False,
 	}
 }
 
@@ -209,7 +209,7 @@ func NewRequestAdapterOptions() RequestAdapterOptions {
 func NewRequestAdapterWebXROptions() RequestAdapterWebXROptions {
 	return RequestAdapterWebXROptions{
 		SType:        STypeRequestAdapterWebXROptions,
-		XrCompatible: 0,
+		XrCompatible: False,
 	}
 }
 
@@ -313,7 +313,7 @@ func NewTexelCopyTextureInfo() TexelCopyTextureInfo {
 // NewTextureBindingLayout returns a TextureBindingLayout with default values.
 func NewTextureBindingLayout() TextureBindingLayout {
 	return TextureBindingLayout{
-		Multisampled: 0,
+		Multisampled: False,
 	}
 }
 

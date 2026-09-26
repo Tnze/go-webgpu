@@ -92,34 +92,35 @@ the raw pointer without taking ownership. Do not use a handle after `Release()`.
 | `uint8/16/32/64` | `uint8/16/32/64` | `C.uint8_t` … `C.uint64_t` | |
 | `int32/64` | `int32/64` | `C.int32_t` / `C.int64_t` | |
 | `float32/64` | `float32/64` | `C.float` / `C.double` | |
-| `bool` | `bool` | `C.int` | |
+| `bool` | `Bool` | `C.WGPUBool` | `type Bool uint32`; `True` / `False` |
 | `usize` | `uintptr` | `C.size_t` | |
 | `string_with_default_empty` | `string` | `*C.char` | CGO: `C.CString` + `defer C.free` |
 | `nullable_float32` | `*float32` | — | |
 | `enum.*` | `type X uint32` | `C.WGPUXxx` | Prefixed names: `BlendFactorZero` |
 | `bitflag.*` | `type X uint32` | `C.WGPUXxx` | Auto `1<<N` values |
-| `struct.*` | Go struct | `C.WGPUXxx` | Passed by pointer to C |
+| `struct.*` | `*T` (pointer) | `*C.WGPUXxx` | Descriptors and out-params are passed as pointers |
 | `object.*` | `X` (handle) | `C.WGPUXxx` | `type X uintptr`; zero is null |
 | `callback.*` | internal only | — | blocking wrappers hide C futures/callbacks |
 
 ### Errors and blocking
 
-Go methods follow normal Go error style. Operations that can fail return
-`error` (and a handle/value as the first result when there is one):
+Operations surface raw C results: status enums stay enums, handles are
+zero on failure, mapped pointers are nil on failure. Callback APIs
+(`wgpuInstanceRequestAdapter`, `wgpuBufferMapAsync`, …) are wrapped in
+blocking methods that wait on an internal channel while pumping events and
+return the C message string alongside the status:
 
 ```go
-buf, err := d.CreateBuffer(webgpu.BufferDescriptor{ /* ... */ })
-if err != nil { ... }
+adapter, status, msg := instance.RequestAdapter(webgpu.RequestAdapterOptions{})
+if status != webgpu.RequestAdapterStatusSuccess {
+	log.Fatalf("request adapter: %d: %s", status, msg)
+}
+
+status, msg = buf.Map(webgpu.MapModeRead, 0, size) // not MapAsync
 ```
 
-There are no callbacks or `Future`s in the public API. C async entry points
-(`wgpuInstanceRequestAdapter`, `wgpuBufferMapAsync`, …) are wrapped in blocking
-methods that wait on an internal channel while pumping events:
-
-```go
-adapter, err := instance.RequestAdapter(webgpu.RequestAdapterOptions{})
-err = buf.Map(webgpu.MapModeRead, 0, size) // not MapAsync
-```
+`error_type` callbacks (`uncaptured_error`, `pop_error_scope`) fold the
+message into a typed `error` (`*ValidationError`, `*OutOfMemoryError`, …).
 | `c_void_*` | `unsafe.Pointer` | `unsafe.Pointer` | Platform-specific window handles |
 | `array<T>` | `[]T` | ptr + count | Expanded to two C args |
 

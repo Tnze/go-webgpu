@@ -55,6 +55,20 @@ var (
 )
 
 // ---------------------------------------------------------------------------
+// Bool (WGPUBool)
+// ---------------------------------------------------------------------------
+
+// Bool is a WebGPU boolean (C WGPUBool, an alias of uint32_t).
+type Bool uint32
+
+const (
+	// False is the 'false' value of Bool (WGPU_FALSE).
+	False Bool = 0
+	// True is the 'true' value of Bool (WGPU_TRUE).
+	True Bool = 1
+)
+
+// ---------------------------------------------------------------------------
 // Enum types
 // ---------------------------------------------------------------------------
 
@@ -991,7 +1005,7 @@ type BufferBindingLayout struct {
 	// [defaults](@ref SentinelValues) to @ref WGPUBufferBindingType_Uniform.
 	Type BufferBindingType
 	// TODO
-	HasDynamicOffset uint32
+	HasDynamicOffset Bool
 	// TODO
 	MinBindingSize uint64
 }
@@ -1009,7 +1023,7 @@ type BufferDescriptor struct {
 	// When true, the buffer is mapped in write mode at creation. It should thus be unmapped once its initial data has been written.
 	//
 	// @note Mapping at creation does **not** require the usage @ref WGPUBufferUsage_MapWrite.
-	MappedAtCreation uint32
+	MappedAtCreation Bool
 }
 
 // Color is a WebGPU struct.
@@ -1248,7 +1262,7 @@ type FutureWaitInfo struct {
 	// The future to wait on.
 	Future Future
 	// Whether or not the future completed.
-	Completed uint32
+	Completed Bool
 }
 
 // InstanceDescriptor is a WebGPU struct.
@@ -1349,7 +1363,7 @@ type MultisampleState struct {
 	// TODO
 	Mask uint32
 	// TODO
-	AlphaToCoverageEnabled uint32
+	AlphaToCoverageEnabled Bool
 }
 
 // Origin3D is a WebGPU struct.
@@ -1404,7 +1418,7 @@ type PrimitiveState struct {
 	// [defaults](@ref SentinelValues) to @ref WGPUCullMode_None.
 	CullMode CullMode
 	// TODO
-	UnclippedDepth uint32
+	UnclippedDepth Bool
 }
 
 // QuerySetDescriptor is a WebGPU struct.
@@ -1449,9 +1463,9 @@ type RenderBundleEncoderDescriptor struct {
 	// TODO
 	SampleCount uint32
 	// TODO
-	DepthReadOnly uint32
+	DepthReadOnly Bool
 	// TODO
-	StencilReadOnly uint32
+	StencilReadOnly Bool
 }
 
 // RenderPassColorAttachment is a WebGPU struct.
@@ -1491,7 +1505,7 @@ type RenderPassDepthStencilAttachment struct {
 	// If infinite, produces a @ref NonFiniteFloatValueError.
 	DepthClearValue *float32
 	// TODO
-	DepthReadOnly uint32
+	DepthReadOnly Bool
 	// TODO
 	StencilLoadOp LoadOp
 	// TODO
@@ -1499,7 +1513,7 @@ type RenderPassDepthStencilAttachment struct {
 	// TODO
 	StencilClearValue uint32
 	// TODO
-	StencilReadOnly uint32
+	StencilReadOnly Bool
 }
 
 // RenderPassDescriptor is a WebGPU struct.
@@ -1563,7 +1577,7 @@ type RequestAdapterOptions struct {
 	PowerPreference PowerPreference
 	// If true, requires the adapter to be a "fallback" adapter as defined by the JS spec.
 	// If this is not possible, the request returns null.
-	ForceFallbackAdapter uint32
+	ForceFallbackAdapter Bool
 	// If set, requires the adapter to have a particular backend type.
 	// If this is not possible, the request returns null.
 	BackendType BackendType
@@ -1578,7 +1592,7 @@ type RequestAdapterWebXROptions struct {
 	NextInChain unsafe.Pointer
 	SType       SType
 	// Sets the `xrCompatible` option in the JS API.
-	XrCompatible uint32
+	XrCompatible Bool
 }
 
 // SamplerBindingLayout is a WebGPU struct.
@@ -1899,7 +1913,7 @@ type TextureBindingLayout struct {
 	// [defaults](@ref SentinelValues) to @ref WGPUTextureViewDimension_2D.
 	ViewDimension TextureViewDimension
 	// TODO
-	Multisampled uint32
+	Multisampled Bool
 }
 
 // TextureBindingViewDimension is a WebGPU struct.
@@ -2498,31 +2512,31 @@ func (t TextureView) Handle() uintptr {
 // ---------------------------------------------------------------------------
 
 // BufferMapFn is a callback function type.
-type BufferMapFn func(status MapAsyncStatus)
+type BufferMapFn func(status MapAsyncStatus, message string)
 
 // CompilationInfoFn is a callback function type.
 type CompilationInfoFn func(compilationInfo CompilationInfo, status CompilationInfoRequestStatus)
 
 // CreateComputePipelineAsyncFn is a callback function type.
-type CreateComputePipelineAsyncFn func(pipeline ComputePipeline, status CreatePipelineAsyncStatus)
+type CreateComputePipelineAsyncFn func(pipeline ComputePipeline, status CreatePipelineAsyncStatus, message string)
 
 // CreateRenderPipelineAsyncFn is a callback function type.
-type CreateRenderPipelineAsyncFn func(pipeline RenderPipeline, status CreatePipelineAsyncStatus)
+type CreateRenderPipelineAsyncFn func(pipeline RenderPipeline, status CreatePipelineAsyncStatus, message string)
 
 // DeviceLostFn is a callback function type.
-type DeviceLostFn func(device Device, reason DeviceLostReason)
+type DeviceLostFn func(device Device, reason DeviceLostReason, message string)
 
 // PopErrorScopeFn is a callback function type.
 type PopErrorScopeFn func(err error, status PopErrorScopeStatus)
 
 // QueueWorkDoneFn is a callback function type.
-type QueueWorkDoneFn func(status QueueWorkDoneStatus)
+type QueueWorkDoneFn func(status QueueWorkDoneStatus, message string)
 
 // RequestAdapterFn is a callback function type.
-type RequestAdapterFn func(adapter Adapter, status RequestAdapterStatus)
+type RequestAdapterFn func(adapter Adapter, status RequestAdapterStatus, message string)
 
 // RequestDeviceFn is a callback function type.
-type RequestDeviceFn func(device Device, status RequestDeviceStatus)
+type RequestDeviceFn func(device Device, status RequestDeviceStatus, message string)
 
 // UncapturedErrorFn is a callback function type.
 type UncapturedErrorFn func(device Device, err error)

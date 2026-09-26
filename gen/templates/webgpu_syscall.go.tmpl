@@ -94,11 +94,22 @@ func release{{ .Name }}(inner uintptr) {
 	defer pinner.Unpin()
 {{- range .GoArgs }}
 {{- if isStruct .TypeRef }}
+{{- if .IsPtr }}
+	if {{ .Name }} != nil {
+		pinner.Pin({{ .Name }})
+{{- range .SliceFields }}
+		if {{ . }} != nil {
+			pinner.Pin({{ . }})
+		}
+{{- end }}
+	}
+{{- else }}
 	pinner.Pin(&{{ .Name }})
 {{- range .SliceFields }}
 	if {{ . }} != nil {
 		pinner.Pin({{ . }})
 	}
+{{- end }}
 {{- end }}
 {{- else if .IsSlice }}
 	if len({{ .Name }}) > 0 {
@@ -162,15 +173,7 @@ func release{{ .Name }}(inner uintptr) {
 {{- end }}
 {{- end }}
 {{- range .Args }}
-{{- if eq .Kind "message" }}
-		var s string
-		if {{ .Name }} != 0 {
-			sv := (*wgpuStringView)(unsafe.Pointer({{ .Name }}))
-			if sv.data != nil && sv.length > 0 {
-				s = unsafe.String(sv.data, int(sv.length))
-			}
-		}
-{{- else if eq .Kind "object" }}
+{{- if eq .Kind "object" }}
 		var {{ .GoName }} {{ .GoType }}
 		if {{ .Name }} != 0 {
 			{{ .GoName }} = {{ .GoType }}({{ .Name }})
@@ -182,6 +185,14 @@ func release{{ .Name }}(inner uintptr) {
 		}
 {{- else if eq .Kind "error_type" }}
 		{{ .GoName }} := errorFromErrorType(ErrorType({{ .Name }}), emsg)
+{{- else if eq .Kind "message" }}
+		{{ .GoName }} := ""
+		if {{ .Name }} != 0 {
+			sv := (*wgpuStringView)(unsafe.Pointer({{ .Name }}))
+			if sv.data != nil && sv.length > 0 {
+				{{ .GoName }} = unsafe.String(sv.data, int(sv.length))
+			}
+		}
 {{- else if or (eq .Kind "enum") (eq .Kind "status") }}
 		{{ .GoName }} := {{ .GoType }}({{ .Name }})
 {{- end }}
@@ -197,7 +208,7 @@ func release{{ .Name }}(inner uintptr) {
 {{- $funcName := .Ident }}
 {{- $kind := .RetKind }}
 	r1, _, _ := proc{{ $funcName }}.Call(
-		{{- range $i, $a := .GoArgs }}{{ if $i }}, {{ end }}{{ if $a.IsSlice }}{{ $a.Name }}_count, uintptr({{ $a.Name }}_ptr){{ else if isFuncPtr $a.TypeRef }}uintptr(unsafe.Pointer(&_cbInfo)){{ else if isHandle $a.TypeRef }}{{ $a.Name }}_v{{ else if $a.IsStr }}uintptr(unsafe.Pointer(&{{ $a.Name }}_sv)){{ else if isStruct $a.TypeRef }}uintptr(unsafe.Pointer(&{{ $a.Name }})){{ else }}{{ $a.Name }}_v{{ end }}{{ end -}}
+		{{- range $i, $a := .GoArgs }}{{ if $i }}, {{ end }}{{ if $a.IsSlice }}{{ $a.Name }}_count, uintptr({{ $a.Name }}_ptr){{ else if isFuncPtr $a.TypeRef }}uintptr(unsafe.Pointer(&_cbInfo)){{ else if isHandle $a.TypeRef }}{{ $a.Name }}_v{{ else if $a.IsStr }}uintptr(unsafe.Pointer(&{{ $a.Name }}_sv)){{ else if isStruct $a.TypeRef }}{{ if $a.IsPtr }}uintptr(unsafe.Pointer({{ $a.Name }})){{ else }}uintptr(unsafe.Pointer(&{{ $a.Name }})){{ end }}{{ else }}{{ $a.Name }}_v{{ end }}{{ end -}}
 	)
 {{- if eq $kind "blocking" }}
 	_ = r1
@@ -218,7 +229,7 @@ func release{{ .Name }}(inner uintptr) {
 {{- else if eq $kind "pointer" }}
 	return unsafe.Pointer(r1)
 {{- else if eq $kind "bool" }}
-	return r1 != 0
+	return Bool(r1)
 {{- else if eq $kind "future" }}
 	return Future{Id: uint64(r1)}
 {{- else }}
@@ -226,7 +237,7 @@ func release{{ .Name }}(inner uintptr) {
 {{- end }}
 {{- else }}
 	proc{{ .Ident }}.Call(
-		{{- range $i, $a := .GoArgs }}{{ if $i }}, {{ end }}{{ if $a.IsSlice }}{{ $a.Name }}_count, uintptr({{ $a.Name }}_ptr){{ else if isFuncPtr $a.TypeRef }}uintptr(unsafe.Pointer(&_cbInfo)){{ else if isHandle $a.TypeRef }}{{ $a.Name }}_v{{ else if $a.IsStr }}uintptr(unsafe.Pointer(&{{ $a.Name }}_sv)){{ else if isStruct $a.TypeRef }}uintptr(unsafe.Pointer(&{{ $a.Name }})){{ else }}{{ $a.Name }}_v{{ end }}{{ end -}}
+		{{- range $i, $a := .GoArgs }}{{ if $i }}, {{ end }}{{ if $a.IsSlice }}{{ $a.Name }}_count, uintptr({{ $a.Name }}_ptr){{ else if isFuncPtr $a.TypeRef }}uintptr(unsafe.Pointer(&_cbInfo)){{ else if isHandle $a.TypeRef }}{{ $a.Name }}_v{{ else if $a.IsStr }}uintptr(unsafe.Pointer(&{{ $a.Name }}_sv)){{ else if isStruct $a.TypeRef }}{{ if $a.IsPtr }}uintptr(unsafe.Pointer({{ $a.Name }})){{ else }}uintptr(unsafe.Pointer(&{{ $a.Name }})){{ end }}{{ else }}{{ $a.Name }}_v{{ end }}{{ end -}}
 	)
 {{- end }}
 }

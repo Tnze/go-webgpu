@@ -143,7 +143,8 @@ type CallbackArgInfo struct {
 // Return convention: raw C results are surfaced directly — status enums
 // stay enums, handles stay handles (zero = failure), pointer returns stay
 // pointers (nil = failure). Callback APIs become blocking multi-return
-// functions whose last value is the status enum.
+// functions whose last values are the status enum and the C message string
+// (the message is folded into a typed error for error_type callbacks).
 type FuncData struct {
 	Name          string
 	CName         string
@@ -355,9 +356,9 @@ func buildTemplateData(spec *parser.Spec) *TemplateData {
 		}
 
 		// Classify each C parameter.
-		//   status         → raw status enum (last Go callback arg)
+		//   status         → raw status enum (before trailing message)
 		//   error_type     → folded with following message into typed error
-		//   message        → dropped (or feeds the typed error)
+		//   message        → trailing string (or feeds the typed error)
 		//   everything else → passed through raw
 		sawErrorType := false
 		for _, a := range cb.Args {
@@ -399,6 +400,10 @@ func buildTemplateData(spec *parser.Spec) *TemplateData {
 		}
 		if ci.StatusArg != nil {
 			ci.CallArgs = append(ci.CallArgs, ci.StatusArg.GoName)
+		}
+		// Standalone messages (not folded into a typed error) are passed through.
+		if ci.MessageArg != nil {
+			ci.CallArgs = append(ci.CallArgs, ci.MessageArg.GoName)
 		}
 
 		td.CallbackInfos = append(td.CallbackInfos, ci)
@@ -647,12 +652,17 @@ func buildFuncData(f parser.Function, spec *parser.Spec) FuncData {
 			goType = "[]" + innerGo
 			fadSliceCPtr = "*" + cgoTypeName(innerGo)
 		}
+		isPtr := arg.Pointer == "immutable" || arg.Pointer == "mutable"
+		// Struct args are C pointers (descriptors / out-params); mirror that in Go.
+		if isStructType(arg.Type) && isPtr && !isSlice {
+			goType = "*" + goType
+		}
 		fad := FuncArgData{
 			Name:       camelCase(arg.Name),
 			GoType:     goType,
 			TypeRef:    arg.Type,
 			CName:      arg.Name,
-			IsPtr:      arg.Pointer == "immutable" || arg.Pointer == "mutable",
+			IsPtr:      isPtr,
 			IsOptional: arg.Optional,
 			IsSlice:    isSlice,
 			IsStr:      isStringType(arg.Type),
@@ -813,7 +823,7 @@ func goTypeForRef(ref string, spec *parser.Spec) string {
 	}
 	switch ref {
 	case "bool":
-		return "bool"
+		return "Bool"
 	case "uint8":
 		return "uint8"
 	case "uint16":
@@ -868,10 +878,6 @@ func goTypeForRef(ref string, spec *parser.Spec) string {
 }
 
 func goTypeForMember(m parser.StructMember) string {
-	// C ABI: WGPUBool is uint32_t.
-	if m.Type == "bool" {
-		return "uint32"
-	}
 	// Nullable / default-empty strings are WGPUStringView (pointer + length),
 	// which matches a Go string header on 64-bit.
 	if m.Type == "nullable_string" || isStringType(m.Type) {
@@ -905,7 +911,7 @@ func cgoTypeName(goType string) string {
 		return "C.WGPU" + strings.TrimPrefix(goType, "*")
 	}
 	switch goType {
-	case "bool":
+	case "bool", "Bool":
 		return "C.WGPUBool"
 	case "uint8":
 		return "C.uint8_t"
@@ -963,7 +969,7 @@ func isStructType(ref string) bool {
 
 func isPrimitiveGoType(t string) bool {
 	switch t {
-	case "bool", "uint8", "uint16", "uint32", "uint64",
+	case "bool", "Bool", "uint8", "uint16", "uint32", "uint64",
 		"int32", "int64", "float32", "float64", "uintptr":
 		return true
 	}
@@ -1000,11 +1006,10 @@ func memberDefaultValue(m parser.StructMember, spec *parser.Spec) string {
 	switch v := m.Default.(type) {
 	case bool:
 		if m.Type == "bool" {
-			// C WGPUBool is uint32.
 			if v {
-				return "1"
+				return "True"
 			}
-			return "0"
+			return "False"
 		}
 		if v {
 			return "true"
@@ -1038,8 +1043,14 @@ func resolveDefaultString(val, typeRef string, spec *parser.Spec) string {
 	case "constant.undefined":
 		return "Undefined"
 	case "true":
+		if typeRef == "bool" {
+			return "True"
+		}
 		return "true"
 	case "false":
+		if typeRef == "bool" {
+			return "False"
+		}
 		return "false"
 	}
 
@@ -1064,6 +1075,8 @@ func goZeroValue(goType string) string {
 	switch goType {
 	case "bool":
 		return "false"
+	case "Bool":
+		return "False"
 	case "uint8", "uint16", "uint32", "uint64",
 		"int32", "int64", "float32", "float64", "uintptr":
 		return "0"
@@ -1134,6 +1147,7 @@ type CallbackArgData struct {
 func goCallbackArgs(cb parser.Callback) []CallbackArgData {
 	var args []CallbackArgData
 	var statusGoType string
+	var messageArg *CallbackArgData
 	skipMessage := false
 	for _, a := range cb.Args {
 		if skipMessage {
@@ -1150,7 +1164,9 @@ func goCallbackArgs(cb parser.Callback) []CallbackArgData {
 			continue
 		}
 		if a.Name == "message" && isStringType(a.Type) {
-			continue // message is not surfaced
+			// Surfaced as a trailing string, unless folded into a typed error.
+			messageArg = &CallbackArgData{Name: "message", GoType: "string"}
+			continue
 		}
 		args = append(args, CallbackArgData{
 			Name:   camelCase(a.Name),
@@ -1159,6 +1175,9 @@ func goCallbackArgs(cb parser.Callback) []CallbackArgData {
 	}
 	if statusGoType != "" {
 		args = append(args, CallbackArgData{Name: "status", GoType: statusGoType})
+	}
+	if messageArg != nil {
+		args = append(args, *messageArg)
 	}
 	return args
 }

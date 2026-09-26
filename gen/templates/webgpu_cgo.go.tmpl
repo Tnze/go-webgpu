@@ -73,6 +73,8 @@ func {{ .ExportName }}({{ range $i, $a := .Args }}{{ if $i }}, {{ end }}{{ $a.Na
 	}
 {{- else if eq .Kind "error_type" }}
 	{{ .GoName }} := {{ $cb.ErrConvert }}
+{{- else if eq .Kind "message" }}
+	{{ .GoName }} := cgoGoString({{ .Name }})
 {{- else if or (eq .Kind "enum") (eq .Kind "status") }}
 	{{ .GoName }} := {{ .GoType }}({{ .Name }})
 {{- end }}
@@ -135,11 +137,22 @@ func release{{ .Name }}(inner uintptr) {
 	defer pinner.Unpin()
 {{- range .GoArgs }}
 {{- if isStruct .TypeRef }}
+{{- if .IsPtr }}
+	if {{ .Name }} != nil {
+		pinner.Pin({{ .Name }})
+{{- range .SliceFields }}
+		if {{ . }} != nil {
+			pinner.Pin({{ . }})
+		}
+{{- end }}
+	}
+{{- else }}
 	pinner.Pin(&{{ .Name }})
 {{- range .SliceFields }}
 	if {{ . }} != nil {
 		pinner.Pin({{ . }})
 	}
+{{- end }}
 {{- end }}
 {{- else if .IsSlice }}
 	if len({{ .Name }}) > 0 {
@@ -171,7 +184,11 @@ func release{{ .Name }}(inner uintptr) {
 {{- end }}
 	c_{{ .Name }}_count := (C.size_t)(len({{ .Name }}))
 {{- else if isStruct .TypeRef }}
+{{- if .IsPtr }}
+	c_{{ .Name }} := (*{{ cgoType .GoType }})(unsafe.Pointer({{ .Name }}))
+{{- else }}
 	c_{{ .Name }} := (*{{ cgoType .GoType }})(unsafe.Pointer(&{{ .Name }}))
+{{- end }}
 {{- else if isFuncPtr .TypeRef }}
 {{- /* callback arg is handled via callbackInfo below */}}
 {{- else }}
@@ -216,7 +233,7 @@ func release{{ .Name }}(inner uintptr) {
 {{- else if eq $kind "pointer" }}
 	return unsafe.Pointer(c_result)
 {{- else if eq $kind "bool" }}
-	return c_result != 0
+	return Bool(c_result)
 {{- else if eq $kind "future" }}
 	return Future{Id: uint64(c_result.id)}
 {{- else }}
