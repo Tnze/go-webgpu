@@ -10,10 +10,6 @@ import (
 	"unsafe"
 )
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
 const (
 	// Indicates no array layer count is specified. For more info,
 	// see @ref SentinelValues and the places that use this sentinel value.
@@ -47,32 +43,19 @@ const (
 	WholeSize = 0xFFFFFFFFFFFFFFFF
 )
 
-// NaN-based constants (not valid in const blocks).
 var (
 	// Indicates no depth clear value is specified. For more info,
 	// see @ref SentinelValues and the places that use this sentinel value.
 	DepthClearValueUndefined float32 = float32(math.NaN())
 )
 
-// ---------------------------------------------------------------------------
-// Bool (WGPUBool)
-// ---------------------------------------------------------------------------
-
-// Bool is a WebGPU boolean (C WGPUBool, an alias of uint32_t).
 type Bool uint32
 
 const (
-	// False is the 'false' value of Bool (WGPU_FALSE).
 	False Bool = 0
-	// True is the 'true' value of Bool (WGPU_TRUE).
-	True Bool = 1
+	True  Bool = 1
 )
 
-// ---------------------------------------------------------------------------
-// Enum types
-// ---------------------------------------------------------------------------
-
-// AdapterType is a WebGPU enum.
 type AdapterType uint32
 
 const (
@@ -82,20 +65,20 @@ const (
 	AdapterTypeUnknown       AdapterType = 4
 )
 
-// AddressMode is a WebGPU enum.
 type AddressMode uint32
 
 const (
+	// Indicates no value is passed for this argument. See @ref SentinelValues.
 	AddressModeUndefined    AddressMode = 0
 	AddressModeClampToEdge  AddressMode = 1
 	AddressModeRepeat       AddressMode = 2
 	AddressModeMirrorRepeat AddressMode = 3
 )
 
-// BackendType is a WebGPU enum.
 type BackendType uint32
 
 const (
+	// Indicates no value is passed for this argument. See @ref SentinelValues.
 	BackendTypeUndefined BackendType = 0
 	BackendTypeNull      BackendType = 1
 	BackendTypeWebGPU    BackendType = 2
@@ -107,10 +90,10 @@ const (
 	BackendTypeOpenGLES  BackendType = 8
 )
 
-// BlendFactor is a WebGPU enum.
 type BlendFactor uint32
 
 const (
+	// Indicates no value is passed for this argument. See @ref SentinelValues.
 	BlendFactorUndefined         BlendFactor = 0
 	BlendFactorZero              BlendFactor = 1
 	BlendFactorOne               BlendFactor = 2
@@ -131,10 +114,10 @@ const (
 	BlendFactorOneMinusSrc1Alpha BlendFactor = 17
 )
 
-// BlendOperation is a WebGPU enum.
 type BlendOperation uint32
 
 const (
+	// Indicates no value is passed for this argument. See @ref SentinelValues.
 	BlendOperationUndefined       BlendOperation = 0
 	BlendOperationAdd             BlendOperation = 1
 	BlendOperationSubtract        BlendOperation = 2
@@ -143,18 +126,20 @@ const (
 	BlendOperationMax             BlendOperation = 5
 )
 
-// BufferBindingType is a WebGPU enum.
 type BufferBindingType uint32
 
 const (
-	BufferBindingTypeBindingNotUsed  BufferBindingType = 0
+	// Indicates that this @ref WGPUBufferBindingLayout member of
+	// its parent @ref WGPUBindGroupLayoutEntry is not used.
+	// (See also @ref SentinelValues.)
+	BufferBindingTypeBindingNotUsed BufferBindingType = 0
+	// `1`. Indicates no value is passed for this argument. See @ref SentinelValues.
 	BufferBindingTypeUndefined       BufferBindingType = 1
 	BufferBindingTypeUniform         BufferBindingType = 2
 	BufferBindingTypeStorage         BufferBindingType = 3
 	BufferBindingTypeReadOnlyStorage BufferBindingType = 4
 )
 
-// BufferMapState is a WebGPU enum.
 type BufferMapState uint32
 
 const (
@@ -163,19 +148,32 @@ const (
 	BufferMapStateMapped   BufferMapState = 3
 )
 
-// CallbackMode is a WebGPU enum.
+// The callback mode controls how a callback for an asynchronous operation may be fired. See @ref Asynchronous-Operations for how these are used.
 type CallbackMode uint32
 
 const (
-	CallbackModeWaitAnyOnly        CallbackMode = 1
+	// Callbacks created with `WGPUCallbackMode_WaitAnyOnly`:
+	// - fire when the asynchronous operation's future is passed to a call to @ref wgpuInstanceWaitAny
+	//   AND the operation has already completed or it completes inside the call to @ref wgpuInstanceWaitAny.
+	CallbackModeWaitAnyOnly CallbackMode = 1
+	// Callbacks created with `WGPUCallbackMode_AllowProcessEvents`:
+	// - fire for the same reasons as callbacks created with `WGPUCallbackMode_WaitAnyOnly`
+	// - fire inside a call to @ref wgpuInstanceProcessEvents if the asynchronous operation is complete.
 	CallbackModeAllowProcessEvents CallbackMode = 2
-	CallbackModeAllowSpontaneous   CallbackMode = 3
+	// Callbacks created with `WGPUCallbackMode_AllowSpontaneous`:
+	// - fire for the same reasons as callbacks created with `WGPUCallbackMode_AllowProcessEvents`
+	// - **may** fire spontaneously on an arbitrary or application thread, when the WebGPU implementations discovers that the asynchronous operation is complete.
+	//
+	//   Implementations _should_ fire spontaneous callbacks as soon as possible.
+	//
+	// @note Because spontaneous callbacks may fire at an arbitrary time on an arbitrary thread, applications should take extra care when acquiring locks or mutating state inside the callback. It undefined behavior to re-entrantly call into the webgpu.h API if the callback fires while inside the callstack of another webgpu.h function that is not `wgpuInstanceWaitAny` or `wgpuInstanceProcessEvents`.
+	CallbackModeAllowSpontaneous CallbackMode = 3
 )
 
-// CompareFunction is a WebGPU enum.
 type CompareFunction uint32
 
 const (
+	// Indicates no value is passed for this argument. See @ref SentinelValues.
 	CompareFunctionUndefined    CompareFunction = 0
 	CompareFunctionNever        CompareFunction = 1
 	CompareFunctionLess         CompareFunction = 2
@@ -187,15 +185,14 @@ const (
 	CompareFunctionAlways       CompareFunction = 8
 )
 
-// CompilationInfoRequestStatus is a WebGPU enum.
 type CompilationInfoRequestStatus uint32
 
 const (
-	CompilationInfoRequestStatusSuccess           CompilationInfoRequestStatus = 1
+	CompilationInfoRequestStatusSuccess CompilationInfoRequestStatus = 1
+	// See @ref CallbackStatuses.
 	CompilationInfoRequestStatusCallbackCancelled CompilationInfoRequestStatus = 2
 )
 
-// CompilationMessageType is a WebGPU enum.
 type CompilationMessageType uint32
 
 const (
@@ -204,61 +201,71 @@ const (
 	CompilationMessageTypeInfo    CompilationMessageType = 3
 )
 
-// ComponentSwizzle is a WebGPU enum.
 type ComponentSwizzle uint32
 
 const (
+	// Indicates no value is passed for this argument. See @ref SentinelValues.
 	ComponentSwizzleUndefined ComponentSwizzle = 0
-	ComponentSwizzleZero      ComponentSwizzle = 1
-	ComponentSwizzleOne       ComponentSwizzle = 2
-	ComponentSwizzleR         ComponentSwizzle = 3
-	ComponentSwizzleG         ComponentSwizzle = 4
-	ComponentSwizzleB         ComponentSwizzle = 5
-	ComponentSwizzleA         ComponentSwizzle = 6
+	// Force its value to 0.
+	ComponentSwizzleZero ComponentSwizzle = 1
+	// Force its value to 1.
+	ComponentSwizzleOne ComponentSwizzle = 2
+	// Take its value from the red channel of the texture.
+	ComponentSwizzleR ComponentSwizzle = 3
+	// Take its value from the green channel of the texture.
+	ComponentSwizzleG ComponentSwizzle = 4
+	// Take its value from the blue channel of the texture.
+	ComponentSwizzleB ComponentSwizzle = 5
+	// Take its value from the alpha channel of the texture.
+	ComponentSwizzleA ComponentSwizzle = 6
 )
 
-// CompositeAlphaMode is a WebGPU enum.
+// Describes how frames are composited with other contents on the screen when @ref wgpuSurfacePresent is called.
 type CompositeAlphaMode uint32
 
 const (
-	CompositeAlphaModeAuto            CompositeAlphaMode = 0
-	CompositeAlphaModeOpaque          CompositeAlphaMode = 1
-	CompositeAlphaModePremultiplied   CompositeAlphaMode = 2
+	// Lets the WebGPU implementation choose the best mode (supported, and with the best performance) between @ref WGPUCompositeAlphaMode_Opaque or @ref WGPUCompositeAlphaMode_Inherit.
+	CompositeAlphaModeAuto CompositeAlphaMode = 0
+	// The alpha component of the image is ignored and teated as if it is always 1.0.
+	CompositeAlphaModeOpaque CompositeAlphaMode = 1
+	// The alpha component is respected and non-alpha components are assumed to be already multiplied with the alpha component. For example, (0.5, 0, 0, 0.5) is semi-transparent bright red.
+	CompositeAlphaModePremultiplied CompositeAlphaMode = 2
+	// The alpha component is respected and non-alpha components are assumed to NOT be already multiplied with the alpha component. For example, (1.0, 0, 0, 0.5) is semi-transparent bright red.
 	CompositeAlphaModeUnpremultiplied CompositeAlphaMode = 3
-	CompositeAlphaModeInherit         CompositeAlphaMode = 4
+	// The handling of the alpha component is unknown to WebGPU and should be handled by the application using system-specific APIs. This mode may be unavailable (for example on Wasm).
+	CompositeAlphaModeInherit CompositeAlphaMode = 4
 )
 
-// CreatePipelineAsyncStatus is a WebGPU enum.
 type CreatePipelineAsyncStatus uint32
 
 const (
-	CreatePipelineAsyncStatusSuccess           CreatePipelineAsyncStatus = 1
+	CreatePipelineAsyncStatusSuccess CreatePipelineAsyncStatus = 1
+	// See @ref CallbackStatuses.
 	CreatePipelineAsyncStatusCallbackCancelled CreatePipelineAsyncStatus = 2
 	CreatePipelineAsyncStatusValidationError   CreatePipelineAsyncStatus = 3
 	CreatePipelineAsyncStatusInternalError     CreatePipelineAsyncStatus = 4
 )
 
-// CullMode is a WebGPU enum.
 type CullMode uint32
 
 const (
+	// Indicates no value is passed for this argument. See @ref SentinelValues.
 	CullModeUndefined CullMode = 0
 	CullModeNone      CullMode = 1
 	CullModeFront     CullMode = 2
 	CullModeBack      CullMode = 3
 )
 
-// DeviceLostReason is a WebGPU enum.
 type DeviceLostReason uint32
 
 const (
-	DeviceLostReasonUnknown           DeviceLostReason = 1
-	DeviceLostReasonDestroyed         DeviceLostReason = 2
+	DeviceLostReasonUnknown   DeviceLostReason = 1
+	DeviceLostReasonDestroyed DeviceLostReason = 2
+	// See @ref CallbackStatuses.
 	DeviceLostReasonCallbackCancelled DeviceLostReason = 3
 	DeviceLostReasonFailedCreation    DeviceLostReason = 4
 )
 
-// ErrorFilter is a WebGPU enum.
 type ErrorFilter uint32
 
 const (
@@ -267,7 +274,6 @@ const (
 	ErrorFilterInternal    ErrorFilter = 3
 )
 
-// ErrorType is a WebGPU enum.
 type ErrorType uint32
 
 const (
@@ -278,16 +284,18 @@ const (
 	ErrorTypeUnknown     ErrorType = 5
 )
 
-// FeatureLevel is a WebGPU enum.
+// See @ref WGPURequestAdapterOptions::featureLevel.
 type FeatureLevel uint32
 
 const (
-	FeatureLevelUndefined     FeatureLevel = 0
+	// Indicates no value is passed for this argument. See @ref SentinelValues.
+	FeatureLevelUndefined FeatureLevel = 0
+	// "Compatibility" profile which can be supported on OpenGL ES 3.1 and D3D11.
 	FeatureLevelCompatibility FeatureLevel = 1
-	FeatureLevelCore          FeatureLevel = 2
+	// "Core" profile which can be supported on Vulkan/Metal/D3D12 (at least).
+	FeatureLevelCore FeatureLevel = 2
 )
 
-// FeatureName is a WebGPU enum.
 type FeatureName uint32
 
 const (
@@ -317,71 +325,76 @@ const (
 	FeatureNameTextureCompressionUnaligned    FeatureName = 24
 )
 
-// FilterMode is a WebGPU enum.
 type FilterMode uint32
 
 const (
+	// Indicates no value is passed for this argument. See @ref SentinelValues.
 	FilterModeUndefined FilterMode = 0
 	FilterModeNearest   FilterMode = 1
 	FilterModeLinear    FilterMode = 2
 )
 
-// FrontFace is a WebGPU enum.
 type FrontFace uint32
 
 const (
+	// Indicates no value is passed for this argument. See @ref SentinelValues.
 	FrontFaceUndefined FrontFace = 0
 	FrontFaceCCW       FrontFace = 1
 	FrontFaceCW        FrontFace = 2
 )
 
-// IndexFormat is a WebGPU enum.
 type IndexFormat uint32
 
 const (
+	// Indicates no value is passed for this argument. See @ref SentinelValues.
 	IndexFormatUndefined IndexFormat = 0
 	IndexFormatUint16    IndexFormat = 1
 	IndexFormatUint32    IndexFormat = 2
 )
 
-// InstanceFeatureName is a WebGPU enum.
 type InstanceFeatureName uint32
 
 const (
-	InstanceFeatureNameTimedWaitAny              InstanceFeatureName = 1
-	InstanceFeatureNameShaderSourceSPIRV         InstanceFeatureName = 2
+	// Enable use of ::wgpuInstanceWaitAny with `timeoutNS > 0`.
+	InstanceFeatureNameTimedWaitAny InstanceFeatureName = 1
+	// Enable passing SPIR-V shaders to @ref wgpuDeviceCreateShaderModule,
+	// via @ref WGPUShaderSourceSPIRV.
+	InstanceFeatureNameShaderSourceSPIRV InstanceFeatureName = 2
+	// Normally, a @ref WGPUAdapter can only create a single device. If this is
+	// available and enabled, then adapters won't immediately expire when they
+	// create a device, so can be reused to make multiple devices. They may
+	// still expire for other reasons.
 	InstanceFeatureNameMultipleDevicesPerAdapter InstanceFeatureName = 3
 )
 
-// LoadOp is a WebGPU enum.
 type LoadOp uint32
 
 const (
+	// Indicates no value is passed for this argument. See @ref SentinelValues.
 	LoadOpUndefined LoadOp = 0
 	LoadOpLoad      LoadOp = 1
 	LoadOpClear     LoadOp = 2
 )
 
-// MapAsyncStatus is a WebGPU enum.
 type MapAsyncStatus uint32
 
 const (
-	MapAsyncStatusSuccess           MapAsyncStatus = 1
+	MapAsyncStatusSuccess MapAsyncStatus = 1
+	// See @ref CallbackStatuses.
 	MapAsyncStatusCallbackCancelled MapAsyncStatus = 2
 	MapAsyncStatusError             MapAsyncStatus = 3
 	MapAsyncStatusAborted           MapAsyncStatus = 4
 )
 
-// MipmapFilterMode is a WebGPU enum.
 type MipmapFilterMode uint32
 
 const (
+	// Indicates no value is passed for this argument. See @ref SentinelValues.
 	MipmapFilterModeUndefined MipmapFilterMode = 0
 	MipmapFilterModeNearest   MipmapFilterMode = 1
 	MipmapFilterModeLinear    MipmapFilterMode = 2
 )
 
-// OptionalBool is a WebGPU enum.
 type OptionalBool uint32
 
 const (
@@ -390,25 +403,26 @@ const (
 	OptionalBoolUndefined OptionalBool = 2
 )
 
-// PopErrorScopeStatus is a WebGPU enum.
 type PopErrorScopeStatus uint32
 
 const (
-	PopErrorScopeStatusSuccess           PopErrorScopeStatus = 1
+	// The error scope stack was successfully popped and a result was reported.
+	PopErrorScopeStatusSuccess PopErrorScopeStatus = 1
+	// See @ref CallbackStatuses.
 	PopErrorScopeStatusCallbackCancelled PopErrorScopeStatus = 2
-	PopErrorScopeStatusError             PopErrorScopeStatus = 3
+	// The error scope stack could not be popped, because it was empty.
+	PopErrorScopeStatusError PopErrorScopeStatus = 3
 )
 
-// PowerPreference is a WebGPU enum.
 type PowerPreference uint32
 
 const (
+	// No preference. (See also @ref SentinelValues.)
 	PowerPreferenceUndefined       PowerPreference = 0
 	PowerPreferenceLowPower        PowerPreference = 1
 	PowerPreferenceHighPerformance PowerPreference = 2
 )
 
-// PredefinedColorSpace is a WebGPU enum.
 type PredefinedColorSpace uint32
 
 const (
@@ -416,21 +430,32 @@ const (
 	PredefinedColorSpaceDisplayP3 PredefinedColorSpace = 2
 )
 
-// PresentMode is a WebGPU enum.
+// Describes when and in which order frames are presented on the screen when @ref wgpuSurfacePresent is called.
 type PresentMode uint32
 
 const (
-	PresentModeUndefined   PresentMode = 0
-	PresentModeFifo        PresentMode = 1
+	// Present mode is not specified. Use the default.
+	PresentModeUndefined PresentMode = 0
+	// The presentation of the image to the user waits for the next vertical blanking period to update in a first-in, first-out manner.
+	// Tearing cannot be observed and frame-loop will be limited to the display's refresh rate.
+	// This is the only mode that's always available.
+	PresentModeFifo PresentMode = 1
+	// The presentation of the image to the user tries to wait for the next vertical blanking period but may decide to not wait if a frame is presented late.
+	// Tearing can sometimes be observed but late-frame don't produce a full-frame stutter in the presentation.
+	// This is still a first-in, first-out mechanism so a frame-loop will be limited to the display's refresh rate.
 	PresentModeFifoRelaxed PresentMode = 2
-	PresentModeImmediate   PresentMode = 3
-	PresentModeMailbox     PresentMode = 4
+	// The presentation of the image to the user is updated immediately without waiting for a vertical blank.
+	// Tearing can be observed but latency is minimized.
+	PresentModeImmediate PresentMode = 3
+	// The presentation of the image to the user waits for the next vertical blanking period to update to the latest provided image.
+	// Tearing cannot be observed and a frame-loop is not limited to the display's refresh rate.
+	PresentModeMailbox PresentMode = 4
 )
 
-// PrimitiveTopology is a WebGPU enum.
 type PrimitiveTopology uint32
 
 const (
+	// Indicates no value is passed for this argument. See @ref SentinelValues.
 	PrimitiveTopologyUndefined     PrimitiveTopology = 0
 	PrimitiveTopologyPointList     PrimitiveTopology = 1
 	PrimitiveTopologyLineList      PrimitiveTopology = 2
@@ -439,7 +464,6 @@ const (
 	PrimitiveTopologyTriangleStrip PrimitiveTopology = 5
 )
 
-// QueryType is a WebGPU enum.
 type QueryType uint32
 
 const (
@@ -447,35 +471,36 @@ const (
 	QueryTypeTimestamp QueryType = 2
 )
 
-// QueueWorkDoneStatus is a WebGPU enum.
 type QueueWorkDoneStatus uint32
 
 const (
-	QueueWorkDoneStatusSuccess           QueueWorkDoneStatus = 1
+	QueueWorkDoneStatusSuccess QueueWorkDoneStatus = 1
+	// See @ref CallbackStatuses.
 	QueueWorkDoneStatusCallbackCancelled QueueWorkDoneStatus = 2
-	QueueWorkDoneStatusError             QueueWorkDoneStatus = 3
+	// There was some deterministic error. (Note this is currently never used,
+	// but it will be relevant when it's possible to create a queue object.)
+	QueueWorkDoneStatusError QueueWorkDoneStatus = 3
 )
 
-// RequestAdapterStatus is a WebGPU enum.
 type RequestAdapterStatus uint32
 
 const (
-	RequestAdapterStatusSuccess           RequestAdapterStatus = 1
+	RequestAdapterStatusSuccess RequestAdapterStatus = 1
+	// See @ref CallbackStatuses.
 	RequestAdapterStatusCallbackCancelled RequestAdapterStatus = 2
 	RequestAdapterStatusUnavailable       RequestAdapterStatus = 3
 	RequestAdapterStatusError             RequestAdapterStatus = 4
 )
 
-// RequestDeviceStatus is a WebGPU enum.
 type RequestDeviceStatus uint32
 
 const (
-	RequestDeviceStatusSuccess           RequestDeviceStatus = 1
+	RequestDeviceStatusSuccess RequestDeviceStatus = 1
+	// See @ref CallbackStatuses.
 	RequestDeviceStatusCallbackCancelled RequestDeviceStatus = 2
 	RequestDeviceStatusError             RequestDeviceStatus = 3
 )
 
-// SType is a WebGPU enum.
 type SType uint32
 
 const (
@@ -497,18 +522,23 @@ const (
 	STypeTextureBindingViewDimension       SType = 16
 )
 
-// SamplerBindingType is a WebGPU enum.
 type SamplerBindingType uint32
 
 const (
+	// Indicates that this @ref WGPUSamplerBindingLayout member of
+	// its parent @ref WGPUBindGroupLayoutEntry is not used.
+	// (See also @ref SentinelValues.)
 	SamplerBindingTypeBindingNotUsed SamplerBindingType = 0
-	SamplerBindingTypeUndefined      SamplerBindingType = 1
-	SamplerBindingTypeFiltering      SamplerBindingType = 2
-	SamplerBindingTypeNonFiltering   SamplerBindingType = 3
-	SamplerBindingTypeComparison     SamplerBindingType = 4
+	// `1`. Indicates no value is passed for this argument. See @ref SentinelValues.
+	SamplerBindingTypeUndefined    SamplerBindingType = 1
+	SamplerBindingTypeFiltering    SamplerBindingType = 2
+	SamplerBindingTypeNonFiltering SamplerBindingType = 3
+	SamplerBindingTypeComparison   SamplerBindingType = 4
 )
 
-// Status is a WebGPU enum.
+// Status code returned (synchronously) from many operations. Generally
+// indicates an invalid input like an unknown enum value or @ref OutStructChainError.
+// Read the function's documentation for specific error conditions.
 type Status uint32
 
 const (
@@ -516,10 +546,10 @@ const (
 	StatusError   Status = 2
 )
 
-// StencilOperation is a WebGPU enum.
 type StencilOperation uint32
 
 const (
+	// Indicates no value is passed for this argument. See @ref SentinelValues.
 	StencilOperationUndefined      StencilOperation = 0
 	StencilOperationKeep           StencilOperation = 1
 	StencilOperationZero           StencilOperation = 2
@@ -531,62 +561,71 @@ const (
 	StencilOperationDecrementWrap  StencilOperation = 8
 )
 
-// StorageTextureAccess is a WebGPU enum.
 type StorageTextureAccess uint32
 
 const (
+	// Indicates that this @ref WGPUStorageTextureBindingLayout member of
+	// its parent @ref WGPUBindGroupLayoutEntry is not used.
+	// (See also @ref SentinelValues.)
 	StorageTextureAccessBindingNotUsed StorageTextureAccess = 0
-	StorageTextureAccessUndefined      StorageTextureAccess = 1
-	StorageTextureAccessWriteOnly      StorageTextureAccess = 2
-	StorageTextureAccessReadOnly       StorageTextureAccess = 3
-	StorageTextureAccessReadWrite      StorageTextureAccess = 4
+	// `1`. Indicates no value is passed for this argument. See @ref SentinelValues.
+	StorageTextureAccessUndefined StorageTextureAccess = 1
+	StorageTextureAccessWriteOnly StorageTextureAccess = 2
+	StorageTextureAccessReadOnly  StorageTextureAccess = 3
+	StorageTextureAccessReadWrite StorageTextureAccess = 4
 )
 
-// StoreOp is a WebGPU enum.
 type StoreOp uint32
 
 const (
+	// Indicates no value is passed for this argument. See @ref SentinelValues.
 	StoreOpUndefined StoreOp = 0
 	StoreOpStore     StoreOp = 1
 	StoreOpDiscard   StoreOp = 2
 )
 
-// SurfaceGetCurrentTextureStatus is a WebGPU enum.
+// The status enum for @ref wgpuSurfaceGetCurrentTexture.
 type SurfaceGetCurrentTextureStatus uint32
 
 const (
-	SurfaceGetCurrentTextureStatusSuccessOptimal    SurfaceGetCurrentTextureStatus = 1
+	// Yay! Everything is good and we can render this frame.
+	SurfaceGetCurrentTextureStatusSuccessOptimal SurfaceGetCurrentTextureStatus = 1
+	// Still OK - the surface can present the frame, but in a suboptimal way. The surface may need reconfiguration.
 	SurfaceGetCurrentTextureStatusSuccessSuboptimal SurfaceGetCurrentTextureStatus = 2
-	SurfaceGetCurrentTextureStatusTimeout           SurfaceGetCurrentTextureStatus = 3
-	SurfaceGetCurrentTextureStatusOutdated          SurfaceGetCurrentTextureStatus = 4
-	SurfaceGetCurrentTextureStatusLost              SurfaceGetCurrentTextureStatus = 5
-	SurfaceGetCurrentTextureStatusError             SurfaceGetCurrentTextureStatus = 6
+	// Some operation timed out while trying to acquire the frame.
+	SurfaceGetCurrentTextureStatusTimeout SurfaceGetCurrentTextureStatus = 3
+	// The surface is too different to be used, compared to when it was originally created.
+	SurfaceGetCurrentTextureStatusOutdated SurfaceGetCurrentTextureStatus = 4
+	// The connection to whatever owns the surface was lost, or generally needs to be fully reinitialized.
+	SurfaceGetCurrentTextureStatusLost SurfaceGetCurrentTextureStatus = 5
+	// There was some deterministic error (for example, the surface is not configured, or there was an @ref OutStructChainError). Should produce @ref ImplementationDefinedLogging containing details.
+	SurfaceGetCurrentTextureStatusError SurfaceGetCurrentTextureStatus = 6
 )
 
-// TextureAspect is a WebGPU enum.
 type TextureAspect uint32
 
 const (
+	// Indicates no value is passed for this argument. See @ref SentinelValues.
 	TextureAspectUndefined   TextureAspect = 0
 	TextureAspectAll         TextureAspect = 1
 	TextureAspectStencilOnly TextureAspect = 2
 	TextureAspectDepthOnly   TextureAspect = 3
 )
 
-// TextureDimension is a WebGPU enum.
 type TextureDimension uint32
 
 const (
+	// Indicates no value is passed for this argument. See @ref SentinelValues.
 	TextureDimensionUndefined TextureDimension = 0
 	TextureDimension1D        TextureDimension = 1
 	TextureDimension2D        TextureDimension = 2
 	TextureDimension3D        TextureDimension = 3
 )
 
-// TextureFormat is a WebGPU enum.
 type TextureFormat uint32
 
 const (
+	// Indicates no value is passed for this argument. See @ref SentinelValues.
 	TextureFormatUndefined            TextureFormat = 0
 	TextureFormatR8Unorm              TextureFormat = 1
 	TextureFormatR8Snorm              TextureFormat = 2
@@ -691,11 +730,14 @@ const (
 	TextureFormatASTC12x12UnormSrgb   TextureFormat = 101
 )
 
-// TextureSampleType is a WebGPU enum.
 type TextureSampleType uint32
 
 const (
-	TextureSampleTypeBindingNotUsed    TextureSampleType = 0
+	// Indicates that this @ref WGPUTextureBindingLayout member of
+	// its parent @ref WGPUBindGroupLayoutEntry is not used.
+	// (See also @ref SentinelValues.)
+	TextureSampleTypeBindingNotUsed TextureSampleType = 0
+	// `1`. Indicates no value is passed for this argument. See @ref SentinelValues.
 	TextureSampleTypeUndefined         TextureSampleType = 1
 	TextureSampleTypeFloat             TextureSampleType = 2
 	TextureSampleTypeUnfilterableFloat TextureSampleType = 3
@@ -704,10 +746,10 @@ const (
 	TextureSampleTypeUint              TextureSampleType = 6
 )
 
-// TextureViewDimension is a WebGPU enum.
 type TextureViewDimension uint32
 
 const (
+	// Indicates no value is passed for this argument. See @ref SentinelValues.
 	TextureViewDimensionUndefined TextureViewDimension = 0
 	TextureViewDimension1D        TextureViewDimension = 1
 	TextureViewDimension2D        TextureViewDimension = 2
@@ -717,7 +759,6 @@ const (
 	TextureViewDimension3D        TextureViewDimension = 6
 )
 
-// ToneMappingMode is a WebGPU enum.
 type ToneMappingMode uint32
 
 const (
@@ -725,7 +766,6 @@ const (
 	ToneMappingModeExtended ToneMappingMode = 2
 )
 
-// VertexFormat is a WebGPU enum.
 type VertexFormat uint32
 
 const (
@@ -773,25 +813,28 @@ const (
 	VertexFormatSnorm1010102 VertexFormat = 42
 )
 
-// VertexStepMode is a WebGPU enum.
 type VertexStepMode uint32
 
 const (
+	// Indicates no value is passed for this argument. See @ref SentinelValues.
 	VertexStepModeUndefined VertexStepMode = 0
 	VertexStepModeVertex    VertexStepMode = 1
 	VertexStepModeInstance  VertexStepMode = 2
 )
 
-// WaitStatus is a WebGPU enum.
+// Status returned from a call to ::wgpuInstanceWaitAny.
 type WaitStatus uint32
 
 const (
-	WaitStatusSuccess  WaitStatus = 1
+	// At least one WGPUFuture completed successfully.
+	WaitStatusSuccess WaitStatus = 1
+	// The wait operation succeeded, but no WGPUFutures completed within the timeout.
 	WaitStatusTimedOut WaitStatus = 2
-	WaitStatusError    WaitStatus = 3
+	// The call was invalid for some reason (see @ref Wait-Any).
+	// Should produce @ref ImplementationDefinedLogging containing details.
+	WaitStatusError WaitStatus = 3
 )
 
-// WGSLLanguageFeatureName is a WebGPU enum.
 type WGSLLanguageFeatureName uint32
 
 const (
@@ -811,28 +854,34 @@ const (
 	WGSLLanguageFeatureNameFragmentDepth                       WGSLLanguageFeatureName = 14
 )
 
-// ---------------------------------------------------------------------------
-// Bitflag types
-// ---------------------------------------------------------------------------
-
-// BufferUsage is a WebGPU bitflag type.
 type BufferUsage uint64
 
 const (
-	BufferUsageNone         BufferUsage = 0
-	BufferUsageMapRead      BufferUsage = 1 << 0
-	BufferUsageMapWrite     BufferUsage = 1 << 1
-	BufferUsageCopySrc      BufferUsage = 1 << 2
-	BufferUsageCopyDst      BufferUsage = 1 << 3
-	BufferUsageIndex        BufferUsage = 1 << 4
-	BufferUsageVertex       BufferUsage = 1 << 5
-	BufferUsageUniform      BufferUsage = 1 << 6
-	BufferUsageStorage      BufferUsage = 1 << 7
-	BufferUsageIndirect     BufferUsage = 1 << 8
+	BufferUsageNone BufferUsage = 0
+	// The buffer can be *mapped* on the CPU side in *read* mode (using @ref WGPUMapMode_Read).
+	BufferUsageMapRead BufferUsage = 1 << 0
+	// The buffer can be *mapped* on the CPU side in *write* mode (using @ref WGPUMapMode_Write).
+	//
+	// @note This usage is **not** required to set `mappedAtCreation` to `true` in @ref WGPUBufferDescriptor.
+	BufferUsageMapWrite BufferUsage = 1 << 1
+	// The buffer can be used as the *source* of a GPU-side copy operation.
+	BufferUsageCopySrc BufferUsage = 1 << 2
+	// The buffer can be used as the *destination* of a GPU-side copy operation.
+	BufferUsageCopyDst BufferUsage = 1 << 3
+	// The buffer can be used as an Index buffer when doing indexed drawing in a render pipeline.
+	BufferUsageIndex BufferUsage = 1 << 4
+	// The buffer can be used as a Vertex buffer when using a render pipeline.
+	BufferUsageVertex BufferUsage = 1 << 5
+	// The buffer can be bound to a shader as a uniform buffer.
+	BufferUsageUniform BufferUsage = 1 << 6
+	// The buffer can be bound to a shader as a storage buffer.
+	BufferUsageStorage BufferUsage = 1 << 7
+	// The buffer can store arguments for an indirect draw call.
+	BufferUsageIndirect BufferUsage = 1 << 8
+	// The buffer can store the result of a timestamp or occlusion query.
 	BufferUsageQueryResolve BufferUsage = 1 << 9
 )
 
-// ColorWriteMask is a WebGPU bitflag type.
 type ColorWriteMask uint64
 
 const (
@@ -844,7 +893,6 @@ const (
 	ColorWriteMaskAll   ColorWriteMask = ColorWriteMaskRed | ColorWriteMaskGreen | ColorWriteMaskBlue | ColorWriteMaskAlpha
 )
 
-// MapMode is a WebGPU bitflag type.
 type MapMode uint64
 
 const (
@@ -853,7 +901,6 @@ const (
 	MapModeWrite MapMode = 1 << 1
 )
 
-// ShaderStage is a WebGPU bitflag type.
 type ShaderStage uint64
 
 const (
@@ -863,7 +910,6 @@ const (
 	ShaderStageCompute  ShaderStage = 1 << 2
 )
 
-// TextureUsage is a WebGPU bitflag type.
 type TextureUsage uint64
 
 const (
@@ -876,50 +922,28 @@ const (
 	TextureUsageTransientAttachment TextureUsage = 1 << 5
 )
 
-// ---------------------------------------------------------------------------
-// Struct types
-// ---------------------------------------------------------------------------
-
-// AdapterInfo is a WebGPU struct.
 type AdapterInfo struct {
-	_           structs.HostLayout
-	NextInChain unsafe.Pointer
-	// TODO
-	Vendor string
-	// TODO
-	Architecture string
-	// TODO
-	Device string
-	// TODO
-	Description string
-	// TODO
-	BackendType BackendType
-	// TODO
-	AdapterType AdapterType
-	// TODO
-	VendorID uint32
-	// TODO
-	DeviceID uint32
-	// TODO
+	_               structs.HostLayout
+	NextInChain     unsafe.Pointer
+	Vendor          string
+	Architecture    string
+	Device          string
+	Description     string
+	BackendType     BackendType
+	AdapterType     AdapterType
+	VendorID        uint32
+	DeviceID        uint32
 	SubgroupMinSize uint32
-	// TODO
 	SubgroupMaxSize uint32
 }
-
-// BindGroupDescriptor is a WebGPU struct.
 type BindGroupDescriptor struct {
-	_           structs.HostLayout
-	NextInChain unsafe.Pointer
-	// TODO
-	Label string
-	// TODO
-	Layout       uintptr
+	_            structs.HostLayout
+	NextInChain  unsafe.Pointer
+	Label        string
+	Layout       BindGroupLayout
 	EntriesCount uintptr
-	// TODO
-	Entries *BindGroupEntry
+	Entries      *BindGroupEntry
 }
-
-// BindGroupEntry is a WebGPU struct.
 type BindGroupEntry struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
@@ -927,7 +951,7 @@ type BindGroupEntry struct {
 	Binding uint32
 	// Set this if the binding is a buffer object.
 	// Otherwise must be null.
-	Buffer uintptr
+	Buffer Buffer
 	// If the binding is a buffer, this is the byte offset of the binding range.
 	// Otherwise ignored.
 	Offset uint64
@@ -937,44 +961,30 @@ type BindGroupEntry struct {
 	Size uint64
 	// Set this if the binding is a sampler object.
 	// Otherwise must be null.
-	Sampler uintptr
+	Sampler Sampler
 	// Set this if the binding is a texture view object.
 	// Otherwise must be null.
-	TextureView uintptr
+	TextureView TextureView
 }
-
-// BindGroupLayoutDescriptor is a WebGPU struct.
 type BindGroupLayoutDescriptor struct {
-	_           structs.HostLayout
-	NextInChain unsafe.Pointer
-	// TODO
+	_            structs.HostLayout
+	NextInChain  unsafe.Pointer
 	Label        string
 	EntriesCount uintptr
-	// TODO
-	Entries *BindGroupLayoutEntry
+	Entries      *BindGroupLayoutEntry
 }
-
-// BindGroupLayoutEntry is a WebGPU struct.
 type BindGroupLayoutEntry struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
-	// TODO
-	Binding uint32
-	// TODO
-	Visibility ShaderStage
+	Binding     uint32
+	Visibility  ShaderStage
 	// If non-zero, this entry defines a binding array with this size.
 	BindingArraySize uint32
-	// TODO
-	Buffer BufferBindingLayout
-	// TODO
-	Sampler SamplerBindingLayout
-	// TODO
-	Texture TextureBindingLayout
-	// TODO
-	StorageTexture StorageTextureBindingLayout
+	Buffer           BufferBindingLayout
+	Sampler          SamplerBindingLayout
+	Texture          TextureBindingLayout
+	StorageTexture   StorageTextureBindingLayout
 }
-
-// BlendComponent is a WebGPU struct.
 type BlendComponent struct {
 	_ structs.HostLayout
 	// If set to @ref WGPUBlendOperation_Undefined,
@@ -987,46 +997,35 @@ type BlendComponent struct {
 	// [defaults](@ref SentinelValues) to @ref WGPUBlendFactor_Zero.
 	DstFactor BlendFactor
 }
-
-// BlendState is a WebGPU struct.
 type BlendState struct {
-	_ structs.HostLayout
-	// TODO
+	_     structs.HostLayout
 	Color BlendComponent
-	// TODO
 	Alpha BlendComponent
 }
-
-// BufferBindingLayout is a WebGPU struct.
 type BufferBindingLayout struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
 	// If set to @ref WGPUBufferBindingType_Undefined,
 	// [defaults](@ref SentinelValues) to @ref WGPUBufferBindingType_Uniform.
-	Type BufferBindingType
-	// TODO
+	Type             BufferBindingType
 	HasDynamicOffset Bool
-	// TODO
-	MinBindingSize uint64
+	MinBindingSize   uint64
 }
-
-// BufferDescriptor is a WebGPU struct.
 type BufferDescriptor struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
-	// TODO
-	Label string
-	// TODO
-	Usage BufferUsage
-	// TODO
-	Size uint64
+	Label       string
+	Usage       BufferUsage
+	Size        uint64
 	// When true, the buffer is mapped in write mode at creation. It should thus be unmapped once its initial data has been written.
 	//
 	// @note Mapping at creation does **not** require the usage @ref WGPUBufferUsage_MapWrite.
 	MappedAtCreation Bool
 }
 
-// Color is a WebGPU struct.
+// An RGBA color. Represents a `f32`, `i32`, or `u32` color using @ref DoubleAsSupertype.
+//
+// If any channel is non-finite, produces a @ref NonFiniteFloatValueError.
 type Color struct {
 	_ structs.HostLayout
 	R float64
@@ -1034,62 +1033,45 @@ type Color struct {
 	B float64
 	A float64
 }
-
-// ColorTargetState is a WebGPU struct.
 type ColorTargetState struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
 	// The texture format of the target. If @ref WGPUTextureFormat_Undefined,
 	// indicates a "hole" in the parent @ref WGPUFragmentState `targets` array:
 	// the pipeline does not output a value at this `location`.
-	Format TextureFormat
-	// TODO
-	Blend *BlendState
-	// TODO
+	Format    TextureFormat
+	Blend     *BlendState
 	WriteMask ColorWriteMask
 }
-
-// CommandBufferDescriptor is a WebGPU struct.
 type CommandBufferDescriptor struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
-	// TODO
-	Label string
+	Label       string
 }
-
-// CommandEncoderDescriptor is a WebGPU struct.
 type CommandEncoderDescriptor struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
-	// TODO
-	Label string
+	Label       string
 }
 
-// CompatibilityModeLimits is a WebGPU struct.
+// Note: While Compatibility Mode is optional to implement, this extension struct
+// is required to be supported (for both queries and requests) and behave as
+// defined in the WebGPU spec.
 type CompatibilityModeLimits struct {
-	_           structs.HostLayout
-	NextInChain unsafe.Pointer
-	SType       SType
-	// TODO
-	MaxStorageBuffersInVertexStage uint32
-	// TODO
-	MaxStorageTexturesInVertexStage uint32
-	// TODO
-	MaxStorageBuffersInFragmentStage uint32
-	// TODO
+	_                                 structs.HostLayout
+	NextInChain                       unsafe.Pointer
+	SType                             SType
+	MaxStorageBuffersInVertexStage    uint32
+	MaxStorageTexturesInVertexStage   uint32
+	MaxStorageBuffersInFragmentStage  uint32
 	MaxStorageTexturesInFragmentStage uint32
 }
-
-// CompilationInfo is a WebGPU struct.
 type CompilationInfo struct {
 	_             structs.HostLayout
 	NextInChain   unsafe.Pointer
 	MessagesCount uintptr
-	// TODO
-	Messages *CompilationMessage
+	Messages      *CompilationMessage
 }
-
-// CompilationMessage is a WebGPU struct.
 type CompilationMessage struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
@@ -1106,74 +1088,47 @@ type CompilationMessage struct {
 	// Length in UTF-8 code units (bytes) of the span the message corresponds to.
 	Length uint64
 }
-
-// ComputePassDescriptor is a WebGPU struct.
 type ComputePassDescriptor struct {
-	_           structs.HostLayout
-	NextInChain unsafe.Pointer
-	// TODO
-	Label string
-	// TODO
+	_               structs.HostLayout
+	NextInChain     unsafe.Pointer
+	Label           string
 	TimestampWrites *PassTimestampWrites
 }
-
-// ComputePipelineDescriptor is a WebGPU struct.
 type ComputePipelineDescriptor struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
-	// TODO
-	Label string
-	// TODO
-	Layout uintptr
-	// TODO
-	Compute ComputeState
+	Label       string
+	Layout      PipelineLayout
+	Compute     ComputeState
 }
-
-// ComputeState is a WebGPU struct.
 type ComputeState struct {
-	_           structs.HostLayout
-	NextInChain unsafe.Pointer
-	// TODO
-	Module uintptr
-	// TODO
+	_              structs.HostLayout
+	NextInChain    unsafe.Pointer
+	Module         ShaderModule
 	EntryPoint     string
 	ConstantsCount uintptr
-	// TODO
-	Constants *ConstantEntry
+	Constants      *ConstantEntry
 }
-
-// ConstantEntry is a WebGPU struct.
 type ConstantEntry struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
-	// TODO
-	Key string
+	Key         string
 	// Represents a WGSL numeric or boolean value using @ref DoubleAsSupertype.
 	//
 	// If non-finite, produces a @ref NonFiniteFloatValueError.
 	Value float64
 }
-
-// DepthStencilState is a WebGPU struct.
 type DepthStencilState struct {
-	_           structs.HostLayout
-	NextInChain unsafe.Pointer
-	// TODO
-	Format TextureFormat
-	// TODO
+	_                 structs.HostLayout
+	NextInChain       unsafe.Pointer
+	Format            TextureFormat
 	DepthWriteEnabled OptionalBool
-	// TODO
-	DepthCompare CompareFunction
-	// TODO
-	StencilFront StencilFaceState
-	// TODO
-	StencilBack StencilFaceState
-	// TODO
-	StencilReadMask uint32
-	// TODO
-	StencilWriteMask uint32
-	// TODO
-	DepthBias int32
+	DepthCompare      CompareFunction
+	StencilFront      StencilFaceState
+	StencilBack       StencilFaceState
+	StencilReadMask   uint32
+	StencilWriteMask  uint32
+	DepthBias         int32
 	// TODO
 	//
 	// If non-finite, produces a @ref NonFiniteFloatValueError.
@@ -1183,21 +1138,14 @@ type DepthStencilState struct {
 	// If non-finite, produces a @ref NonFiniteFloatValueError.
 	DepthBiasClamp float32
 }
-
-// DeviceDescriptor is a WebGPU struct.
 type DeviceDescriptor struct {
-	_           structs.HostLayout
-	NextInChain unsafe.Pointer
-	// TODO
-	Label                 string
-	RequiredFeaturesCount uintptr
-	// TODO
-	RequiredFeatures *FeatureName
-	// TODO
-	RequiredLimits *Limits
-	// TODO
-	DefaultQueue QueueDescriptor
-	// TODO
+	_                      structs.HostLayout
+	NextInChain            unsafe.Pointer
+	Label                  string
+	RequiredFeaturesCount  uintptr
+	RequiredFeatures       *FeatureName
+	RequiredLimits         *Limits
+	DefaultQueue           QueueDescriptor
 	DeviceLostCallbackInfo DeviceLostCallbackInfo
 	// Called when there is an uncaptured error on this device, from any thread.
 	// See @ref ErrorScopes.
@@ -1205,58 +1153,46 @@ type DeviceDescriptor struct {
 	// **Important:** This callback does not have a configurable @ref WGPUCallbackMode; it may be called at any time (like @ref WGPUCallbackMode_AllowSpontaneous). As such, calls into the `webgpu.h` API from this callback are unsafe. See @ref CallbackReentrancy.
 	UncapturedErrorCallbackInfo UncapturedErrorCallbackInfo
 }
-
-// Extent3D is a WebGPU struct.
 type Extent3D struct {
-	_ structs.HostLayout
-	// TODO
-	Width uint32
-	// TODO
-	Height uint32
-	// TODO
+	_                  structs.HostLayout
+	Width              uint32
+	Height             uint32
 	DepthOrArrayLayers uint32
 }
 
-// ExternalTextureBindingEntry is a WebGPU struct.
+// Chained in an @ref WGPUBindGroupEntry to set it to an @ref WGPUExternalTexture. This must have a corresponding @ref WGPUExternalTextureBindingLayout in the @ref WGPUBindGroupLayout.
 type ExternalTextureBindingEntry struct {
-	_           structs.HostLayout
-	NextInChain unsafe.Pointer
-	SType       SType
-	// TODO
-	ExternalTexture uintptr
+	_               structs.HostLayout
+	NextInChain     unsafe.Pointer
+	SType           SType
+	ExternalTexture ExternalTexture
 }
 
-// ExternalTextureBindingLayout is a WebGPU struct.
+// Chained in @ref WGPUBindGroupLayoutEntry to specify that the corresponding entries in an @ref WGPUBindGroup will contain an @ref WGPUExternalTexture.
 type ExternalTextureBindingLayout struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
 	SType       SType
 }
-
-// FragmentState is a WebGPU struct.
 type FragmentState struct {
-	_           structs.HostLayout
-	NextInChain unsafe.Pointer
-	// TODO
-	Module uintptr
-	// TODO
+	_              structs.HostLayout
+	NextInChain    unsafe.Pointer
+	Module         ShaderModule
 	EntryPoint     string
 	ConstantsCount uintptr
-	// TODO
-	Constants    *ConstantEntry
-	TargetsCount uintptr
-	// TODO
-	Targets *ColorTargetState
+	Constants      *ConstantEntry
+	TargetsCount   uintptr
+	Targets        *ColorTargetState
 }
 
-// Future is a WebGPU struct.
+// Opaque handle to an asynchronous operation. See @ref Asynchronous-Operations for more information.
 type Future struct {
 	_ structs.HostLayout
 	// Opaque id of the @ref WGPUFuture
 	Id uint64
 }
 
-// FutureWaitInfo is a WebGPU struct.
+// Struct holding a future to wait on, and a `completed` boolean flag.
 type FutureWaitInfo struct {
 	_ structs.HostLayout
 	// The future to wait on.
@@ -1264,238 +1200,144 @@ type FutureWaitInfo struct {
 	// Whether or not the future completed.
 	Completed Bool
 }
-
-// InstanceDescriptor is a WebGPU struct.
 type InstanceDescriptor struct {
 	_                     structs.HostLayout
 	NextInChain           unsafe.Pointer
 	RequiredFeaturesCount uintptr
-	// TODO
-	RequiredFeatures *InstanceFeatureName
-	// TODO
-	RequiredLimits *InstanceLimits
+	RequiredFeatures      *InstanceFeatureName
+	RequiredLimits        *InstanceLimits
 }
-
-// InstanceLimits is a WebGPU struct.
 type InstanceLimits struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
 	// The maximum number @ref WGPUFutureWaitInfo supported in a call to ::wgpuInstanceWaitAny with `timeoutNS > 0`.
 	TimedWaitAnyMaxCount uintptr
 }
-
-// Limits is a WebGPU struct.
 type Limits struct {
-	_           structs.HostLayout
-	NextInChain unsafe.Pointer
-	// TODO
-	MaxTextureDimension1D uint32
-	// TODO
-	MaxTextureDimension2D uint32
-	// TODO
-	MaxTextureDimension3D uint32
-	// TODO
-	MaxTextureArrayLayers uint32
-	// TODO
-	MaxBindGroups uint32
-	// TODO
-	MaxBindGroupsPlusVertexBuffers uint32
-	// TODO
-	MaxBindingsPerBindGroup uint32
-	// TODO
+	_                                         structs.HostLayout
+	NextInChain                               unsafe.Pointer
+	MaxTextureDimension1D                     uint32
+	MaxTextureDimension2D                     uint32
+	MaxTextureDimension3D                     uint32
+	MaxTextureArrayLayers                     uint32
+	MaxBindGroups                             uint32
+	MaxBindGroupsPlusVertexBuffers            uint32
+	MaxBindingsPerBindGroup                   uint32
 	MaxDynamicUniformBuffersPerPipelineLayout uint32
-	// TODO
 	MaxDynamicStorageBuffersPerPipelineLayout uint32
-	// TODO
-	MaxSampledTexturesPerShaderStage uint32
-	// TODO
-	MaxSamplersPerShaderStage uint32
-	// TODO
-	MaxStorageBuffersPerShaderStage uint32
-	// TODO
-	MaxStorageTexturesPerShaderStage uint32
-	// TODO
-	MaxUniformBuffersPerShaderStage uint32
-	// TODO
-	MaxUniformBufferBindingSize uint64
-	// TODO
-	MaxStorageBufferBindingSize uint64
-	// TODO
-	MinUniformBufferOffsetAlignment uint32
-	// TODO
-	MinStorageBufferOffsetAlignment uint32
-	// TODO
-	MaxVertexBuffers uint32
-	// TODO
-	MaxBufferSize uint64
-	// TODO
-	MaxVertexAttributes uint32
-	// TODO
-	MaxVertexBufferArrayStride uint32
-	// TODO
-	MaxInterStageShaderVariables uint32
-	// TODO
-	MaxColorAttachments uint32
-	// TODO
-	MaxColorAttachmentBytesPerSample uint32
-	// TODO
-	MaxComputeWorkgroupStorageSize uint32
-	// TODO
-	MaxComputeInvocationsPerWorkgroup uint32
-	// TODO
-	MaxComputeWorkgroupSizeX uint32
-	// TODO
-	MaxComputeWorkgroupSizeY uint32
-	// TODO
-	MaxComputeWorkgroupSizeZ uint32
-	// TODO
-	MaxComputeWorkgroupsPerDimension uint32
-	// TODO
-	MaxImmediateSize uint32
+	MaxSampledTexturesPerShaderStage          uint32
+	MaxSamplersPerShaderStage                 uint32
+	MaxStorageBuffersPerShaderStage           uint32
+	MaxStorageTexturesPerShaderStage          uint32
+	MaxUniformBuffersPerShaderStage           uint32
+	MaxUniformBufferBindingSize               uint64
+	MaxStorageBufferBindingSize               uint64
+	MinUniformBufferOffsetAlignment           uint32
+	MinStorageBufferOffsetAlignment           uint32
+	MaxVertexBuffers                          uint32
+	MaxBufferSize                             uint64
+	MaxVertexAttributes                       uint32
+	MaxVertexBufferArrayStride                uint32
+	MaxInterStageShaderVariables              uint32
+	MaxColorAttachments                       uint32
+	MaxColorAttachmentBytesPerSample          uint32
+	MaxComputeWorkgroupStorageSize            uint32
+	MaxComputeInvocationsPerWorkgroup         uint32
+	MaxComputeWorkgroupSizeX                  uint32
+	MaxComputeWorkgroupSizeY                  uint32
+	MaxComputeWorkgroupSizeZ                  uint32
+	MaxComputeWorkgroupsPerDimension          uint32
+	MaxImmediateSize                          uint32
 }
-
-// MultisampleState is a WebGPU struct.
 type MultisampleState struct {
-	_           structs.HostLayout
-	NextInChain unsafe.Pointer
-	// TODO
-	Count uint32
-	// TODO
-	Mask uint32
-	// TODO
+	_                      structs.HostLayout
+	NextInChain            unsafe.Pointer
+	Count                  uint32
+	Mask                   uint32
 	AlphaToCoverageEnabled Bool
 }
-
-// Origin3D is a WebGPU struct.
 type Origin3D struct {
 	_ structs.HostLayout
-	// TODO
 	X uint32
-	// TODO
 	Y uint32
-	// TODO
 	Z uint32
 }
-
-// PassTimestampWrites is a WebGPU struct.
 type PassTimestampWrites struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
 	// Query set to write timestamps to.
-	QuerySet uintptr
-	// TODO
+	QuerySet                  QuerySet
 	BeginningOfPassWriteIndex uint32
-	// TODO
-	EndOfPassWriteIndex uint32
+	EndOfPassWriteIndex       uint32
 }
-
-// PipelineLayoutDescriptor is a WebGPU struct.
 type PipelineLayoutDescriptor struct {
-	_           structs.HostLayout
-	NextInChain unsafe.Pointer
-	// TODO
+	_                     structs.HostLayout
+	NextInChain           unsafe.Pointer
 	Label                 string
 	BindGroupLayoutsCount uintptr
-	// TODO
-	BindGroupLayouts *BindGroupLayout
-	// TODO
-	ImmediateSize uint32
+	BindGroupLayouts      *BindGroupLayout
+	ImmediateSize         uint32
 }
-
-// PrimitiveState is a WebGPU struct.
 type PrimitiveState struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
 	// If set to @ref WGPUPrimitiveTopology_Undefined,
 	// [defaults](@ref SentinelValues) to @ref WGPUPrimitiveTopology_TriangleList.
-	Topology PrimitiveTopology
-	// TODO
+	Topology         PrimitiveTopology
 	StripIndexFormat IndexFormat
 	// If set to @ref WGPUFrontFace_Undefined,
 	// [defaults](@ref SentinelValues) to @ref WGPUFrontFace_CCW.
 	FrontFace FrontFace
 	// If set to @ref WGPUCullMode_Undefined,
 	// [defaults](@ref SentinelValues) to @ref WGPUCullMode_None.
-	CullMode CullMode
-	// TODO
+	CullMode       CullMode
 	UnclippedDepth Bool
 }
-
-// QuerySetDescriptor is a WebGPU struct.
 type QuerySetDescriptor struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
-	// TODO
-	Label string
-	// TODO
-	Type QueryType
-	// TODO
-	Count uint32
+	Label       string
+	Type        QueryType
+	Count       uint32
 }
-
-// QueueDescriptor is a WebGPU struct.
 type QueueDescriptor struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
-	// TODO
-	Label string
+	Label       string
 }
-
-// RenderBundleDescriptor is a WebGPU struct.
 type RenderBundleDescriptor struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
-	// TODO
-	Label string
+	Label       string
 }
-
-// RenderBundleEncoderDescriptor is a WebGPU struct.
 type RenderBundleEncoderDescriptor struct {
-	_           structs.HostLayout
-	NextInChain unsafe.Pointer
-	// TODO
-	Label             string
-	ColorFormatsCount uintptr
-	// TODO
-	ColorFormats *TextureFormat
-	// TODO
+	_                  structs.HostLayout
+	NextInChain        unsafe.Pointer
+	Label              string
+	ColorFormatsCount  uintptr
+	ColorFormats       *TextureFormat
 	DepthStencilFormat TextureFormat
-	// TODO
-	SampleCount uint32
-	// TODO
-	DepthReadOnly Bool
-	// TODO
-	StencilReadOnly Bool
+	SampleCount        uint32
+	DepthReadOnly      Bool
+	StencilReadOnly    Bool
 }
-
-// RenderPassColorAttachment is a WebGPU struct.
 type RenderPassColorAttachment struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
 	// If `NULL`, indicates a hole in the parent
 	// @ref WGPURenderPassDescriptor::colorAttachments array.
-	View uintptr
-	// TODO
-	DepthSlice uint32
-	// TODO
-	ResolveTarget uintptr
-	// TODO
-	LoadOp LoadOp
-	// TODO
-	StoreOp StoreOp
-	// TODO
-	ClearValue Color
+	View          TextureView
+	DepthSlice    uint32
+	ResolveTarget TextureView
+	LoadOp        LoadOp
+	StoreOp       StoreOp
+	ClearValue    Color
 }
-
-// RenderPassDepthStencilAttachment is a WebGPU struct.
 type RenderPassDepthStencilAttachment struct {
-	_           structs.HostLayout
-	NextInChain unsafe.Pointer
-	// TODO
-	View uintptr
-	// TODO
-	DepthLoadOp LoadOp
-	// TODO
+	_            structs.HostLayout
+	NextInChain  unsafe.Pointer
+	View         TextureView
+	DepthLoadOp  LoadOp
 	DepthStoreOp StoreOp
 	// This is a @ref NullableFloatingPointType.
 	//
@@ -1503,66 +1345,40 @@ type RenderPassDepthStencilAttachment struct {
 	// Use @ref WGPU_DEPTH_CLEAR_VALUE_UNDEFINED to indicate this semantically.
 	//
 	// If infinite, produces a @ref NonFiniteFloatValueError.
-	DepthClearValue *float32
-	// TODO
-	DepthReadOnly Bool
-	// TODO
-	StencilLoadOp LoadOp
-	// TODO
-	StencilStoreOp StoreOp
-	// TODO
+	DepthClearValue   *float32
+	DepthReadOnly     Bool
+	StencilLoadOp     LoadOp
+	StencilStoreOp    StoreOp
 	StencilClearValue uint32
-	// TODO
-	StencilReadOnly Bool
+	StencilReadOnly   Bool
 }
-
-// RenderPassDescriptor is a WebGPU struct.
 type RenderPassDescriptor struct {
-	_           structs.HostLayout
-	NextInChain unsafe.Pointer
-	// TODO
-	Label                 string
-	ColorAttachmentsCount uintptr
-	// TODO
-	ColorAttachments *RenderPassColorAttachment
-	// TODO
+	_                      structs.HostLayout
+	NextInChain            unsafe.Pointer
+	Label                  string
+	ColorAttachmentsCount  uintptr
+	ColorAttachments       *RenderPassColorAttachment
 	DepthStencilAttachment *RenderPassDepthStencilAttachment
-	// TODO
-	OcclusionQuerySet uintptr
-	// TODO
-	TimestampWrites *PassTimestampWrites
+	OcclusionQuerySet      QuerySet
+	TimestampWrites        *PassTimestampWrites
 }
-
-// RenderPassMaxDrawCount is a WebGPU struct.
 type RenderPassMaxDrawCount struct {
-	_           structs.HostLayout
-	NextInChain unsafe.Pointer
-	SType       SType
-	// TODO
+	_            structs.HostLayout
+	NextInChain  unsafe.Pointer
+	SType        SType
 	MaxDrawCount uint64
 }
-
-// RenderPipelineDescriptor is a WebGPU struct.
 type RenderPipelineDescriptor struct {
-	_           structs.HostLayout
-	NextInChain unsafe.Pointer
-	// TODO
-	Label string
-	// TODO
-	Layout uintptr
-	// TODO
-	Vertex VertexState
-	// TODO
-	Primitive PrimitiveState
-	// TODO
+	_            structs.HostLayout
+	NextInChain  unsafe.Pointer
+	Label        string
+	Layout       PipelineLayout
+	Vertex       VertexState
+	Primitive    PrimitiveState
 	DepthStencil *DepthStencilState
-	// TODO
-	Multisample MultisampleState
-	// TODO
-	Fragment *FragmentState
+	Multisample  MultisampleState
+	Fragment     *FragmentState
 }
-
-// RequestAdapterOptions is a WebGPU struct.
 type RequestAdapterOptions struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
@@ -1572,8 +1388,7 @@ type RequestAdapterOptions struct {
 	// [defaults](@ref SentinelValues) to @ref WGPUFeatureLevel_Core.
 	// Additionally, implementations may ignore @ref WGPUFeatureLevel_Compatibility
 	// and provide @ref WGPUFeatureLevel_Core instead.
-	FeatureLevel FeatureLevel
-	// TODO
+	FeatureLevel    FeatureLevel
 	PowerPreference PowerPreference
 	// If true, requires the adapter to be a "fallback" adapter as defined by the JS spec.
 	// If this is not possible, the request returns null.
@@ -1583,10 +1398,10 @@ type RequestAdapterOptions struct {
 	BackendType BackendType
 	// If set, requires the adapter to be able to output to a particular surface.
 	// If this is not possible, the request returns null.
-	CompatibleSurface uintptr
+	CompatibleSurface Surface
 }
 
-// RequestAdapterWebXROptions is a WebGPU struct.
+// Extension providing requestAdapter options for implementations with WebXR interop (i.e. Wasm).
 type RequestAdapterWebXROptions struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
@@ -1594,8 +1409,6 @@ type RequestAdapterWebXROptions struct {
 	// Sets the `xrCompatible` option in the JS API.
 	XrCompatible Bool
 }
-
-// SamplerBindingLayout is a WebGPU struct.
 type SamplerBindingLayout struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
@@ -1603,13 +1416,10 @@ type SamplerBindingLayout struct {
 	// [defaults](@ref SentinelValues) to @ref WGPUSamplerBindingType_Filtering.
 	Type SamplerBindingType
 }
-
-// SamplerDescriptor is a WebGPU struct.
 type SamplerDescriptor struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
-	// TODO
-	Label string
+	Label       string
 	// If set to @ref WGPUAddressMode_Undefined,
 	// [defaults](@ref SentinelValues) to @ref WGPUAddressMode_ClampToEdge.
 	AddressModeU AddressMode
@@ -1635,42 +1445,28 @@ type SamplerDescriptor struct {
 	// TODO
 	//
 	// If non-finite, produces a @ref NonFiniteFloatValueError.
-	LodMaxClamp float32
-	// TODO
-	Compare CompareFunction
-	// TODO
+	LodMaxClamp   float32
+	Compare       CompareFunction
 	MaxAnisotropy uint16
 }
-
-// ShaderModuleDescriptor is a WebGPU struct.
 type ShaderModuleDescriptor struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
-	// TODO
-	Label string
+	Label       string
 }
-
-// ShaderSourceSPIRV is a WebGPU struct.
 type ShaderSourceSPIRV struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
 	SType       SType
-	// TODO
-	CodeSize uint32
-	// TODO
-	Code uint32
+	CodeSize    uint32
+	Code        uint32
 }
-
-// ShaderSourceWGSL is a WebGPU struct.
 type ShaderSourceWGSL struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
 	SType       SType
-	// TODO
-	Code string
+	Code        string
 }
-
-// StencilFaceState is a WebGPU struct.
 type StencilFaceState struct {
 	_ structs.HostLayout
 	// If set to @ref WGPUCompareFunction_Undefined,
@@ -1686,46 +1482,34 @@ type StencilFaceState struct {
 	// [defaults](@ref SentinelValues) to @ref WGPUStencilOperation_Keep.
 	PassOp StencilOperation
 }
-
-// StorageTextureBindingLayout is a WebGPU struct.
 type StorageTextureBindingLayout struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
 	// If set to @ref WGPUStorageTextureAccess_Undefined,
 	// [defaults](@ref SentinelValues) to @ref WGPUStorageTextureAccess_WriteOnly.
 	Access StorageTextureAccess
-	// TODO
 	Format TextureFormat
 	// If set to @ref WGPUTextureViewDimension_Undefined,
 	// [defaults](@ref SentinelValues) to @ref WGPUTextureViewDimension_2D.
 	ViewDimension TextureViewDimension
 }
-
-// SupportedFeatures is a WebGPU struct.
 type SupportedFeatures struct {
 	_             structs.HostLayout
 	FeaturesCount uintptr
-	// TODO
-	Features *FeatureName
+	Features      *FeatureName
 }
-
-// SupportedInstanceFeatures is a WebGPU struct.
 type SupportedInstanceFeatures struct {
 	_             structs.HostLayout
 	FeaturesCount uintptr
-	// TODO
-	Features *InstanceFeatureName
+	Features      *InstanceFeatureName
 }
-
-// SupportedWGSLLanguageFeatures is a WebGPU struct.
 type SupportedWGSLLanguageFeatures struct {
 	_             structs.HostLayout
 	FeaturesCount uintptr
-	// TODO
-	Features *WGSLLanguageFeatureName
+	Features      *WGSLLanguageFeatureName
 }
 
-// SurfaceCapabilities is a WebGPU struct.
+// Filled by @ref wgpuSurfaceGetCapabilities with what's supported for @ref wgpuSurfaceConfigure for a pair of @ref WGPUSurface and @ref WGPUAdapter.
 type SurfaceCapabilities struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
@@ -1745,23 +1529,22 @@ type SurfaceCapabilities struct {
 	AlphaModes *CompositeAlphaMode
 }
 
-// SurfaceColorManagement is a WebGPU struct.
+// Extension of @ref WGPUSurfaceConfiguration for color spaces and HDR.
 type SurfaceColorManagement struct {
-	_           structs.HostLayout
-	NextInChain unsafe.Pointer
-	SType       SType
-	// TODO
-	ColorSpace PredefinedColorSpace
-	// TODO
+	_               structs.HostLayout
+	NextInChain     unsafe.Pointer
+	SType           SType
+	ColorSpace      PredefinedColorSpace
 	ToneMappingMode ToneMappingMode
 }
 
-// SurfaceConfiguration is a WebGPU struct.
+// Options to @ref wgpuSurfaceConfigure for defining how a @ref WGPUSurface will be rendered to and presented to the user.
+// See @ref Surface-Configuration for more details.
 type SurfaceConfiguration struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
 	// The @ref WGPUDevice to use to render to surface's textures.
-	Device uintptr
+	Device Device
 	// The @ref WGPUTextureFormat of the surface's textures.
 	Format TextureFormat
 	// The @ref WGPUTextureUsage of the surface's textures.
@@ -1786,7 +1569,9 @@ type SurfaceConfiguration struct {
 	PresentMode PresentMode
 }
 
-// SurfaceDescriptor is a WebGPU struct.
+// The root descriptor for the creation of an @ref WGPUSurface with @ref wgpuInstanceCreateSurface.
+// It isn't sufficient by itself and must have one of the `WGPUSurfaceSource*` in its chain.
+// See @ref Surface-Creation for more details.
 type SurfaceDescriptor struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
@@ -1794,7 +1579,7 @@ type SurfaceDescriptor struct {
 	Label string
 }
 
-// SurfaceSourceAndroidNativeWindow is a WebGPU struct.
+// Chained in @ref WGPUSurfaceDescriptor to make an @ref WGPUSurface wrapping an Android [`ANativeWindow`](https://developer.android.com/ndk/reference/group/a-native-window).
 type SurfaceSourceAndroidNativeWindow struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
@@ -1803,7 +1588,7 @@ type SurfaceSourceAndroidNativeWindow struct {
 	Window unsafe.Pointer
 }
 
-// SurfaceSourceMetalLayer is a WebGPU struct.
+// Chained in @ref WGPUSurfaceDescriptor to make an @ref WGPUSurface wrapping a [`CAMetalLayer`](https://developer.apple.com/documentation/quartzcore/cametallayer?language=objc).
 type SurfaceSourceMetalLayer struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
@@ -1812,7 +1597,7 @@ type SurfaceSourceMetalLayer struct {
 	Layer unsafe.Pointer
 }
 
-// SurfaceSourceWaylandSurface is a WebGPU struct.
+// Chained in @ref WGPUSurfaceDescriptor to make an @ref WGPUSurface wrapping a [Wayland](https://wayland.freedesktop.org/) [`wl_surface`](https://wayland.freedesktop.org/docs/html/apa.html#protocol-spec-wl_surface).
 type SurfaceSourceWaylandSurface struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
@@ -1823,7 +1608,7 @@ type SurfaceSourceWaylandSurface struct {
 	Surface unsafe.Pointer
 }
 
-// SurfaceSourceWindowsHWND is a WebGPU struct.
+// Chained in @ref WGPUSurfaceDescriptor to make an @ref WGPUSurface wrapping a Windows [`HWND`](https://learn.microsoft.com/en-us/windows/apps/develop/ui-input/retrieve-hwnd).
 type SurfaceSourceWindowsHWND struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
@@ -1835,7 +1620,7 @@ type SurfaceSourceWindowsHWND struct {
 	Hwnd unsafe.Pointer
 }
 
-// SurfaceSourceXCBWindow is a WebGPU struct.
+// Chained in @ref WGPUSurfaceDescriptor to make an @ref WGPUSurface wrapping an [XCB](https://xcb.freedesktop.org/) `xcb_window_t`.
 type SurfaceSourceXCBWindow struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
@@ -1846,7 +1631,7 @@ type SurfaceSourceXCBWindow struct {
 	Window uint32
 }
 
-// SurfaceSourceXlibWindow is a WebGPU struct.
+// Chained in @ref WGPUSurfaceDescriptor to make an @ref WGPUSurface wrapping an [Xlib](https://www.x.org/releases/current/doc/libX11/libX11/libX11.html) `Window`.
 type SurfaceSourceXlibWindow struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
@@ -1857,52 +1642,37 @@ type SurfaceSourceXlibWindow struct {
 	Window uint64
 }
 
-// SurfaceTexture is a WebGPU struct.
+// Queried each frame from a @ref WGPUSurface to get a @ref WGPUTexture to render to along with some metadata.
+// See @ref Surface-Presenting for more details.
 type SurfaceTexture struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
 	// The @ref WGPUTexture representing the frame that will be shown on the surface.
 	// It is @ref ReturnedWithOwnership from @ref wgpuSurfaceGetCurrentTexture.
-	Texture uintptr
+	Texture Texture
 	// Whether the call to @ref wgpuSurfaceGetCurrentTexture succeeded and a hint as to why it might not have.
 	Status SurfaceGetCurrentTextureStatus
 }
-
-// TexelCopyBufferInfo is a WebGPU struct.
 type TexelCopyBufferInfo struct {
-	_ structs.HostLayout
-	// TODO
+	_      structs.HostLayout
 	Layout TexelCopyBufferLayout
-	// TODO
-	Buffer uintptr
+	Buffer Buffer
 }
-
-// TexelCopyBufferLayout is a WebGPU struct.
 type TexelCopyBufferLayout struct {
-	_ structs.HostLayout
-	// TODO
-	Offset uint64
-	// TODO
-	BytesPerRow uint32
-	// TODO
+	_            structs.HostLayout
+	Offset       uint64
+	BytesPerRow  uint32
 	RowsPerImage uint32
 }
-
-// TexelCopyTextureInfo is a WebGPU struct.
 type TexelCopyTextureInfo struct {
-	_ structs.HostLayout
-	// TODO
-	Texture uintptr
-	// TODO
+	_        structs.HostLayout
+	Texture  Texture
 	MipLevel uint32
-	// TODO
-	Origin Origin3D
+	Origin   Origin3D
 	// If set to @ref WGPUTextureAspect_Undefined,
 	// [defaults](@ref SentinelValues) to @ref WGPUTextureAspect_All.
 	Aspect TextureAspect
 }
-
-// TextureBindingLayout is a WebGPU struct.
 type TextureBindingLayout struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
@@ -1912,20 +1682,23 @@ type TextureBindingLayout struct {
 	// If set to @ref WGPUTextureViewDimension_Undefined,
 	// [defaults](@ref SentinelValues) to @ref WGPUTextureViewDimension_2D.
 	ViewDimension TextureViewDimension
-	// TODO
-	Multisampled Bool
+	Multisampled  Bool
 }
 
-// TextureBindingViewDimension is a WebGPU struct.
+// Note: While Compatibility Mode is optional to implement, this extension struct
+// is required to be accepted (but per the WebGPU spec, its contents are ignored
+// on devices that have the @ref WGPUFeatureName_CoreFeaturesAndLimits feature).
 type TextureBindingViewDimension struct {
-	_           structs.HostLayout
-	NextInChain unsafe.Pointer
-	SType       SType
-	// TODO
+	_                           structs.HostLayout
+	NextInChain                 unsafe.Pointer
+	SType                       SType
 	TextureBindingViewDimension TextureViewDimension
 }
 
-// TextureComponentSwizzle is a WebGPU struct.
+// When accessed by a shader, the red/green/blue/alpha channels are replaced
+// by the value corresponding to the component specified in r, g, b, and a,
+// respectively unlike the JS API which uses a string of length four, with
+// each character mapping to the texture view's red/green/blue/alpha channels.
 type TextureComponentSwizzle struct {
 	_ structs.HostLayout
 	// The value that replaces the red channel in the shader.
@@ -1949,111 +1722,81 @@ type TextureComponentSwizzle struct {
 	// [defaults](@ref SentinelValues) to @ref WGPUComponentSwizzle_A.
 	A ComponentSwizzle
 }
-
-// TextureComponentSwizzleDescriptor is a WebGPU struct.
 type TextureComponentSwizzleDescriptor struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
 	SType       SType
-	// TODO
-	Swizzle TextureComponentSwizzle
+	Swizzle     TextureComponentSwizzle
 }
-
-// TextureDescriptor is a WebGPU struct.
 type TextureDescriptor struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
-	// TODO
-	Label string
-	// TODO
-	Usage TextureUsage
+	Label       string
+	Usage       TextureUsage
 	// If set to @ref WGPUTextureDimension_Undefined,
 	// [defaults](@ref SentinelValues) to @ref WGPUTextureDimension_2D.
-	Dimension TextureDimension
-	// TODO
-	Size Extent3D
-	// TODO
-	Format TextureFormat
-	// TODO
-	MipLevelCount uint32
-	// TODO
+	Dimension        TextureDimension
+	Size             Extent3D
+	Format           TextureFormat
+	MipLevelCount    uint32
 	SampleCount      uint32
 	ViewFormatsCount uintptr
-	// TODO
-	ViewFormats *TextureFormat
+	ViewFormats      *TextureFormat
 }
-
-// TextureViewDescriptor is a WebGPU struct.
 type TextureViewDescriptor struct {
-	_           structs.HostLayout
-	NextInChain unsafe.Pointer
-	// TODO
-	Label string
-	// TODO
-	Format TextureFormat
-	// TODO
-	Dimension TextureViewDimension
-	// TODO
-	BaseMipLevel uint32
-	// TODO
-	MipLevelCount uint32
-	// TODO
-	BaseArrayLayer uint32
-	// TODO
+	_               structs.HostLayout
+	NextInChain     unsafe.Pointer
+	Label           string
+	Format          TextureFormat
+	Dimension       TextureViewDimension
+	BaseMipLevel    uint32
+	MipLevelCount   uint32
+	BaseArrayLayer  uint32
 	ArrayLayerCount uint32
 	// If set to @ref WGPUTextureAspect_Undefined,
 	// [defaults](@ref SentinelValues) to @ref WGPUTextureAspect_All.
 	Aspect TextureAspect
-	// TODO
-	Usage TextureUsage
+	Usage  TextureUsage
 }
-
-// VertexAttribute is a WebGPU struct.
 type VertexAttribute struct {
-	_           structs.HostLayout
-	NextInChain unsafe.Pointer
-	// TODO
-	Format VertexFormat
-	// TODO
-	Offset uint64
-	// TODO
+	_              structs.HostLayout
+	NextInChain    unsafe.Pointer
+	Format         VertexFormat
+	Offset         uint64
 	ShaderLocation uint32
 }
 
-// VertexBufferLayout is a WebGPU struct.
+// If `attributes` is empty *and* `stepMode` is @ref WGPUVertexStepMode_Undefined,
+// indicates a "hole" in the parent @ref WGPUVertexState `buffers` array,
+// with behavior equivalent to `null` in the JS API.
+//
+// If `attributes` is empty but `stepMode` is *not* @ref WGPUVertexStepMode_Undefined,
+// indicates a vertex buffer with no attributes, with behavior equivalent to
+// `{ attributes: [] }` in the JS API. (TODO: If the JS API changes not to
+// distinguish these cases, then this distinction doesn't matter and we can
+// remove this documentation.)
+//
+// If `stepMode` is @ref WGPUVertexStepMode_Undefined but `attributes` is *not* empty,
+// `stepMode` [defaults](@ref SentinelValues) to @ref WGPUVertexStepMode_Vertex.
 type VertexBufferLayout struct {
-	_           structs.HostLayout
-	NextInChain unsafe.Pointer
-	// TODO
-	StepMode VertexStepMode
-	// TODO
+	_               structs.HostLayout
+	NextInChain     unsafe.Pointer
+	StepMode        VertexStepMode
 	ArrayStride     uint64
 	AttributesCount uintptr
-	// TODO
-	Attributes *VertexAttribute
+	Attributes      *VertexAttribute
 }
-
-// VertexState is a WebGPU struct.
 type VertexState struct {
-	_           structs.HostLayout
-	NextInChain unsafe.Pointer
-	// TODO
-	Module uintptr
-	// TODO
+	_              structs.HostLayout
+	NextInChain    unsafe.Pointer
+	Module         ShaderModule
 	EntryPoint     string
 	ConstantsCount uintptr
-	// TODO
-	Constants    *ConstantEntry
-	BuffersCount uintptr
-	// TODO
-	Buffers *VertexBufferLayout
+	Constants      *ConstantEntry
+	BuffersCount   uintptr
+	Buffers        *VertexBufferLayout
 }
 
-// ---------------------------------------------------------------------------
-// Callback info records (embedded in descriptors / async calls)
-// ---------------------------------------------------------------------------
-
-// BufferMapCallbackInfo matches C.WGPUBufferMapCallbackInfo.
 type BufferMapCallbackInfo struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
@@ -2063,7 +1806,6 @@ type BufferMapCallbackInfo struct {
 	Userdata2   unsafe.Pointer
 }
 
-// CompilationInfoCallbackInfo matches C.WGPUCompilationInfoCallbackInfo.
 type CompilationInfoCallbackInfo struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
@@ -2073,7 +1815,6 @@ type CompilationInfoCallbackInfo struct {
 	Userdata2   unsafe.Pointer
 }
 
-// CreateComputePipelineAsyncCallbackInfo matches C.WGPUCreateComputePipelineAsyncCallbackInfo.
 type CreateComputePipelineAsyncCallbackInfo struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
@@ -2083,7 +1824,6 @@ type CreateComputePipelineAsyncCallbackInfo struct {
 	Userdata2   unsafe.Pointer
 }
 
-// CreateRenderPipelineAsyncCallbackInfo matches C.WGPUCreateRenderPipelineAsyncCallbackInfo.
 type CreateRenderPipelineAsyncCallbackInfo struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
@@ -2093,7 +1833,6 @@ type CreateRenderPipelineAsyncCallbackInfo struct {
 	Userdata2   unsafe.Pointer
 }
 
-// DeviceLostCallbackInfo matches C.WGPUDeviceLostCallbackInfo.
 type DeviceLostCallbackInfo struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
@@ -2103,7 +1842,6 @@ type DeviceLostCallbackInfo struct {
 	Userdata2   unsafe.Pointer
 }
 
-// PopErrorScopeCallbackInfo matches C.WGPUPopErrorScopeCallbackInfo.
 type PopErrorScopeCallbackInfo struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
@@ -2113,7 +1851,6 @@ type PopErrorScopeCallbackInfo struct {
 	Userdata2   unsafe.Pointer
 }
 
-// QueueWorkDoneCallbackInfo matches C.WGPUQueueWorkDoneCallbackInfo.
 type QueueWorkDoneCallbackInfo struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
@@ -2123,7 +1860,6 @@ type QueueWorkDoneCallbackInfo struct {
 	Userdata2   unsafe.Pointer
 }
 
-// RequestAdapterCallbackInfo matches C.WGPURequestAdapterCallbackInfo.
 type RequestAdapterCallbackInfo struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
@@ -2133,7 +1869,6 @@ type RequestAdapterCallbackInfo struct {
 	Userdata2   unsafe.Pointer
 }
 
-// RequestDeviceCallbackInfo matches C.WGPURequestDeviceCallbackInfo.
 type RequestDeviceCallbackInfo struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
@@ -2143,7 +1878,6 @@ type RequestDeviceCallbackInfo struct {
 	Userdata2   unsafe.Pointer
 }
 
-// UncapturedErrorCallbackInfo matches C.WGPUUncapturedErrorCallbackInfo.
 type UncapturedErrorCallbackInfo struct {
 	_           structs.HostLayout
 	NextInChain unsafe.Pointer
@@ -2152,11 +1886,6 @@ type UncapturedErrorCallbackInfo struct {
 	Userdata2   unsafe.Pointer
 }
 
-// ---------------------------------------------------------------------------
-// Errors
-// ---------------------------------------------------------------------------
-
-// ValidationError is a WebGPU validation error.
 type ValidationError struct{ Message string }
 
 func (e *ValidationError) Error() string {
@@ -2166,7 +1895,6 @@ func (e *ValidationError) Error() string {
 	return "webgpu: validation"
 }
 
-// OutOfMemoryError is a WebGPU out of memory error.
 type OutOfMemoryError struct{ Message string }
 
 func (e *OutOfMemoryError) Error() string {
@@ -2176,7 +1904,6 @@ func (e *OutOfMemoryError) Error() string {
 	return "webgpu: out of memory"
 }
 
-// InternalError is a WebGPU internal error.
 type InternalError struct{ Message string }
 
 func (e *InternalError) Error() string {
@@ -2186,7 +1913,6 @@ func (e *InternalError) Error() string {
 	return "webgpu: internal"
 }
 
-// UnknownError is a WebGPU unknown error.
 type UnknownError struct{ Message string }
 
 func (e *UnknownError) Error() string {
@@ -2196,8 +1922,6 @@ func (e *UnknownError) Error() string {
 	return "webgpu: unknown"
 }
 
-// errorFromErrorType creates the typed error for a WGPUErrorType value.
-// Returns nil for ErrorTypeNoError.
 func errorFromErrorType(t ErrorType, message string) error {
 	switch t {
 	case ErrorTypeValidation:
@@ -2212,12 +1936,6 @@ func errorFromErrorType(t ErrorType, message string) error {
 	return nil
 }
 
-// ---------------------------------------------------------------------------
-// Blocking wait
-// ---------------------------------------------------------------------------
-
-// liveInstances is the set of Instance handles that should be pumped while
-// a blocking API is waiting for its callback.
 var (
 	instanceMu    sync.Mutex
 	liveInstances []Instance
@@ -2246,12 +1964,10 @@ func pumpEvents() {
 	copy(insts, liveInstances)
 	instanceMu.Unlock()
 	for _, in := range insts {
-		in.ProcessEvents()
+		InstanceProcessEvents(in)
 	}
 }
 
-// waitRecv blocks until a value arrives on ch, pumping WebGPU events so
-// completion callbacks can run on this goroutine.
 func waitRecv[T any](ch <-chan T) T {
 	for {
 		select {
@@ -2264,279 +1980,63 @@ func waitRecv[T any](ch <-chan T) T {
 	}
 }
 
-// wrapInstance registers a new Instance for event pumping.
-func wrapInstance(inner uintptr) Instance {
+func wrapInstance(inner unsafe.Pointer) Instance {
 	i := Instance(inner)
-	if i != 0 {
+	if i != nil {
 		addInstance(i)
 	}
 	return i
 }
 
-// ---------------------------------------------------------------------------
-// Handle (object) types
-// ---------------------------------------------------------------------------
+type Adapter unsafe.Pointer
+type BindGroup unsafe.Pointer
+type BindGroupLayout unsafe.Pointer
+type Buffer unsafe.Pointer
+type CommandBuffer unsafe.Pointer
+type CommandEncoder unsafe.Pointer
+type ComputePassEncoder unsafe.Pointer
+type ComputePipeline unsafe.Pointer
 
-// Adapter is a WebGPU object handle (a native WGPUAdapter pointer).
-// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
-// and must call Release when done.
-type Adapter uintptr
+// TODO
+//
+// Releasing the last ref to a `WGPUDevice` also calls @ref wgpuDeviceDestroy.
+// For more info, see @ref DeviceRelease.
+type Device unsafe.Pointer
 
-// Handle returns the raw native handle.
-func (a Adapter) Handle() uintptr {
-	return uintptr(a)
-}
+// A sampleable 2D texture that may perform 0-copy YUV sampling internally. Creation of @ref WGPUExternalTexture is extremely implementation-dependent and not defined in this header.
+type ExternalTexture unsafe.Pointer
+type Instance unsafe.Pointer
+type PipelineLayout unsafe.Pointer
+type QuerySet unsafe.Pointer
+type Queue unsafe.Pointer
+type RenderBundle unsafe.Pointer
+type RenderBundleEncoder unsafe.Pointer
+type RenderPassEncoder unsafe.Pointer
+type RenderPipeline unsafe.Pointer
+type Sampler unsafe.Pointer
+type ShaderModule unsafe.Pointer
 
-// BindGroup is a WebGPU object handle (a native WGPUBindGroup pointer).
-// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
-// and must call Release when done.
-type BindGroup uintptr
+// An object used to continuously present image data to the user, see @ref Surfaces for more details.
+type Surface unsafe.Pointer
+type Texture unsafe.Pointer
+type TextureView unsafe.Pointer
 
-// Handle returns the raw native handle.
-func (b BindGroup) Handle() uintptr {
-	return uintptr(b)
-}
-
-// BindGroupLayout is a WebGPU object handle (a native WGPUBindGroupLayout pointer).
-// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
-// and must call Release when done.
-type BindGroupLayout uintptr
-
-// Handle returns the raw native handle.
-func (b BindGroupLayout) Handle() uintptr {
-	return uintptr(b)
-}
-
-// Buffer is a WebGPU object handle (a native WGPUBuffer pointer).
-// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
-// and must call Release when done.
-type Buffer uintptr
-
-// Handle returns the raw native handle.
-func (b Buffer) Handle() uintptr {
-	return uintptr(b)
-}
-
-// CommandBuffer is a WebGPU object handle (a native WGPUCommandBuffer pointer).
-// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
-// and must call Release when done.
-type CommandBuffer uintptr
-
-// Handle returns the raw native handle.
-func (c CommandBuffer) Handle() uintptr {
-	return uintptr(c)
-}
-
-// CommandEncoder is a WebGPU object handle (a native WGPUCommandEncoder pointer).
-// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
-// and must call Release when done.
-type CommandEncoder uintptr
-
-// Handle returns the raw native handle.
-func (c CommandEncoder) Handle() uintptr {
-	return uintptr(c)
-}
-
-// ComputePassEncoder is a WebGPU object handle (a native WGPUComputePassEncoder pointer).
-// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
-// and must call Release when done.
-type ComputePassEncoder uintptr
-
-// Handle returns the raw native handle.
-func (c ComputePassEncoder) Handle() uintptr {
-	return uintptr(c)
-}
-
-// ComputePipeline is a WebGPU object handle (a native WGPUComputePipeline pointer).
-// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
-// and must call Release when done.
-type ComputePipeline uintptr
-
-// Handle returns the raw native handle.
-func (c ComputePipeline) Handle() uintptr {
-	return uintptr(c)
-}
-
-// Device is a WebGPU object handle (a native WGPUDevice pointer).
-// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
-// and must call Release when done.
-type Device uintptr
-
-// Handle returns the raw native handle.
-func (d Device) Handle() uintptr {
-	return uintptr(d)
-}
-
-// ExternalTexture is a WebGPU object handle (a native WGPUExternalTexture pointer).
-// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
-// and must call Release when done.
-type ExternalTexture uintptr
-
-// Handle returns the raw native handle.
-func (e ExternalTexture) Handle() uintptr {
-	return uintptr(e)
-}
-
-// Instance is a WebGPU object handle (a native WGPUInstance pointer).
-// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
-// and must call Release when done.
-type Instance uintptr
-
-// Handle returns the raw native handle.
-func (i Instance) Handle() uintptr {
-	return uintptr(i)
-}
-
-// PipelineLayout is a WebGPU object handle (a native WGPUPipelineLayout pointer).
-// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
-// and must call Release when done.
-type PipelineLayout uintptr
-
-// Handle returns the raw native handle.
-func (p PipelineLayout) Handle() uintptr {
-	return uintptr(p)
-}
-
-// QuerySet is a WebGPU object handle (a native WGPUQuerySet pointer).
-// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
-// and must call Release when done.
-type QuerySet uintptr
-
-// Handle returns the raw native handle.
-func (q QuerySet) Handle() uintptr {
-	return uintptr(q)
-}
-
-// Queue is a WebGPU object handle (a native WGPUQueue pointer).
-// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
-// and must call Release when done.
-type Queue uintptr
-
-// Handle returns the raw native handle.
-func (q Queue) Handle() uintptr {
-	return uintptr(q)
-}
-
-// RenderBundle is a WebGPU object handle (a native WGPURenderBundle pointer).
-// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
-// and must call Release when done.
-type RenderBundle uintptr
-
-// Handle returns the raw native handle.
-func (r RenderBundle) Handle() uintptr {
-	return uintptr(r)
-}
-
-// RenderBundleEncoder is a WebGPU object handle (a native WGPURenderBundleEncoder pointer).
-// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
-// and must call Release when done.
-type RenderBundleEncoder uintptr
-
-// Handle returns the raw native handle.
-func (r RenderBundleEncoder) Handle() uintptr {
-	return uintptr(r)
-}
-
-// RenderPassEncoder is a WebGPU object handle (a native WGPURenderPassEncoder pointer).
-// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
-// and must call Release when done.
-type RenderPassEncoder uintptr
-
-// Handle returns the raw native handle.
-func (r RenderPassEncoder) Handle() uintptr {
-	return uintptr(r)
-}
-
-// RenderPipeline is a WebGPU object handle (a native WGPURenderPipeline pointer).
-// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
-// and must call Release when done.
-type RenderPipeline uintptr
-
-// Handle returns the raw native handle.
-func (r RenderPipeline) Handle() uintptr {
-	return uintptr(r)
-}
-
-// Sampler is a WebGPU object handle (a native WGPUSampler pointer).
-// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
-// and must call Release when done.
-type Sampler uintptr
-
-// Handle returns the raw native handle.
-func (s Sampler) Handle() uintptr {
-	return uintptr(s)
-}
-
-// ShaderModule is a WebGPU object handle (a native WGPUShaderModule pointer).
-// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
-// and must call Release when done.
-type ShaderModule uintptr
-
-// Handle returns the raw native handle.
-func (s ShaderModule) Handle() uintptr {
-	return uintptr(s)
-}
-
-// Surface is a WebGPU object handle (a native WGPUSurface pointer).
-// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
-// and must call Release when done.
-type Surface uintptr
-
-// Handle returns the raw native handle.
-func (s Surface) Handle() uintptr {
-	return uintptr(s)
-}
-
-// Texture is a WebGPU object handle (a native WGPUTexture pointer).
-// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
-// and must call Release when done.
-type Texture uintptr
-
-// Handle returns the raw native handle.
-func (t Texture) Handle() uintptr {
-	return uintptr(t)
-}
-
-// TextureView is a WebGPU object handle (a native WGPUTextureView pointer).
-// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
-// and must call Release when done.
-type TextureView uintptr
-
-// Handle returns the raw native handle.
-func (t TextureView) Handle() uintptr {
-	return uintptr(t)
-}
-
-// ---------------------------------------------------------------------------
-// Callback types
-// ---------------------------------------------------------------------------
-
-// BufferMapFn is a callback function type.
 type BufferMapFn func(status MapAsyncStatus, message string)
 
-// CompilationInfoFn is a callback function type.
 type CompilationInfoFn func(compilationInfo CompilationInfo, status CompilationInfoRequestStatus)
 
-// CreateComputePipelineAsyncFn is a callback function type.
 type CreateComputePipelineAsyncFn func(pipeline ComputePipeline, status CreatePipelineAsyncStatus, message string)
 
-// CreateRenderPipelineAsyncFn is a callback function type.
 type CreateRenderPipelineAsyncFn func(pipeline RenderPipeline, status CreatePipelineAsyncStatus, message string)
 
-// DeviceLostFn is a callback function type.
 type DeviceLostFn func(device Device, reason DeviceLostReason, message string)
 
-// PopErrorScopeFn is a callback function type.
 type PopErrorScopeFn func(err error, status PopErrorScopeStatus)
 
-// QueueWorkDoneFn is a callback function type.
 type QueueWorkDoneFn func(status QueueWorkDoneStatus, message string)
 
-// RequestAdapterFn is a callback function type.
 type RequestAdapterFn func(adapter Adapter, status RequestAdapterStatus, message string)
 
-// RequestDeviceFn is a callback function type.
 type RequestDeviceFn func(device Device, status RequestDeviceStatus, message string)
 
-// UncapturedErrorFn is a callback function type.
 type UncapturedErrorFn func(device Device, err error)

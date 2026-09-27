@@ -104,6 +104,7 @@ func loadTemplates() (map[string]*template.Template, error) {
 		"isStruct":      isStructType,
 		"isArrayLen":    isArrayLenField,
 		"comment":       commentLine,
+		"commentLine":   commentLine,
 		"commentIndent": commentIndent,
 		"sig":           goSignature,
 		"recv":          receiverName,

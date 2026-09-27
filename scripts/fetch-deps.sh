@@ -26,13 +26,28 @@ fetch_wgpu_native() {
 }
 
 # Host / common targets. Override with FORCE_ALL=1 to pull every platform.
-if [[ "$(uname -s)" == "Darwin" ]]; then
-  fetch_wgpu_native "macos-aarch64" "macos-aarch64"
-  fetch_wgpu_native "macos-x86_64" "macos-x86_64"
-else
-  fetch_wgpu_native "linux-x86_64" "linux-x86_64"
-  fetch_wgpu_native "linux-aarch64" "linux-aarch64"
-fi
+case "$(uname -s)" in
+  Darwin*)
+    fetch_wgpu_native "macos-aarch64" "macos-aarch64"
+    fetch_wgpu_native "macos-x86_64" "macos-x86_64"
+    ;;
+  MINGW*|MSYS*|CYGWIN*)
+    fetch_wgpu_native "windows-x86_64-msvc" "windows-x86_64-msvc"
+    # Prefer the DLL import library for -lwgpu_native (matches the syscall backend).
+    # The release also ships a large static wgpu_native.lib; keep it as *_static.lib.
+    winlib="$THIRD/wgpu-native/windows-x86_64-msvc/lib"
+    if [[ -f "$winlib/wgpu_native.dll.lib" ]]; then
+      if [[ -f "$winlib/wgpu_native.lib" && ! -f "$winlib/wgpu_native_static.lib" ]]; then
+        mv "$winlib/wgpu_native.lib" "$winlib/wgpu_native_static.lib"
+      fi
+      cp "$winlib/wgpu_native.dll.lib" "$winlib/wgpu_native.lib"
+    fi
+    ;;
+  *)
+    fetch_wgpu_native "linux-x86_64" "linux-x86_64"
+    fetch_wgpu_native "linux-aarch64" "linux-aarch64"
+    ;;
+esac
 
 # Always keep a Linux .so available (requested for non-cgo / CI use).
 if [[ ! -f "$THIRD/wgpu-native/linux-x86_64/lib/libwgpu_native.so" ]]; then
@@ -40,4 +55,4 @@ if [[ ! -f "$THIRD/wgpu-native/linux-x86_64/lib/libwgpu_native.so" ]]; then
 fi
 
 echo "==> done"
-find "$THIRD" -type f \( -name 'webgpu.h' -o -name 'libwgpu_native.*' \) | sort
+find "$THIRD" -type f \( -name 'webgpu.h' -o -name 'libwgpu_native.*' -o -name 'wgpu_native.dll' -o -name 'wgpu_native.lib' \) | sort

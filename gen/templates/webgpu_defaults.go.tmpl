@@ -5,7 +5,6 @@ package webgpu
 {{- range .Structs }}
 {{- if .HasDefault }}
 
-// New{{ .Name }} returns a {{ .Name }} with default values.
 func New{{ .Name }}() {{ .Name }} {
 	return {{ .Name }}{
 {{- range .Members }}

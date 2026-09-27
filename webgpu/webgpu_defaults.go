@@ -2,14 +2,12 @@
 
 package webgpu
 
-// NewBindGroupEntry returns a BindGroupEntry with default values.
 func NewBindGroupEntry() BindGroupEntry {
 	return BindGroupEntry{
 		Size: WholeSize,
 	}
 }
 
-// NewBindGroupLayoutEntry returns a BindGroupLayoutEntry with default values.
 func NewBindGroupLayoutEntry() BindGroupLayoutEntry {
 	return BindGroupLayoutEntry{
 		Visibility:     ShaderStageNone,
@@ -20,7 +18,6 @@ func NewBindGroupLayoutEntry() BindGroupLayoutEntry {
 	}
 }
 
-// NewBufferBindingLayout returns a BufferBindingLayout with default values.
 func NewBufferBindingLayout() BufferBindingLayout {
 	return BufferBindingLayout{
 		HasDynamicOffset: False,
@@ -28,7 +25,6 @@ func NewBufferBindingLayout() BufferBindingLayout {
 	}
 }
 
-// NewBufferDescriptor returns a BufferDescriptor with default values.
 func NewBufferDescriptor() BufferDescriptor {
 	return BufferDescriptor{
 		Usage:            BufferUsageNone,
@@ -36,14 +32,12 @@ func NewBufferDescriptor() BufferDescriptor {
 	}
 }
 
-// NewColorTargetState returns a ColorTargetState with default values.
 func NewColorTargetState() ColorTargetState {
 	return ColorTargetState{
 		WriteMask: ColorWriteMaskAll,
 	}
 }
 
-// NewCompatibilityModeLimits returns a CompatibilityModeLimits with default values.
 func NewCompatibilityModeLimits() CompatibilityModeLimits {
 	return CompatibilityModeLimits{
 		SType:                             STypeCompatibilityModeLimits,
@@ -54,7 +48,6 @@ func NewCompatibilityModeLimits() CompatibilityModeLimits {
 	}
 }
 
-// NewDepthStencilState returns a DepthStencilState with default values.
 func NewDepthStencilState() DepthStencilState {
 	return DepthStencilState{
 		StencilReadMask:     0xFFFFFFFF,
@@ -65,7 +58,6 @@ func NewDepthStencilState() DepthStencilState {
 	}
 }
 
-// NewExtent3D returns a Extent3D with default values.
 func NewExtent3D() Extent3D {
 	return Extent3D{
 		Height:             1,
@@ -73,21 +65,18 @@ func NewExtent3D() Extent3D {
 	}
 }
 
-// NewExternalTextureBindingEntry returns a ExternalTextureBindingEntry with default values.
 func NewExternalTextureBindingEntry() ExternalTextureBindingEntry {
 	return ExternalTextureBindingEntry{
 		SType: STypeExternalTextureBindingEntry,
 	}
 }
 
-// NewExternalTextureBindingLayout returns a ExternalTextureBindingLayout with default values.
 func NewExternalTextureBindingLayout() ExternalTextureBindingLayout {
 	return ExternalTextureBindingLayout{
 		SType: STypeExternalTextureBindingLayout,
 	}
 }
 
-// NewLimits returns a Limits with default values.
 func NewLimits() Limits {
 	return Limits{
 		MaxTextureDimension1D:                     LimitU32Undefined,
@@ -125,7 +114,6 @@ func NewLimits() Limits {
 	}
 }
 
-// NewMultisampleState returns a MultisampleState with default values.
 func NewMultisampleState() MultisampleState {
 	return MultisampleState{
 		Count:                  1,
@@ -134,7 +122,6 @@ func NewMultisampleState() MultisampleState {
 	}
 }
 
-// NewOrigin3D returns a Origin3D with default values.
 func NewOrigin3D() Origin3D {
 	return Origin3D{
 		X: 0,
@@ -143,7 +130,6 @@ func NewOrigin3D() Origin3D {
 	}
 }
 
-// NewPassTimestampWrites returns a PassTimestampWrites with default values.
 func NewPassTimestampWrites() PassTimestampWrites {
 	return PassTimestampWrites{
 		BeginningOfPassWriteIndex: QuerySetIndexUndefined,
@@ -151,21 +137,18 @@ func NewPassTimestampWrites() PassTimestampWrites {
 	}
 }
 
-// NewPipelineLayoutDescriptor returns a PipelineLayoutDescriptor with default values.
 func NewPipelineLayoutDescriptor() PipelineLayoutDescriptor {
 	return PipelineLayoutDescriptor{
 		ImmediateSize: 0,
 	}
 }
 
-// NewPrimitiveState returns a PrimitiveState with default values.
 func NewPrimitiveState() PrimitiveState {
 	return PrimitiveState{
 		UnclippedDepth: False,
 	}
 }
 
-// NewRenderBundleEncoderDescriptor returns a RenderBundleEncoderDescriptor with default values.
 func NewRenderBundleEncoderDescriptor() RenderBundleEncoderDescriptor {
 	return RenderBundleEncoderDescriptor{
 		SampleCount:     1,
@@ -174,14 +157,12 @@ func NewRenderBundleEncoderDescriptor() RenderBundleEncoderDescriptor {
 	}
 }
 
-// NewRenderPassColorAttachment returns a RenderPassColorAttachment with default values.
 func NewRenderPassColorAttachment() RenderPassColorAttachment {
 	return RenderPassColorAttachment{
 		DepthSlice: DepthSliceUndefined,
 	}
 }
 
-// NewRenderPassDepthStencilAttachment returns a RenderPassDepthStencilAttachment with default values.
 func NewRenderPassDepthStencilAttachment() RenderPassDepthStencilAttachment {
 	return RenderPassDepthStencilAttachment{
 		DepthClearValue: &DepthClearValueUndefined,
@@ -190,7 +171,6 @@ func NewRenderPassDepthStencilAttachment() RenderPassDepthStencilAttachment {
 	}
 }
 
-// NewRenderPassMaxDrawCount returns a RenderPassMaxDrawCount with default values.
 func NewRenderPassMaxDrawCount() RenderPassMaxDrawCount {
 	return RenderPassMaxDrawCount{
 		SType:        STypeRenderPassMaxDrawCount,
@@ -198,14 +178,12 @@ func NewRenderPassMaxDrawCount() RenderPassMaxDrawCount {
 	}
 }
 
-// NewRequestAdapterOptions returns a RequestAdapterOptions with default values.
 func NewRequestAdapterOptions() RequestAdapterOptions {
 	return RequestAdapterOptions{
 		ForceFallbackAdapter: False,
 	}
 }
 
-// NewRequestAdapterWebXROptions returns a RequestAdapterWebXROptions with default values.
 func NewRequestAdapterWebXROptions() RequestAdapterWebXROptions {
 	return RequestAdapterWebXROptions{
 		SType:        STypeRequestAdapterWebXROptions,
@@ -213,7 +191,6 @@ func NewRequestAdapterWebXROptions() RequestAdapterWebXROptions {
 	}
 }
 
-// NewSamplerDescriptor returns a SamplerDescriptor with default values.
 func NewSamplerDescriptor() SamplerDescriptor {
 	return SamplerDescriptor{
 		LodMinClamp:   0,
@@ -222,7 +199,6 @@ func NewSamplerDescriptor() SamplerDescriptor {
 	}
 }
 
-// NewShaderSourceSPIRV returns a ShaderSourceSPIRV with default values.
 func NewShaderSourceSPIRV() ShaderSourceSPIRV {
 	return ShaderSourceSPIRV{
 		SType:    STypeShaderSourceSPIRV,
@@ -230,21 +206,18 @@ func NewShaderSourceSPIRV() ShaderSourceSPIRV {
 	}
 }
 
-// NewShaderSourceWGSL returns a ShaderSourceWGSL with default values.
 func NewShaderSourceWGSL() ShaderSourceWGSL {
 	return ShaderSourceWGSL{
 		SType: STypeShaderSourceWGSL,
 	}
 }
 
-// NewSurfaceColorManagement returns a SurfaceColorManagement with default values.
 func NewSurfaceColorManagement() SurfaceColorManagement {
 	return SurfaceColorManagement{
 		SType: STypeSurfaceColorManagement,
 	}
 }
 
-// NewSurfaceConfiguration returns a SurfaceConfiguration with default values.
 func NewSurfaceConfiguration() SurfaceConfiguration {
 	return SurfaceConfiguration{
 		Usage:     TextureUsageRenderAttachment,
@@ -252,49 +225,42 @@ func NewSurfaceConfiguration() SurfaceConfiguration {
 	}
 }
 
-// NewSurfaceSourceAndroidNativeWindow returns a SurfaceSourceAndroidNativeWindow with default values.
 func NewSurfaceSourceAndroidNativeWindow() SurfaceSourceAndroidNativeWindow {
 	return SurfaceSourceAndroidNativeWindow{
 		SType: STypeSurfaceSourceAndroidNativeWindow,
 	}
 }
 
-// NewSurfaceSourceMetalLayer returns a SurfaceSourceMetalLayer with default values.
 func NewSurfaceSourceMetalLayer() SurfaceSourceMetalLayer {
 	return SurfaceSourceMetalLayer{
 		SType: STypeSurfaceSourceMetalLayer,
 	}
 }
 
-// NewSurfaceSourceWaylandSurface returns a SurfaceSourceWaylandSurface with default values.
 func NewSurfaceSourceWaylandSurface() SurfaceSourceWaylandSurface {
 	return SurfaceSourceWaylandSurface{
 		SType: STypeSurfaceSourceWaylandSurface,
 	}
 }
 
-// NewSurfaceSourceWindowsHWND returns a SurfaceSourceWindowsHWND with default values.
 func NewSurfaceSourceWindowsHWND() SurfaceSourceWindowsHWND {
 	return SurfaceSourceWindowsHWND{
 		SType: STypeSurfaceSourceWindowsHWND,
 	}
 }
 
-// NewSurfaceSourceXCBWindow returns a SurfaceSourceXCBWindow with default values.
 func NewSurfaceSourceXCBWindow() SurfaceSourceXCBWindow {
 	return SurfaceSourceXCBWindow{
 		SType: STypeSurfaceSourceXCBWindow,
 	}
 }
 
-// NewSurfaceSourceXlibWindow returns a SurfaceSourceXlibWindow with default values.
 func NewSurfaceSourceXlibWindow() SurfaceSourceXlibWindow {
 	return SurfaceSourceXlibWindow{
 		SType: STypeSurfaceSourceXlibWindow,
 	}
 }
 
-// NewTexelCopyBufferLayout returns a TexelCopyBufferLayout with default values.
 func NewTexelCopyBufferLayout() TexelCopyBufferLayout {
 	return TexelCopyBufferLayout{
 		Offset:       0,
@@ -303,35 +269,30 @@ func NewTexelCopyBufferLayout() TexelCopyBufferLayout {
 	}
 }
 
-// NewTexelCopyTextureInfo returns a TexelCopyTextureInfo with default values.
 func NewTexelCopyTextureInfo() TexelCopyTextureInfo {
 	return TexelCopyTextureInfo{
 		MipLevel: 0,
 	}
 }
 
-// NewTextureBindingLayout returns a TextureBindingLayout with default values.
 func NewTextureBindingLayout() TextureBindingLayout {
 	return TextureBindingLayout{
 		Multisampled: False,
 	}
 }
 
-// NewTextureBindingViewDimension returns a TextureBindingViewDimension with default values.
 func NewTextureBindingViewDimension() TextureBindingViewDimension {
 	return TextureBindingViewDimension{
 		SType: STypeTextureBindingViewDimension,
 	}
 }
 
-// NewTextureComponentSwizzleDescriptor returns a TextureComponentSwizzleDescriptor with default values.
 func NewTextureComponentSwizzleDescriptor() TextureComponentSwizzleDescriptor {
 	return TextureComponentSwizzleDescriptor{
 		SType: STypeTextureComponentSwizzleDescriptor,
 	}
 }
 
-// NewTextureDescriptor returns a TextureDescriptor with default values.
 func NewTextureDescriptor() TextureDescriptor {
 	return TextureDescriptor{
 		Usage:         TextureUsageNone,
@@ -340,7 +301,6 @@ func NewTextureDescriptor() TextureDescriptor {
 	}
 }
 
-// NewTextureViewDescriptor returns a TextureViewDescriptor with default values.
 func NewTextureViewDescriptor() TextureViewDescriptor {
 	return TextureViewDescriptor{
 		BaseMipLevel:    0,

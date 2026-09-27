@@ -4,27 +4,45 @@
 package webgpu
 
 import (
+	"os"
+	"path/filepath"
 	"runtime"
 	"syscall"
 	"unsafe"
 )
 
-// ---------------------------------------------------------------------------
-// DLL and function procs
-// ---------------------------------------------------------------------------
+func loadWebGPUDLL() *syscall.LazyDLL {
+	const name = "wgpu_native.dll"
+	if p := os.Getenv("WGPU_NATIVE_DLL"); p != "" {
+		return syscall.NewLazyDLL(p)
+	}
+	if exe, err := os.Executable(); err == nil {
+		if p := filepath.Join(filepath.Dir(exe), name); fileExists(p) {
+			return syscall.NewLazyDLL(p)
+		}
+	}
+	if _, file, _, ok := runtime.Caller(0); ok {
+		pattern := filepath.Join(filepath.Dir(file), "..", "third_party", "wgpu-native", "windows-*", "lib", name)
+		if matches, err := filepath.Glob(pattern); err == nil && len(matches) > 0 {
+			return syscall.NewLazyDLL(matches[0])
+		}
+	}
+	return syscall.NewLazyDLL(name)
+}
+
+func fileExists(p string) bool {
+	st, err := os.Stat(p)
+	return err == nil && !st.IsDir()
+}
 
 var (
-	webgpuDLL = syscall.NewLazyDLL("webgpu.dll")
+	webgpuDLL = loadWebGPUDLL()
 {{- range .Funcs }}
 	proc{{ .Ident }} = webgpuDLL.NewProc("{{ .CName }}")
 {{- end }}
 )
 
-// ---------------------------------------------------------------------------
-// Syscall helpers
-// ---------------------------------------------------------------------------
-
-// wgpuStringView matches C.WGPUStringView.
+// wgpuStringView matches C.WGPUStringView (passed by reference on win64).
 type wgpuStringView struct {
 	data   *byte
 	length uintptr
@@ -41,40 +59,78 @@ func syscallStringView(s string, pinner *runtime.Pinner) wgpuStringView {
 	return v
 }
 
-// ---------------------------------------------------------------------------
-// Handle release
-// ---------------------------------------------------------------------------
+func goStringFromView(p uintptr) string {
+	if p == 0 {
+		return ""
+	}
+	sv := (*wgpuStringView)(unsafe.Pointer(p))
+	if sv.data == nil || sv.length == 0 {
+		return ""
+	}
+	return unsafe.String(sv.data, int(sv.length))
+}
+
+// cbThunk carries the Go callback through C userdata1.
+// One syscall.NewCallback trampoline is created per C callback type.
+type cbThunk struct{ fn any }
+
+{{- range .CallbackInfos }}
+{{- if .HasTrampoline }}
+
+var cb{{ .BaseName }} = syscall.NewCallback(func({{ range .Args }}{{ .Name }}, {{ end }}ud1, ud2 uintptr) uintptr {
+{{- range .Args }}
+{{- if eq .Kind "error_msg" }}
+	emsg := goStringFromView({{ .Name }})
+{{- end }}
+{{- end }}
+{{- range .Args }}
+{{- if eq .Kind "object" }}
+	{{ .GoName }} := {{ .GoType }}(unsafe.Pointer({{ .Name }}))
+{{- else if eq .Kind "struct_ptr" }}
+	var {{ .GoName }} {{ .GoType }}
+	if {{ .Name }} != 0 {
+		{{ .GoName }} = *(*{{ .GoType }})(unsafe.Pointer({{ .Name }}))
+	}
+{{- else if eq .Kind "error_type" }}
+	{{ .GoName }} := errorFromErrorType(ErrorType({{ .Name }}), emsg)
+{{- else if eq .Kind "message" }}
+	{{ .GoName }} := goStringFromView({{ .Name }})
+{{- else if or (eq .Kind "enum") (eq .Kind "status") }}
+	{{ .GoName }} := {{ .GoType }}({{ .Name }})
+{{- end }}
+{{- end }}
+	if ud1 != 0 {
+		if fn, ok := (*cbThunk)(unsafe.Pointer(ud1)).fn.({{ .FnType }}); ok && fn != nil {
+			fn({{ join .CallArgs ", " }})
+		}
+	}
+	return 0
+})
+{{- end }}
+{{- end }}
 
 {{- range .Handles }}
 
-// release{{ .Name }} drops one reference to a native {{ .CName }}.
-// Safe to call from any goroutine (wgpu-native refcounts are atomic).
-func release{{ .Name }}(inner uintptr) {
-	proc{{ .Name }}Release.Call(inner)
+func release{{ .Name }}(p unsafe.Pointer) {
+	proc{{ .Name }}Release.Call(uintptr(p))
 }
 {{- end }}
-
-// ---------------------------------------------------------------------------
-// Syscall-based function implementations
-// ---------------------------------------------------------------------------
 
 {{- range .Funcs }}
 {{- if .IsRelease }}
 
-// Release drops this handle's reference to the native {{ .ObjName }}.
-// Do not use the handle after calling Release.
 {{ sig . }} {
-	if {{ (index .GoArgs 0).Name }} != 0 {
+	if x := {{ (index .GoArgs 0).Name }}; x != nil {
 {{- if eq .ObjName "Instance" }}
-		removeInstance({{ (index .GoArgs 0).Name }})
+		removeInstance(x)
 {{- end }}
-		release{{ .ObjName }}({{ (index .GoArgs 0).Name }}.Handle())
+		release{{ .ObjName }}(unsafe.Pointer(x))
 	}
 }
 {{- else }}
-
-// {{ .Name }} calls {{ .CName }} via syscall.
-// Blocks until the operation completes.
+{{ if .Doc }}
+{{ commentLine .Doc }}
+{{ end }}
 {{ sig . }} {
 {{- if .HasCallback }}
 	type _res struct {
@@ -86,6 +142,7 @@ func release{{ .Name }}(inner uintptr) {
 	callback := {{ .CallbackFn }}(func({{ range $i, $r := .BlockResults }}{{ if $i }}, {{ end }}r{{ $i }} {{ $r.GoType }}{{ end }}) {
 		_ch <- _res{ {{ range $i, $r := .BlockResults }}{{ if $i }}, {{ end }}r{{ $i }}{{ end }} }
 	})
+	_cbThunk := &cbThunk{fn: callback}
 {{- end }}
 {{- $needsPinner := false }}
 {{- range .GoArgs }}{{ if or (isStruct .TypeRef) .IsSlice .IsStr }}{{ $needsPinner = true }}{{ end }}{{ end }}
@@ -148,109 +205,36 @@ func release{{ .Name }}(inner uintptr) {
 {{- end }}
 {{- end }}
 {{- end }}
-{{- range .GoArgs }}
-{{- if isHandle .TypeRef }}
-	{{ .Name }}_v := {{ .Name }}.Handle()
-{{- else if .IsStr }}
-	{{ .Name }}_sv := syscallStringView({{ .Name }}, &pinner)
-{{- else if .IsSlice }}
-{{- if hasPrefix .TypeRef "array<object." }}
-	{{ .Name }}_handles := make([]uintptr, len({{ .Name }}))
-	for i, v := range {{ .Name }} {
-		{{ .Name }}_handles[i] = v.Handle()
-	}
-	var {{ .Name }}_ptr unsafe.Pointer
-	if len({{ .Name }}) > 0 {
-		{{ .Name }}_ptr = unsafe.Pointer(&{{ .Name }}_handles[0])
-	}
-{{- else }}
-	var {{ .Name }}_ptr unsafe.Pointer
-	if len({{ .Name }}) > 0 {
-		{{ .Name }}_ptr = unsafe.Pointer(&{{ .Name }}[0])
-	}
-{{- end }}
-	{{ .Name }}_count := uintptr(len({{ .Name }}))
-{{- else if isStruct .TypeRef }}
-	// pinned above; pointer converted to uintptr in the Call expression
-{{- else if isFuncPtr .TypeRef }}
-{{- else }}
-	{{ .Name }}_v := uintptr({{ .Name }})
-{{- end }}
-{{- end }}
 {{- if .HasCallback }}
 {{- $cbBase := .CallbackName | pascal }}
-	_cbInfo := struct {
-		next     uintptr
-		mode     uint32
-		callback uintptr
-		ud1      uintptr
-		ud2      uintptr
-	}{}
-	_cbInfo.mode = uint32(CallbackModeAllowProcessEvents)
-{{- range $.CallbackInfos }}
-{{- if and .HasTrampoline (eq .BaseName $cbBase) }}
-	_cbInfo.callback = syscall.NewCallback(func({{ range .Args }}{{ .Name }}, {{ end }}ud1, ud2 uintptr) {
-{{- /* Pre-convert error_msg so error_type can reference it. */}}
-{{- range .Args }}
-{{- if eq .Kind "error_msg" }}
-		var emsg string
-		if {{ .Name }} != 0 {
-			sv := (*wgpuStringView)(unsafe.Pointer({{ .Name }}))
-			if sv.data != nil && sv.length > 0 {
-				emsg = unsafe.String(sv.data, int(sv.length))
-			}
-		}
+	_cbInfo := {{ $cbBase }}CallbackInfo{
+		Mode:      CallbackModeAllowProcessEvents,
+		Callback:  cb{{ $cbBase }},
+		Userdata1: unsafe.Pointer(_cbThunk),
+	}
 {{- end }}
-{{- end }}
-{{- range .Args }}
-{{- if eq .Kind "object" }}
-		var {{ .GoName }} {{ .GoType }}
-		if {{ .Name }} != 0 {
-			{{ .GoName }} = {{ .GoType }}({{ .Name }})
-		}
-{{- else if eq .Kind "struct_ptr" }}
-		var {{ .GoName }} {{ .GoType }}
-		if {{ .Name }} != 0 {
-			{{ .GoName }} = *(*{{ .GoType }})(unsafe.Pointer({{ .Name }}))
-		}
-{{- else if eq .Kind "error_type" }}
-		{{ .GoName }} := errorFromErrorType(ErrorType({{ .Name }}), emsg)
-{{- else if eq .Kind "message" }}
-		{{ .GoName }} := ""
-		if {{ .Name }} != 0 {
-			sv := (*wgpuStringView)(unsafe.Pointer({{ .Name }}))
-			if sv.data != nil && sv.length > 0 {
-				{{ .GoName }} = unsafe.String(sv.data, int(sv.length))
-			}
-		}
-{{- else if or (eq .Kind "enum") (eq .Kind "status") }}
-		{{ .GoName }} := {{ .GoType }}({{ .Name }})
-{{- end }}
-{{- end }}
-		if fn := callback; fn != nil {
-			fn({{ join .CallArgs ", " }})
-		}
-	})
-{{- end }}
+{{- range .GoArgs }}
+{{- if .IsStr }}
+	{{ .Name }}_sv := syscallStringView({{ .Name }}, &pinner)
 {{- end }}
 {{- end }}
 {{- if .ReturnRef }}
-{{- $funcName := .Ident }}
 {{- $kind := .RetKind }}
-	r1, _, _ := proc{{ $funcName }}.Call(
-		{{- range $i, $a := .GoArgs }}{{ if $i }}, {{ end }}{{ if $a.IsSlice }}{{ $a.Name }}_count, uintptr({{ $a.Name }}_ptr){{ else if isFuncPtr $a.TypeRef }}uintptr(unsafe.Pointer(&_cbInfo)){{ else if isHandle $a.TypeRef }}{{ $a.Name }}_v{{ else if $a.IsStr }}uintptr(unsafe.Pointer(&{{ $a.Name }}_sv)){{ else if isStruct $a.TypeRef }}{{ if $a.IsPtr }}uintptr(unsafe.Pointer({{ $a.Name }})){{ else }}uintptr(unsafe.Pointer(&{{ $a.Name }})){{ end }}{{ else }}{{ $a.Name }}_v{{ end }}{{ end -}}
+	r1, _, _ := proc{{ .Ident }}.Call(
+		{{- range $i, $a := .GoArgs }}{{ if $i }}, {{ end }}{{ if $a.IsSlice }}uintptr(len({{ $a.Name }})), uintptr(slicePtr({{ $a.Name }})){{ else if isFuncPtr $a.TypeRef }}uintptr(unsafe.Pointer(&_cbInfo)){{ else if isHandle $a.TypeRef }}uintptr(unsafe.Pointer({{ $a.Name }})){{ else if $a.IsStr }}uintptr(unsafe.Pointer(&{{ $a.Name }}_sv)){{ else if isStruct $a.TypeRef }}{{ if $a.IsPtr }}uintptr(unsafe.Pointer({{ $a.Name }})){{ else }}uintptr(unsafe.Pointer(&{{ $a.Name }})){{ end }}{{ else }}uintptr({{ $a.Name }}){{ end }}{{ end -}}
 	)
 {{- if eq $kind "blocking" }}
 	_ = r1
 	_out := waitRecv(_ch)
+	runtime.KeepAlive(_cbThunk)
 {{- if .BlockResults }}
 	return {{ range $i, $r := .BlockResults }}{{ if $i }}, {{ end }}_out.r{{ $i }}{{ end }}
 {{- end }}
 {{- else if eq $kind "handle" }}
 {{- if eq .GoReturn "Instance" }}
-	return wrapInstance(r1)
+	return wrapInstance(unsafe.Pointer(r1))
 {{- else }}
-	return {{ .GoReturn }}(r1)
+	return {{ .GoReturn }}(unsafe.Pointer(r1))
 {{- end }}
 {{- else if eq $kind "status" }}
 	return Status(r1)
@@ -267,9 +251,17 @@ func release{{ .Name }}(inner uintptr) {
 {{- end }}
 {{- else }}
 	proc{{ .Ident }}.Call(
-		{{- range $i, $a := .GoArgs }}{{ if $i }}, {{ end }}{{ if $a.IsSlice }}{{ $a.Name }}_count, uintptr({{ $a.Name }}_ptr){{ else if isFuncPtr $a.TypeRef }}uintptr(unsafe.Pointer(&_cbInfo)){{ else if isHandle $a.TypeRef }}{{ $a.Name }}_v{{ else if $a.IsStr }}uintptr(unsafe.Pointer(&{{ $a.Name }}_sv)){{ else if isStruct $a.TypeRef }}{{ if $a.IsPtr }}uintptr(unsafe.Pointer({{ $a.Name }})){{ else }}uintptr(unsafe.Pointer(&{{ $a.Name }})){{ end }}{{ else }}{{ $a.Name }}_v{{ end }}{{ end -}}
+		{{- range $i, $a := .GoArgs }}{{ if $i }}, {{ end }}{{ if $a.IsSlice }}uintptr(len({{ $a.Name }})), uintptr(slicePtr({{ $a.Name }})){{ else if isFuncPtr $a.TypeRef }}uintptr(unsafe.Pointer(&_cbInfo)){{ else if isHandle $a.TypeRef }}uintptr(unsafe.Pointer({{ $a.Name }})){{ else if $a.IsStr }}uintptr(unsafe.Pointer(&{{ $a.Name }}_sv)){{ else if isStruct $a.TypeRef }}{{ if $a.IsPtr }}uintptr(unsafe.Pointer({{ $a.Name }})){{ else }}uintptr(unsafe.Pointer(&{{ $a.Name }})){{ end }}{{ else }}uintptr({{ $a.Name }}){{ end }}{{ end -}}
 	)
 {{- end }}
 }
 {{- end }}
 {{- end }}
+
+// slicePtr returns a pointer to the first element of s, or nil if empty.
+func slicePtr[T any](s []T) unsafe.Pointer {
+	if len(s) == 0 {
+		return nil
+	}
+	return unsafe.Pointer(&s[0])
+}

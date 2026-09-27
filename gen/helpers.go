@@ -46,6 +46,7 @@ type ErrorTypeEntryData struct {
 type EnumData struct {
 	Name    string
 	CName   string
+	Doc     string
 	Entries []EnumEntryData
 }
 
@@ -54,12 +55,14 @@ type EnumEntryData struct {
 	Name  string
 	CName string
 	Value string // explicit value or "" for iota
+	Doc   string
 }
 
 // BitflagData describes a Go bitflag type.
 type BitflagData struct {
 	Name    string
 	CName   string
+	Doc     string
 	Entries []BitflagEntryData
 }
 
@@ -68,6 +71,7 @@ type BitflagEntryData struct {
 	Name  string
 	CName string
 	Value string
+	Doc   string
 }
 
 // StructData describes a Go struct.
@@ -75,6 +79,7 @@ type StructData struct {
 	Name       string
 	CName      string
 	Type       string // "extensible", "standalone", "extension"
+	Doc        string
 	Members    []StructMemberData
 	HasDefault bool
 }
@@ -190,6 +195,7 @@ type FuncArgData struct {
 type HandleData struct {
 	Name  string
 	CName string
+	Doc   string
 }
 
 // ConstData describes a named constant.
@@ -211,7 +217,7 @@ func buildTemplateData(spec *parser.Spec) *TemplateData {
 		td.Consts = append(td.Consts, ConstData{
 			Name:  pascalCase(c.Name),
 			Value: constantGoValue(c),
-			Doc:   c.Doc,
+			Doc:   cleanDoc(c.Doc),
 		})
 	}
 
@@ -220,6 +226,7 @@ func buildTemplateData(spec *parser.Spec) *TemplateData {
 		td.Handles = append(td.Handles, HandleData{
 			Name:  pascalCase(obj.Name),
 			CName: "WGPU" + pascalCase(obj.Name),
+			Doc:   cleanDoc(obj.Doc),
 		})
 	}
 
@@ -229,6 +236,7 @@ func buildTemplateData(spec *parser.Spec) *TemplateData {
 		ed := EnumData{
 			Name:  enumName,
 			CName: "WGPU" + enumName,
+			Doc:   cleanDoc(e.Doc),
 		}
 		// YAML `null` entries occupy a numeric slot (usually 0 = undefined)
 		// without emitting a Go constant. Keep the slot so values match the C ABI.
@@ -243,6 +251,7 @@ func buildTemplateData(spec *parser.Spec) *TemplateData {
 				Name:  enumName + entryName,
 				CName: "WGPU" + enumName + "_" + entryName,
 				Value: fmt.Sprintf("%d", val),
+				Doc:   cleanDoc(entry.Doc),
 			})
 			val++
 		}
@@ -273,6 +282,7 @@ func buildTemplateData(spec *parser.Spec) *TemplateData {
 		bd := BitflagData{
 			Name:  bfName,
 			CName: "WGPU" + bfName,
+			Doc:   cleanDoc(bf.Doc),
 		}
 		// Auto-assign power-of-2 values starting from 1 (skip index 0 = "none" = 0).
 		autoVal := uint(1)
@@ -281,6 +291,7 @@ func buildTemplateData(spec *parser.Spec) *TemplateData {
 			be := BitflagEntryData{
 				Name:  bfName + entryName,
 				CName: "WGPU" + bfName + "_" + entryName,
+				Doc:   cleanDoc(entry.Doc),
 			}
 			if entry.Value != nil {
 				be.Value = fmt.Sprintf("%d", *entry.Value)
@@ -418,6 +429,7 @@ func buildTemplateData(spec *parser.Spec) *TemplateData {
 			Name:  pascalCase(s.Name),
 			CName: "WGPU" + pascalCase(s.Name),
 			Type:  s.Type,
+			Doc:   cleanDoc(s.Doc),
 		}
 		// C layout of the chain header depends on the struct kind:
 		//   extensible*: WGPUChainedStruct const * nextInChain
@@ -463,7 +475,7 @@ func buildTemplateData(spec *parser.Spec) *TemplateData {
 					GoType:     "*" + goTypeForRef(inner, spec),
 					TypeRef:    inner,
 					CName:      m.Name,
-					Doc:        m.Doc,
+					Doc:        cleanDoc(m.Doc),
 					IsPtr:      true,
 					IsOptional: m.Optional,
 					IsSlice:    true,
@@ -475,7 +487,7 @@ func buildTemplateData(spec *parser.Spec) *TemplateData {
 				GoType:     goTypeForMember(m),
 				TypeRef:    m.Type,
 				CName:      m.Name,
-				Doc:        m.Doc,
+				Doc:        cleanDoc(m.Doc),
 				IsPtr:      m.Pointer == "immutable" || m.Pointer == "mutable",
 				IsOptional: m.Optional,
 			}
@@ -491,31 +503,24 @@ func buildTemplateData(spec *parser.Spec) *TemplateData {
 		td.Structs = append(td.Structs, sd)
 	}
 
-	// Functions. Prefer a Go method whenever the call has an object handle
-	// to use as a receiver; otherwise emit a package-level function.
+	// Functions. Handles are unsafe.Pointer-based and Go forbids methods on
+	// them, so every wrapper is a package-level function.
 	for _, f := range spec.Functions {
 		fd := buildFuncData(f, spec)
-		if tryAsMethod(&fd, f.Name) {
-			fd.Ident = fd.ObjName + fd.Name
-		} else {
-			fd.Ident = fd.Name
-		}
+		fd.Ident = fd.Name
 		td.Funcs = append(td.Funcs, fd)
 	}
 	for _, obj := range spec.Objects {
 		objName := pascalCase(obj.Name)
-		// Reserved method names on every handle type.
-		used := map[string]bool{"Handle": true, "Release": true}
 		for _, m := range obj.Methods {
 			fd := buildFuncData(m, spec)
 			methodName := pascalCase(m.Name)
 			// MapAsync is blocking in this API; expose it as Map.
-			// Keep the C name based on the spec name.
 			fd.CName = "wgpu" + objName + pascalCase(m.Name)
 			if m.Name == "map_async" {
 				methodName = "Map"
 			}
-			// Prepend the object handle as the first argument (the receiver).
+			// Prepend the object handle as the first argument.
 			handleArg := FuncArgData{
 				Name:    receiverName(objName),
 				GoType:  objName,
@@ -523,33 +528,21 @@ func buildTemplateData(spec *parser.Spec) *TemplateData {
 				CName:   obj.Name,
 			}
 			fd.GoArgs = append([]FuncArgData{handleArg}, fd.GoArgs...)
-
-			if used[methodName] {
-				// Name collision on the receiver type: fall back to a function.
-				fd.Name = objName + methodName
-				fd.Ident = fd.Name
-			} else {
-				used[methodName] = true
-				fd.IsMethod = true
-				fd.ObjName = objName
-				fd.Name = methodName
-				fd.Ident = objName + methodName
-				fd.OpName = objName + "." + methodName
-			}
+			fd.Name = objName + methodName
+			fd.Ident = fd.Name
+			fd.OpName = fd.Name
 			td.Funcs = append(td.Funcs, fd)
 		}
 
-		// Release always comes last among the type's methods.
+		// Release always comes last among the type's functions.
 		fd := FuncData{
-			Name:      "Release",
+			Name:      objName + "Release",
 			CName:     "wgpu" + objName + "Release",
 			Ident:     objName + "Release",
-			IsMethod:  true,
 			IsRelease: true,
 			ObjName:   objName,
-			OpName:    objName + ".Release",
+			OpName:    objName + "Release",
 			RetKind:   "none",
-			Doc:       "drops this handle's reference to the native object",
 			GoArgs: []FuncArgData{{
 				Name:    receiverName(objName),
 				GoType:  objName,
@@ -563,30 +556,6 @@ func buildTemplateData(spec *parser.Spec) *TemplateData {
 	return td
 }
 
-// tryAsMethod converts a function into a method when its first argument is an
-// object handle. The handle argument becomes the receiver. Returns false when
-// no receiver is available (or the name is already taken on that type).
-func tryAsMethod(fd *FuncData, rawName string) bool {
-	if len(fd.GoArgs) == 0 || !isHandleType(fd.GoArgs[0].TypeRef) {
-		return false
-	}
-	recv := fd.GoArgs[0]
-	objName := pascalCase(strings.TrimPrefix(recv.TypeRef, "object."))
-	methodName := pascalCase(rawName)
-	// Avoid colliding with generated Handle() / Release() methods.
-	if methodName == "Handle" || methodName == "Release" {
-		return false
-	}
-	fd.IsMethod = true
-	fd.ObjName = objName
-	fd.Name = methodName
-	fd.GoArgs[0].Name = receiverName(objName)
-	fd.OpName = objName + "." + methodName
-	return true
-}
-
-// receiverName returns the conventional single-letter Go receiver name
-// for a type (Device → d, CommandEncoder → c).
 func receiverName(typeName string) string {
 	if typeName == "" {
 		return "x"
@@ -598,7 +567,7 @@ func buildFuncData(f parser.Function, spec *parser.Spec) FuncData {
 	fd := FuncData{
 		Name:  pascalCase(f.Name),
 		CName: "wgpu" + pascalCase(f.Name),
-		Doc:   f.Doc,
+		Doc:   cleanDoc(f.Doc),
 	}
 	if f.Callback != "" {
 		fd.HasCallback = true
@@ -887,9 +856,9 @@ func goTypeForMember(m parser.StructMember) string {
 	if strings.HasPrefix(m.Type, "callback.") {
 		return pascalCase(strings.TrimPrefix(m.Type, "callback.")) + "CallbackInfo"
 	}
-	// Object handles inside structs are raw C pointers (WGPUNnnImpl*).
+	// Object handles inside structs are native pointers (WGPUNnnImpl*).
 	if strings.HasPrefix(m.Type, "object.") {
-		return "uintptr"
+		return pascalCase(strings.TrimPrefix(m.Type, "object."))
 	}
 	// Optional / pointed-to structs are pointers in the C layout.
 	if isStructType(m.Type) && (m.Optional || m.Pointer == "immutable" || m.Pointer == "mutable") {
@@ -1033,7 +1002,7 @@ func extractArrayInner(ref string) string {
 
 func memberDefaultValue(m parser.StructMember, spec *parser.Spec) string {
 	if m.Default == nil {
-		return goZeroValue(goTypeForRef(m.Type, spec))
+		return goZeroValueRef(m.Type, goTypeForRef(m.Type, spec))
 	}
 	goType := goTypeForRef(m.Type, spec)
 	switch v := m.Default.(type) {
@@ -1124,6 +1093,15 @@ func goZeroValue(goType string) string {
 	return goType + "{}"
 }
 
+// goZeroValueRef is goZeroValue with the original type reference, so
+// object handles (type X unsafe.Pointer) get a nil zero value.
+func goZeroValueRef(typeRef, goType string) string {
+	if isHandleType(typeRef) {
+		return "nil"
+	}
+	return goZeroValue(goType)
+}
+
 func constantGoValue(c parser.Constant) string {
 	switch c.Value {
 	case "uint32_max":
@@ -1144,6 +1122,15 @@ func constantGoValue(c parser.Constant) string {
 // ---------------------------------------------------------------------------
 
 var commentRe = regexp.MustCompile(`(?m)^`)
+
+// cleanDoc trims a YAML doc comment and drops placeholder docs.
+func cleanDoc(s string) string {
+	s = strings.TrimSpace(s)
+	if s == "" || strings.EqualFold(s, "TODO") {
+		return ""
+	}
+	return s
+}
 
 func commentLine(s string) string {
 	s = strings.TrimSpace(s)

@@ -9,6 +9,8 @@ package webgpu
 #cgo darwin,amd64 LDFLAGS: -L${SRCDIR}/../third_party/wgpu-native/macos-x86_64/lib -lwgpu_native -Wl,-rpath,${SRCDIR}/../third_party/wgpu-native/macos-x86_64/lib
 #cgo linux,amd64 LDFLAGS: -L${SRCDIR}/../third_party/wgpu-native/linux-x86_64/lib -lwgpu_native -Wl,-rpath,${SRCDIR}/../third_party/wgpu-native/linux-x86_64/lib
 #cgo linux,arm64 LDFLAGS: -L${SRCDIR}/../third_party/wgpu-native/linux-aarch64/lib -lwgpu_native -Wl,-rpath,${SRCDIR}/../third_party/wgpu-native/linux-aarch64/lib
+#cgo windows,amd64 LDFLAGS: -L${SRCDIR}/../third_party/wgpu-native/windows-x86_64-msvc/lib -lwgpu_native
+#cgo windows,arm64 LDFLAGS: -L${SRCDIR}/../third_party/wgpu-native/windows-aarch64-msvc/lib -lwgpu_native
 #include "webgpu.h"
 #include <stdlib.h>
 {{- range .CallbackInfos }}
@@ -24,10 +26,6 @@ import (
 	"runtime/cgo"
 	"unsafe"
 )
-
-// ---------------------------------------------------------------------------
-// CGO helpers
-// ---------------------------------------------------------------------------
 
 func cgoStringView(s string, pinner *runtime.Pinner) C.WGPUStringView {
 	var v C.WGPUStringView
@@ -47,10 +45,6 @@ func cgoGoString(v C.WGPUStringView) string {
 	return C.GoStringN(v.data, C.int(v.length))
 }
 
-// ---------------------------------------------------------------------------
-// Callback trampolines
-// ---------------------------------------------------------------------------
-
 {{- range .CallbackInfos }}
 {{- if .HasTrampoline }}
 {{- $cb := . }}
@@ -62,10 +56,7 @@ func {{ .ExportName }}({{ range $i, $a := .Args }}{{ if $i }}, {{ end }}{{ $a.Na
 	cb := h.Value().({{ .FnType }})
 {{- range .Args }}
 {{- if eq .Kind "object" }}
-	var {{ .GoName }} {{ .GoType }}
-	if {{ .Name }} != nil {
-		{{ .GoName }} = {{ .GoType }}(uintptr(unsafe.Pointer({{ .Name }})))
-	}
+	{{ .GoName }} := {{ .GoType }}(unsafe.Pointer({{ .Name }}))
 {{- else if eq .Kind "struct_ptr" }}
 	var {{ .GoName }} {{ .GoType }}
 	if {{ .Name }} != nil {
@@ -84,40 +75,28 @@ func {{ .ExportName }}({{ range $i, $a := .Args }}{{ if $i }}, {{ end }}{{ $a.Na
 {{- end }}
 {{- end }}
 
-// ---------------------------------------------------------------------------
-// Handle release
-// ---------------------------------------------------------------------------
-
 {{- range .Handles }}
 
-// release{{ .Name }} drops one reference to a native {{ .CName }}.
-// Safe to call from any goroutine (wgpu-native refcounts are atomic).
-func release{{ .Name }}(inner uintptr) {
-	C.wgpu{{ .Name }}Release(({{ cgoType .Name }})(unsafe.Pointer(inner)))
+func release{{ .Name }}(p unsafe.Pointer) {
+	C.wgpu{{ .Name }}Release(({{ cgoType .Name }})(p))
 }
 {{- end }}
-
-// ---------------------------------------------------------------------------
-// CGO function implementations
-// ---------------------------------------------------------------------------
 
 {{- range .Funcs }}
 {{- if .IsRelease }}
 
-// Release drops this handle's reference to the native {{ .ObjName }}.
-// Do not use the handle after calling Release.
 {{ sig . }} {
-	if {{ (index .GoArgs 0).Name }} != 0 {
+	if x := {{ (index .GoArgs 0).Name }}; x != nil {
 {{- if eq .ObjName "Instance" }}
-		removeInstance({{ (index .GoArgs 0).Name }})
+		removeInstance(x)
 {{- end }}
-		release{{ .ObjName }}({{ (index .GoArgs 0).Name }}.Handle())
+		release{{ .ObjName }}(unsafe.Pointer(x))
 	}
 }
 {{- else }}
-
-// {{ .Name }} calls C.{{ .CName }}.
-// Blocks until the operation completes.
+{{ if .Doc }}
+{{ commentLine .Doc }}
+{{ end }}
 {{ sig . }} {
 {{- if .HasCallback }}
 	type _res struct {
@@ -193,25 +172,14 @@ func release{{ .Name }}(inner uintptr) {
 {{- end }}
 {{- range .GoArgs }}
 {{- if isHandle .TypeRef }}
-	c_{{ .Name }} := ({{ cgoType .GoType }})(unsafe.Pointer({{ .Name }}.Handle()))
+	c_{{ .Name }} := ({{ cgoType .GoType }})(unsafe.Pointer({{ .Name }}))
 {{- else if .IsStr }}
 	c_{{ .Name }} := cgoStringView({{ .Name }}, &pinner)
 {{- else if .IsSlice }}
-{{- if hasPrefix .TypeRef "array<object." }}
-	{{ .Name }}_handles := make([]uintptr, len({{ .Name }}))
-	for i, v := range {{ .Name }} {
-		{{ .Name }}_handles[i] = v.Handle()
-	}
-	var c_{{ .Name }}_ptr {{ .SliceCPtr }}
-	if len({{ .Name }}) > 0 {
-		c_{{ .Name }}_ptr = ({{ .SliceCPtr }})(unsafe.Pointer(&{{ .Name }}_handles[0]))
-	}
-{{- else }}
 	var c_{{ .Name }}_ptr {{ .SliceCPtr }}
 	if len({{ .Name }}) > 0 {
 		c_{{ .Name }}_ptr = ({{ .SliceCPtr }})(unsafe.Pointer(&{{ .Name }}[0]))
 	}
-{{- end }}
 	c_{{ .Name }}_count := (C.size_t)(len({{ .Name }}))
 {{- else if isStruct .TypeRef }}
 {{- if .IsPtr }}
@@ -220,7 +188,6 @@ func release{{ .Name }}(inner uintptr) {
 	c_{{ .Name }} := (*{{ cgoType .GoType }})(unsafe.Pointer(&{{ .Name }}))
 {{- end }}
 {{- else if isFuncPtr .TypeRef }}
-{{- /* callback arg is handled via callbackInfo below */}}
 {{- else }}
 	c_{{ .Name }} := ({{ cgoType .GoType }})({{ .Name }})
 {{- end }}
@@ -230,7 +197,6 @@ func release{{ .Name }}(inner uintptr) {
 	_cbHandle := cgo.NewHandle(callback)
 	var _cbInfo C.WGPU{{ $cbBase }}CallbackInfo
 	_cbInfo.mode = C.WGPUCallbackMode_AllowProcessEvents
-	// cgo.Handle is an opaque uintptr key; cast through uintptr for userdata.
 	_cbInfo.userdata1 = *(*unsafe.Pointer)(unsafe.Pointer(&_cbHandle))
 {{- range $.CallbackInfos }}
 {{- if and .HasTrampoline (eq .BaseName $cbBase) }}
@@ -239,9 +205,8 @@ func release{{ .Name }}(inner uintptr) {
 {{- end }}
 {{- end }}
 {{- if .ReturnRef }}
-{{- $funcName := .CName }}
 {{- $kind := .RetKind }}
-	c_result := C.{{ $funcName }}(
+	c_result := C.{{ .CName }}(
 		{{- range $i, $a := .GoArgs }}{{ if $i }}, {{ end }}{{ if $a.IsSlice }}c_{{ $a.Name }}_count, c_{{ $a.Name }}_ptr{{ else if isFuncPtr $a.TypeRef }}_cbInfo{{ else }}c_{{ $a.Name }}{{ end }}{{ end -}}
 	)
 {{- if eq $kind "blocking" }}
@@ -252,9 +217,9 @@ func release{{ .Name }}(inner uintptr) {
 {{- end }}
 {{- else if eq $kind "handle" }}
 {{- if eq .GoReturn "Instance" }}
-	return wrapInstance(uintptr(unsafe.Pointer(c_result)))
+	return wrapInstance(unsafe.Pointer(c_result))
 {{- else }}
-	return {{ .GoReturn }}(uintptr(unsafe.Pointer(c_result)))
+	return {{ .GoReturn }}(unsafe.Pointer(c_result))
 {{- end }}
 {{- else if eq $kind "status" }}
 	return Status(c_result)

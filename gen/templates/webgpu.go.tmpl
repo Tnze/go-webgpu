@@ -10,10 +10,6 @@ import (
 	"unsafe"
 )
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
 const (
 {{- range .Consts }}
 {{- if ne .Value "float32(math.NaN())" }}
@@ -25,7 +21,6 @@ const (
 {{- end }}
 )
 
-// NaN-based constants (not valid in const blocks).
 var (
 {{- range .Consts }}
 {{- if eq .Value "float32(math.NaN())" }}
@@ -37,63 +32,58 @@ var (
 {{- end }}
 )
 
-// ---------------------------------------------------------------------------
-// Bool (WGPUBool)
-// ---------------------------------------------------------------------------
-
-// Bool is a WebGPU boolean (C WGPUBool, an alias of uint32_t).
 type Bool uint32
 
 const (
-	// False is the 'false' value of Bool (WGPU_FALSE).
 	False Bool = 0
-	// True is the 'true' value of Bool (WGPU_TRUE).
-	True Bool = 1
+	True  Bool = 1
 )
-
-// ---------------------------------------------------------------------------
-// Enum types
-// ---------------------------------------------------------------------------
 
 {{- range .Enums }}
 {{- $enumName := .Name }}
 
-// {{ .Name }} is a WebGPU enum.
+{{- if .Doc }}
+{{ commentLine .Doc }}
+{{- end }}
 type {{ .Name }} uint32
 
 const (
 {{- range .Entries }}
+{{- if .Doc }}
+{{ commentIndent .Doc }}
+{{- end }}
 	{{ .Name }} {{ $enumName }} = {{ .Value }}
 {{- end }}
-){{ end }}
-
-// ---------------------------------------------------------------------------
-// Bitflag types
-// ---------------------------------------------------------------------------
+)
+{{- end }}
 
 {{- range .Bitflags }}
 {{- $bfName := .Name }}
 
-// {{ .Name }} is a WebGPU bitflag type.
+{{- if .Doc }}
+{{ commentLine .Doc }}
+{{- end }}
 type {{ .Name }} uint64
 
 const (
 {{- range .Entries }}
+{{- if .Doc }}
+{{ commentIndent .Doc }}
+{{- end }}
 {{- if .Value }}
 	{{ .Name }} {{ $bfName }} = {{ .Value }}
 {{- else }}
 	{{ .Name }} {{ $bfName }} = 0
 {{- end }}
 {{- end }}
-){{ end }}
-
-// ---------------------------------------------------------------------------
-// Struct types
-// ---------------------------------------------------------------------------
+)
+{{- end }}
 
 {{- range .Structs }}
 
-// {{ .Name }} is a WebGPU struct.
+{{- if .Doc }}
+{{ commentLine .Doc }}
+{{- end }}
 type {{ .Name }} struct {
 	_ structs.HostLayout
 {{- range .Members }}
@@ -102,15 +92,11 @@ type {{ .Name }} struct {
 {{- end }}
 	{{ .Name }} {{ .GoType }}
 {{- end }}
-}{{ end }}
-
-// ---------------------------------------------------------------------------
-// Callback info records (embedded in descriptors / async calls)
-// ---------------------------------------------------------------------------
+}
+{{- end }}
 
 {{- range .CallbackInfos }}
 
-// {{ .Name }} matches C.{{ .CName }}.
 type {{ .Name }} struct {
 	_ structs.HostLayout
 	NextInChain unsafe.Pointer
@@ -120,14 +106,11 @@ type {{ .Name }} struct {
 	Callback  uintptr
 	Userdata1 unsafe.Pointer
 	Userdata2 unsafe.Pointer
-}{{ end }}
+}
+{{- end }}
 
-// ---------------------------------------------------------------------------
-// Errors
-// ---------------------------------------------------------------------------
 {{- range .ErrorTypes }}
 
-// {{ .Name }} is a WebGPU {{ .Display }} error.
 type {{ .Name }} struct{ Message string }
 
 func (e *{{ .Name }}) Error() string {
@@ -138,8 +121,6 @@ func (e *{{ .Name }}) Error() string {
 }
 {{- end }}
 
-// errorFromErrorType creates the typed error for a WGPUErrorType value.
-// Returns nil for ErrorTypeNoError.
 func errorFromErrorType(t ErrorType, message string) error {
 	switch t {
 {{- range .ErrorTypes }}
@@ -150,12 +131,6 @@ func errorFromErrorType(t ErrorType, message string) error {
 	return nil
 }
 
-// ---------------------------------------------------------------------------
-// Blocking wait
-// ---------------------------------------------------------------------------
-
-// liveInstances is the set of Instance handles that should be pumped while
-// a blocking API is waiting for its callback.
 var (
 	instanceMu    sync.Mutex
 	liveInstances []Instance
@@ -184,12 +159,10 @@ func pumpEvents() {
 	copy(insts, liveInstances)
 	instanceMu.Unlock()
 	for _, in := range insts {
-		in.ProcessEvents()
+		InstanceProcessEvents(in)
 	}
 }
 
-// waitRecv blocks until a value arrives on ch, pumping WebGPU events so
-// completion callbacks can run on this goroutine.
 func waitRecv[T any](ch <-chan T) T {
 	for {
 		select {
@@ -202,37 +175,23 @@ func waitRecv[T any](ch <-chan T) T {
 	}
 }
 
-// wrapInstance registers a new Instance for event pumping.
-func wrapInstance(inner uintptr) Instance {
+func wrapInstance(inner unsafe.Pointer) Instance {
 	i := Instance(inner)
-	if i != 0 {
+	if i != nil {
 		addInstance(i)
 	}
 	return i
 }
 
-// ---------------------------------------------------------------------------
-// Handle (object) types
-// ---------------------------------------------------------------------------
-
 {{- range .Handles }}
 
-// {{ .Name }} is a WebGPU object handle (a native {{ .CName }} pointer).
-// Zero is null. Wrapping is zero-alloc; the caller owns the native reference
-// and must call Release when done.
-type {{ .Name }} uintptr
-
-// Handle returns the raw native handle.
-func ({{ recv .Name }} {{ .Name }}) Handle() uintptr {
-	return uintptr({{ recv .Name }})
-}{{ end }}
-
-// ---------------------------------------------------------------------------
-// Callback types
-// ---------------------------------------------------------------------------
+{{- if .Doc }}
+{{ commentLine .Doc }}
+{{- end }}
+type {{ .Name }} unsafe.Pointer
+{{- end }}
 
 {{- range .Spec.Callbacks }}
 
-// {{ .Name | pascal }}Fn is a callback function type.
 type {{ .Name | pascal }}Fn {{ cbSig . }}
-{{ end }}
+{{- end }}
