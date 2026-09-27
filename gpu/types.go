@@ -2479,7 +2479,12 @@ func (s *VertexState) toRaw() webgpu.VertexState {
 	return raw
 }
 
-func compilationInfoFromRaw(raw webgpu.CompilationInfo) *CompilationInfo {
+// compilationInfoFromRawPtr converts a C WGPUCompilationInfo* to the wrapper form.
+func compilationInfoFromRawPtr(p unsafe.Pointer) *CompilationInfo {
+	if p == nil {
+		return nil
+	}
+	raw := (*webgpu.CompilationInfo)(p)
 	msgs := make([]CompilationMessage, 0, raw.MessagesCount)
 	for _, m := range unsafe.Slice(raw.Messages, raw.MessagesCount) {
 		msgs = append(msgs, CompilationMessage{
@@ -2492,6 +2497,11 @@ func compilationInfoFromRaw(raw webgpu.CompilationInfo) *CompilationInfo {
 		})
 	}
 	return &CompilationInfo{Messages: msgs}
+}
+
+// compilationInfoFromRaw converts a value copy to the wrapper form.
+func compilationInfoFromRaw(raw webgpu.CompilationInfo) *CompilationInfo {
+	return compilationInfoFromRawPtr(unsafe.Pointer(&raw))
 }
 
 // ShaderSourceWGSL is the WGSL shader source extension chain.

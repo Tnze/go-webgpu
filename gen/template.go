@@ -138,9 +138,6 @@ func goSignature(fd FuncData) string {
 	}
 	first := true
 	for _, a := range args {
-		if strings.HasPrefix(a.TypeRef, "callback.") {
-			continue // blocking wrappers own the callback
-		}
 		if !first {
 			b.WriteString(", ")
 		}
@@ -148,19 +145,7 @@ func goSignature(fd FuncData) string {
 		fmt.Fprintf(&b, "%s %s", a.Name, a.GoType)
 	}
 	b.WriteString(")")
-	switch {
-	case fd.RetKind == "blocking":
-		if len(fd.BlockResults) > 0 {
-			b.WriteString(" (")
-			for i, r := range fd.BlockResults {
-				if i > 0 {
-					b.WriteString(", ")
-				}
-				b.WriteString(r.GoType)
-			}
-			b.WriteString(")")
-		}
-	case fd.GoReturn != "":
+	if fd.GoReturn != "" {
 		fmt.Fprintf(&b, " %s", fd.GoReturn)
 	}
 	return b.String()

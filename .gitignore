@@ -8,3 +8,4 @@ third_party/*.zip
 /examples/*/*.exe
 *.test
 /dist/
+*.exe

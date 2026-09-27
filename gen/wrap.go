@@ -16,14 +16,15 @@ import (
 
 // WrapData is the root passed to the wrap templates.
 type WrapData struct {
-	Package  string
-	Handles  []WrapHandle
-	Structs  []WrapStruct
-	Enums    []EnumData
-	Bitflags []BitflagData
-	Consts   []ConstData
-	Aliases  []WrapAlias // enum/bitflag constants re-exported from webgpu
-	Helpers  string      // extra source appended to types.go
+	Package    string
+	Handles    []WrapHandle
+	Structs    []WrapStruct
+	Enums      []EnumData
+	Bitflags   []BitflagData
+	Consts     []ConstData
+	Aliases    []WrapAlias // enum/bitflag constants re-exported from webgpu
+	ErrorTypes []ErrorTypeEntryData
+	Helpers    string // extra source appended to types.go
 }
 
 // WrapAlias is a re-exported enum or bitflag constant.
@@ -133,6 +134,7 @@ func buildWrapData(spec *parser.Spec) *WrapData {
 		}
 		wd.Handles = append(wd.Handles, wh)
 	}
+	wd.ErrorTypes = buildErrorTypes(spec)
 	return wd
 }
 
@@ -149,7 +151,12 @@ func isKnownHandle(spec *parser.Spec, name string) bool {
 // wrapHelpersSrc is appended to types.go: hand-written extension-chain types
 // and out-param converters that are awkward to express as generated mirrors.
 const wrapHelpersSrc = `
-func compilationInfoFromRaw(raw webgpu.CompilationInfo) *CompilationInfo {
+// compilationInfoFromRawPtr converts a C WGPUCompilationInfo* to the wrapper form.
+func compilationInfoFromRawPtr(p unsafe.Pointer) *CompilationInfo {
+	if p == nil {
+		return nil
+	}
+	raw := (*webgpu.CompilationInfo)(p)
 	msgs := make([]CompilationMessage, 0, raw.MessagesCount)
 	for _, m := range unsafe.Slice(raw.Messages, raw.MessagesCount) {
 		msgs = append(msgs, CompilationMessage{
@@ -162,6 +169,11 @@ func compilationInfoFromRaw(raw webgpu.CompilationInfo) *CompilationInfo {
 		})
 	}
 	return &CompilationInfo{Messages: msgs}
+}
+
+// compilationInfoFromRaw converts a value copy to the wrapper form.
+func compilationInfoFromRaw(raw webgpu.CompilationInfo) *CompilationInfo {
+	return compilationInfoFromRawPtr(unsafe.Pointer(&raw))
 }
 
 // ShaderSourceWGSL is the WGSL shader source extension chain.

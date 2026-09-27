@@ -49,11 +49,122 @@ type wrapResult struct {
 	name, typ, wrap string
 }
 
+func wrapCBResults(cb parser.Callback, spec *parser.Spec) []wrapResult {
+	var out []wrapResult
+	for _, ra := range goCallbackArgs(cb) {
+		t := ra.GoType
+		switch {
+		case isKnownHandle(spec, t):
+			out = append(out, wrapResult{lowerFirst(t), "*" + t, ""})
+		case t == "error":
+			out = append(out, wrapResult{"err", "error", ""})
+		case t == "string":
+			out = append(out, wrapResult{ra.Name, "string", ""})
+		case t == "CompilationInfo":
+			out = append(out, wrapResult{ra.Name, "*CompilationInfo", ""})
+		default:
+			out = append(out, wrapResult{ra.Name, "webgpu." + t, ""})
+		}
+	}
+	return out
+}
+
+// pureCBType is the webgpu-level Go type of one C callback argument.
+func pureCBType(a parser.CallbackArg) string {
+	switch {
+	case isStringType(a.Type):
+		return "string"
+	case isHandleType(a.Type):
+		return pascalCase(strings.TrimPrefix(a.Type, "object."))
+	case strings.HasPrefix(a.Type, "enum."):
+		return pascalCase(strings.TrimPrefix(a.Type, "enum."))
+	case isStructType(a.Type) && (a.Pointer == "immutable" || a.Pointer == "mutable"):
+		return "*" + pascalCase(strings.TrimPrefix(a.Type, "struct."))
+	default:
+		return goTypeForRef(a.Type, nil)
+	}
+}
+
+// webgpuQualify prefixes a named webgpu type with its package name so it can
+// be referenced from the gpu package. Builtins and pointers are handled.
+func webgpuQualify(t string) string {
+	if t == "string" || t == "unsafe.Pointer" || isPrimitiveGoType(t) {
+		return t
+	}
+	if strings.HasPrefix(t, "*") {
+		return "*" + webgpuQualify(t[1:])
+	}
+	return "webgpu." + t
+}
+
+// modeArg is the leading mode argument of NewXxxCallbackInfo (none for
+// callbacks without a configurable mode).
+func modeArg(base string) string {
+	if base == "UncapturedError" {
+		return ""
+	}
+	return "webgpu.CallbackModeAllowProcessEvents, "
+}
+
+// wrapResultExprs returns the Go expressions that turn the pure callback
+// parameters (C order) into the gpu-layer results (wrapCBResults order).
+func wrapResultExprs(cb parser.Callback, spec *parser.Spec) []string {
+	// Name of each pure parameter (C order).
+	pure := map[string]string{} // yaml name → Go param name
+	for _, a := range cb.Args {
+		pure[a.Name] = camelCase(a.Name)
+	}
+	var errorMsg string
+	for _, a := range cb.Args {
+		if isStringType(a.Type) && a.Name == "message" {
+			errorMsg = pure[a.Name]
+		}
+	}
+
+	var exprs []string
+	skipNext := false
+	// Walk the same shape as goCallbackArgs to build expressions.
+	var statusExpr, messageExpr string
+	for _, a := range cb.Args {
+		if skipNext {
+			skipNext = false
+			continue
+		}
+		switch {
+		case a.Name == "status" && strings.HasPrefix(a.Type, "enum."):
+			statusExpr = pure[a.Name]
+		case a.Type == "enum.error_type":
+			exprs = append(exprs, fmt.Sprintf("errorFromErrorType(webgpu.ErrorType(%s), %s)", pure[a.Name], errorMsg))
+			skipNext = true
+		case a.Name == "message" && isStringType(a.Type):
+			messageExpr = pure[a.Name]
+		default:
+			t := goTypeForRef(a.Type, nil)
+			switch {
+			case isKnownHandle(spec, t):
+				exprs = append(exprs, fmt.Sprintf("new%s(%s)", t, pure[a.Name]))
+			case isStructType(a.Type):
+				exprs = append(exprs, fmt.Sprintf("compilationInfoFromRawPtr(unsafe.Pointer(%s))", pure[a.Name]))
+			default:
+				exprs = append(exprs, pure[a.Name])
+			}
+		}
+	}
+	if statusExpr != "" {
+		exprs = append(exprs, statusExpr)
+	}
+	if messageExpr != "" {
+		exprs = append(exprs, messageExpr)
+	}
+	return exprs
+}
+
 func buildWrapMethod(recv string, m parser.Function, spec *parser.Spec) WrapMethod {
 	methodName := pascalCase(m.Name)
 	llName := recv + pascalCase(m.Name)
 	if m.Name == "map_async" {
-		methodName, llName = "Map", recv+"Map"
+		// Low-level keeps the C name (BufferMapAsync); only the gpu method is Map.
+		methodName = "Map"
 	}
 	if methodName == "Release" {
 		return WrapMethod{Name: "Release"} // emitted by the handle block
@@ -184,20 +295,59 @@ func buildWrapMethod(recv string, m parser.Function, spec *parser.Spec) WrapMeth
 
 	switch {
 	case m.Callback != "":
-		if cb := spec.GetCallback(strings.TrimPrefix(m.Callback, "callback.")); cb != nil {
-			for _, ra := range goCallbackArgs(*cb) {
-				t := ra.GoType
-				switch {
-				case isKnownHandle(spec, t):
-					results = append(results, wrapResult{lowerFirst(t), "*" + t, ""})
-				case t == "error" || t == "string":
-					results = append(results, wrapResult{ra.Name, t, ""})
-				default:
-					results = append(results, wrapResult{ra.Name, "webgpu." + t, ""})
-				}
-			}
+		// Blocking sync-over-async: install a Go closure via
+		// webgpu.NewXxxCallbackInfo (backend-uniform), call the raw primitive,
+		// then pump events until the callback fires.
+		cbName := strings.TrimPrefix(m.Callback, "callback.")
+		cb := spec.GetCallback(cbName)
+		if cb == nil {
+			return WrapMethod{Name: methodName, Sig: sig}
 		}
-		style = "status_tuple"
+		base := pascalCase(cbName)
+		results = append(results, wrapCBResults(*cb, spec)...)
+		sig = attachResults(sig, results)
+
+		// Closure parameters follow the C signature (pure webgpu types,
+		// qualified with the webgpu package name).
+		var pureParams []string
+		for _, a := range cb.Args {
+			pureParams = append(pureParams, camelCase(a.Name)+" "+webgpuQualify(pureCBType(a)))
+		}
+		exprs := wrapResultExprs(*cb, spec)
+
+		var fields, assigns []string
+		for _, r := range results {
+			fields = append(fields, r.name+" "+r.typ)
+			assigns = append(assigns, r.name)
+		}
+		body := append([]string{}, pre...)
+		body = append(body, "type _res struct {")
+		for _, f := range fields {
+			body = append(body, "\t"+f)
+		}
+		body = append(body,
+			"}",
+			"_ch := make(chan _res, 1)",
+			fmt.Sprintf("_cbInfo := webgpu.New%s(%swebgpu.%s(func(%s) {",
+				base+"CallbackInfo", modeArg(base), base+"Fn", strings.Join(pureParams, ", ")),
+			fmt.Sprintf("\t_ch <- _res{%s}", strings.Join(exprs, ", ")),
+			"}))",
+		)
+		ll := fmt.Sprintf("webgpu.%s(%s)", llName, strings.Join(append(llArgs, "_cbInfo"), ", "))
+		body = append(body, ll)
+		body = append(body, post...)
+		body = append(body,
+			"_out := waitRecv(_ch)",
+			"runtime.KeepAlive(_cbInfo)",
+		)
+		var rets []string
+		for _, r := range results {
+			rets = append(rets, "_out."+r.name)
+		}
+		if len(rets) > 0 {
+			body = append(body, "return "+strings.Join(rets, ", "))
+		}
+		return WrapMethod{Name: methodName, Doc: cleanDoc(m.Doc), Sig: sig, Body: body}
 
 	case m.Returns != nil && m.Returns.Type != "" && m.Returns.Type != "void":
 		r := m.Returns.Type
@@ -232,22 +382,28 @@ func buildWrapMethod(recv string, m parser.Function, spec *parser.Spec) WrapMeth
 		}
 	}
 
-	switch len(results) {
-	case 0:
-	case 1:
-		sig += " " + results[0].typ
-	default:
-		var rs []string
-		for _, r := range results {
-			rs = append(rs, r.name+" "+r.typ)
-		}
-		sig += " (" + strings.Join(rs, ", ") + ")"
-	}
+	sig = attachResults(sig, results)
 
 	// --- body ---
 	body := append([]string{}, pre...)
 	body = append(body, wrapBody(style, llCall, results, post, spec)...)
 	return WrapMethod{Name: methodName, Doc: cleanDoc(m.Doc), Sig: sig, Body: body}
+}
+
+// attachResults appends the result clause to a signature that has none yet.
+func attachResults(sig string, results []wrapResult) string {
+	switch len(results) {
+	case 0:
+		return sig
+	case 1:
+		return sig + " " + results[0].typ
+	default:
+		var rs []string
+		for _, r := range results {
+			rs = append(rs, r.name+" "+r.typ)
+		}
+		return sig + " (" + strings.Join(rs, ", ") + ")"
+	}
 }
 
 // wrapSliceArg returns the wrapper type and conversion code for a []T argument.
@@ -314,26 +470,6 @@ func wrapBody(style, llCall string, results []wrapResult, post []string, spec *p
 
 	case "compilation_info":
 		return append([]string{"info, status := " + llCall}, append(post, "return compilationInfoFromRaw(info), status")...)
-
-	case "status_tuple":
-		var names, rets []string
-		for i, r := range results {
-			local := fmt.Sprintf("r%d", i)
-			names = append(names, local)
-			switch {
-			case strings.HasPrefix(r.typ, "*") && isKnownHandle(spec, strings.TrimPrefix(r.typ, "*")):
-				rets = append(rets, "new"+strings.TrimPrefix(r.typ, "*")+"("+local+")")
-			case r.typ == "bool":
-				rets = append(rets, local+" == webgpu.True")
-			default:
-				rets = append(rets, local)
-			}
-		}
-		out := append([]string{strings.Join(names, ", ") + " := " + llCall}, post...)
-		if len(rets) > 0 {
-			out = append(out, "return "+strings.Join(rets, ", "))
-		}
-		return out
 	}
 	return nil
 }

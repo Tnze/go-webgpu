@@ -148,11 +148,16 @@ func buildCallbackInfos(spec *parser.Spec) []CallbackInfoData {
 		ci := CallbackInfoData{
 			Name:          infoName,
 			CName:         "WGPU" + infoName,
+			Doc:           cleanDoc(cb.Doc),
 			FnType:        pascalCase(cb.Name) + "Fn",
 			HasMode:       cb.Name != "uncaptured_error",
 			BaseName:      pascalCase(cb.Name),
+			ExportName:    "go" + pascalCase(cb.Name) + "CB",
+			CFnType:       "WGPU" + pascalCase(cb.Name) + "Callback",
 			OpName:        opName,
-			HasTrampoline: hasFn,
+			HasTrampoline: true, // every used callback needs a Go-reachable trampoline
+			OneShot:       cb.Name != "uncaptured_error",
+			FnParams:      pureCBParams(cb),
 		}
 		if hasFn {
 			ci.ExportName = "go" + pascalCase(cb.Name) + "CB"
@@ -320,16 +325,13 @@ func buildFuncs(spec *parser.Spec) []FuncData {
 		objName := pascalCase(obj.Name)
 		for _, m := range obj.Methods {
 			fd := buildFuncData(m, spec)
-			methodName := pascalCase(m.Name)
+			// Low-level keeps the C name: wgpuBufferMapAsync → BufferMapAsync.
 			fd.CName = "wgpu" + objName + pascalCase(m.Name)
-			if m.Name == "map_async" {
-				methodName = "Map"
-			}
 			fd.GoArgs = append([]FuncArgData{{
 				Name: receiverName(objName), GoType: objName,
 				TypeRef: "object." + obj.Name, CName: obj.Name,
 			}}, fd.GoArgs...)
-			fd.Name = objName + methodName
+			fd.Name = objName + pascalCase(m.Name)
 			fd.Ident = fd.Name
 			fd.OpName = fd.Name
 			out = append(out, fd)
@@ -354,18 +356,17 @@ func buildFuncData(f parser.Function, spec *parser.Spec) FuncData {
 		CName: "wgpu" + pascalCase(f.Name),
 		Doc:   cleanDoc(f.Doc),
 	}
+	// Async APIs are pure primitives: they take the raw callback-info record
+	// by value and return a Future. Blocking / error folding lives in the gpu
+	// wrapper layer.
 	if f.Callback != "" {
+		cbName := strings.TrimPrefix(f.Callback, "callback.")
 		fd.HasCallback = true
-		fd.CallbackName = strings.TrimPrefix(f.Callback, "callback.")
-		fd.CallbackFn = pascalCase(fd.CallbackName) + "Fn"
-		fd.RetKind = "blocking"
-		fd.ReturnRef = "struct.future" // C still returns a Future we ignore
-		if cb := spec.GetCallback(fd.CallbackName); cb != nil {
-			fd.BlockResults = goCallbackArgs(*cb)
-		}
-		if f.Name == "map_async" {
-			fd.Name = "Map"
-		}
+		fd.CallbackName = cbName
+		fd.CallbackFn = pascalCase(cbName) + "Fn"
+		fd.ReturnRef = "struct.future"
+		fd.RetKind = "future"
+		fd.GoReturn = "Future"
 	} else if f.Returns != nil && f.Returns.Type != "" && f.Returns.Type != "void" {
 		fd.ReturnRef = f.Returns.Type
 		fd.GoReturn = goTypeForRef(f.Returns.Type, spec)
@@ -422,13 +423,43 @@ func buildFuncData(f parser.Function, spec *parser.Spec) FuncData {
 		}
 		fd.GoArgs = append(fd.GoArgs, fad)
 	}
+	// The raw callback-info record is a by-value C parameter; mirror it as a
+	// Go by-value struct so callers cannot pass a nil that the C API rejects.
 	if fd.HasCallback {
 		fd.GoArgs = append(fd.GoArgs, FuncArgData{
-			Name: "callback", GoType: fd.CallbackFn,
-			TypeRef: "callback." + fd.CallbackName, CName: "callback",
+			Name:     "callbackInfo",
+			GoType:   pascalCase(fd.CallbackName) + "CallbackInfo",
+			TypeRef:  "callbackinfo." + fd.CallbackName,
+			CName:    "callbackInfo",
+			IsCBInfo: true,
 		})
 	}
 	return fd
+}
+
+// pureCBParams returns the Go callback signature in C argument order, using
+// pure type mapping only (no error folding, no reordering): strings become
+// string, handles become their named types, enums their named types.
+func pureCBParams(cb parser.Callback) []string {
+	var out []string
+	for _, a := range cb.Args {
+		name := camelCase(a.Name)
+		var typ string
+		switch {
+		case isStringType(a.Type):
+			typ = "string"
+		case isHandleType(a.Type):
+			typ = pascalCase(strings.TrimPrefix(a.Type, "object."))
+		case strings.HasPrefix(a.Type, "enum."):
+			typ = pascalCase(strings.TrimPrefix(a.Type, "enum."))
+		case isStructType(a.Type) && (a.Pointer == "immutable" || a.Pointer == "mutable"):
+			typ = "*" + pascalCase(strings.TrimPrefix(a.Type, "struct."))
+		default:
+			typ = goTypeForRef(a.Type, nil)
+		}
+		out = append(out, name+" "+typ)
+	}
+	return out
 }
 
 // callbackArgInfo classifies one callback C parameter for trampoline generation.
@@ -438,6 +469,7 @@ func callbackArgInfo(a parser.CallbackArg) CallbackArgInfo {
 		Name:     "c_" + camelCase(a.Name),
 		GoName:   camelCase(a.Name),
 		GoType:   goTypeForRef(a.Type, nil),
+		PureType: pureCBType(a),
 	}
 	switch {
 	case isStringType(a.Type):

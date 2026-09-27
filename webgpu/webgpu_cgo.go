@@ -17,19 +17,21 @@ extern void goBufferMapCB(WGPUMapAsyncStatus status, WGPUStringView message, voi
 extern void goCompilationInfoCB(WGPUCompilationInfoRequestStatus status, WGPUCompilationInfo* compilation_info, void* userdata1, void* userdata2);
 extern void goCreateComputePipelineAsyncCB(WGPUCreatePipelineAsyncStatus status, WGPUComputePipeline pipeline, WGPUStringView message, void* userdata1, void* userdata2);
 extern void goCreateRenderPipelineAsyncCB(WGPUCreatePipelineAsyncStatus status, WGPURenderPipeline pipeline, WGPUStringView message, void* userdata1, void* userdata2);
+extern void goDeviceLostCB(WGPUDevice device, WGPUDeviceLostReason reason, WGPUStringView message, void* userdata1, void* userdata2);
 extern void goPopErrorScopeCB(WGPUPopErrorScopeStatus status, WGPUErrorType type, WGPUStringView message, void* userdata1, void* userdata2);
 extern void goQueueWorkDoneCB(WGPUQueueWorkDoneStatus status, WGPUStringView message, void* userdata1, void* userdata2);
 extern void goRequestAdapterCB(WGPURequestAdapterStatus status, WGPUAdapter adapter, WGPUStringView message, void* userdata1, void* userdata2);
 extern void goRequestDeviceCB(WGPURequestDeviceStatus status, WGPUDevice device, WGPUStringView message, void* userdata1, void* userdata2);
+extern void goUncapturedErrorCB(WGPUDevice device, WGPUErrorType type, WGPUStringView message, void* userdata1, void* userdata2);
 */
 import "C"
 
 import (
 	"runtime"
-	"runtime/cgo"
 	"unsafe"
 )
 
+// cgoStringView converts a Go string to a C WGPUStringView input value.
 func cgoStringView(s string, pinner *runtime.Pinner) C.WGPUStringView {
 	var v C.WGPUStringView
 	if len(s) > 0 {
@@ -41,98 +43,134 @@ func cgoStringView(s string, pinner *runtime.Pinner) C.WGPUStringView {
 	return v
 }
 
-func cgoGoString(v C.WGPUStringView) string {
+// goStringView converts a callback WGPUStringView argument to a Go string.
+func goStringView(v C.WGPUStringView) string {
 	if v.data == nil || v.length == 0 {
 		return ""
 	}
 	return C.GoStringN(v.data, C.int(v.length))
 }
 
+// cbPtr* are the raw C callback entry points used by NewXxxCallbackInfo.
+
+var cbPtrBufferMap = uintptr(unsafe.Pointer(C.WGPUBufferMapCallback(C.goBufferMapCB)))
+
 //export goBufferMapCB
 func goBufferMapCB(c_status C.WGPUMapAsyncStatus, c_message C.WGPUStringView, userdata1, userdata2 unsafe.Pointer) {
-	h := cgo.Handle(uintptr(userdata1))
-	defer h.Delete()
-	cb := h.Value().(BufferMapFn)
-	status := MapAsyncStatus(c_status)
-	message := cgoGoString(c_message)
-	cb(status, message)
+	r_status := MapAsyncStatus(c_status)
+	r_message := goStringView(c_message)
+	if fn, ok := takeCBThunk(uintptr(userdata1)).(BufferMapFn); ok && fn != nil {
+		fn(r_status, r_message)
+	}
 }
+
+var cbPtrCompilationInfo = uintptr(unsafe.Pointer(C.WGPUCompilationInfoCallback(C.goCompilationInfoCB)))
 
 //export goCompilationInfoCB
 func goCompilationInfoCB(c_status C.WGPUCompilationInfoRequestStatus, c_compilationInfo *C.WGPUCompilationInfo, userdata1, userdata2 unsafe.Pointer) {
-	h := cgo.Handle(uintptr(userdata1))
-	defer h.Delete()
-	cb := h.Value().(CompilationInfoFn)
-	status := CompilationInfoRequestStatus(c_status)
-	var compilationInfo CompilationInfo
+	r_status := CompilationInfoRequestStatus(c_status)
+	var r_compilationInfo *CompilationInfo
 	if c_compilationInfo != nil {
-		compilationInfo = *(*CompilationInfo)(unsafe.Pointer(c_compilationInfo))
+		r_compilationInfo = (*CompilationInfo)(unsafe.Pointer(c_compilationInfo))
 	}
-	cb(compilationInfo, status)
+	if fn, ok := takeCBThunk(uintptr(userdata1)).(CompilationInfoFn); ok && fn != nil {
+		fn(r_status, r_compilationInfo)
+	}
 }
+
+var cbPtrCreateComputePipelineAsync = uintptr(unsafe.Pointer(C.WGPUCreateComputePipelineAsyncCallback(C.goCreateComputePipelineAsyncCB)))
 
 //export goCreateComputePipelineAsyncCB
 func goCreateComputePipelineAsyncCB(c_status C.WGPUCreatePipelineAsyncStatus, c_pipeline C.WGPUComputePipeline, c_message C.WGPUStringView, userdata1, userdata2 unsafe.Pointer) {
-	h := cgo.Handle(uintptr(userdata1))
-	defer h.Delete()
-	cb := h.Value().(CreateComputePipelineAsyncFn)
-	status := CreatePipelineAsyncStatus(c_status)
-	pipeline := ComputePipeline(unsafe.Pointer(c_pipeline))
-	message := cgoGoString(c_message)
-	cb(pipeline, status, message)
+	r_status := CreatePipelineAsyncStatus(c_status)
+	r_pipeline := ComputePipeline(unsafe.Pointer(c_pipeline))
+	r_message := goStringView(c_message)
+	if fn, ok := takeCBThunk(uintptr(userdata1)).(CreateComputePipelineAsyncFn); ok && fn != nil {
+		fn(r_status, r_pipeline, r_message)
+	}
 }
+
+var cbPtrCreateRenderPipelineAsync = uintptr(unsafe.Pointer(C.WGPUCreateRenderPipelineAsyncCallback(C.goCreateRenderPipelineAsyncCB)))
 
 //export goCreateRenderPipelineAsyncCB
 func goCreateRenderPipelineAsyncCB(c_status C.WGPUCreatePipelineAsyncStatus, c_pipeline C.WGPURenderPipeline, c_message C.WGPUStringView, userdata1, userdata2 unsafe.Pointer) {
-	h := cgo.Handle(uintptr(userdata1))
-	defer h.Delete()
-	cb := h.Value().(CreateRenderPipelineAsyncFn)
-	status := CreatePipelineAsyncStatus(c_status)
-	pipeline := RenderPipeline(unsafe.Pointer(c_pipeline))
-	message := cgoGoString(c_message)
-	cb(pipeline, status, message)
+	r_status := CreatePipelineAsyncStatus(c_status)
+	r_pipeline := RenderPipeline(unsafe.Pointer(c_pipeline))
+	r_message := goStringView(c_message)
+	if fn, ok := takeCBThunk(uintptr(userdata1)).(CreateRenderPipelineAsyncFn); ok && fn != nil {
+		fn(r_status, r_pipeline, r_message)
+	}
 }
+
+var cbPtrDeviceLost = uintptr(unsafe.Pointer(C.WGPUDeviceLostCallback(C.goDeviceLostCB)))
+
+//export goDeviceLostCB
+func goDeviceLostCB(c_device C.WGPUDevice, c_reason C.WGPUDeviceLostReason, c_message C.WGPUStringView, userdata1, userdata2 unsafe.Pointer) {
+	r_device := Device(unsafe.Pointer(c_device))
+	r_reason := DeviceLostReason(c_reason)
+	r_message := goStringView(c_message)
+	if fn, ok := takeCBThunk(uintptr(userdata1)).(DeviceLostFn); ok && fn != nil {
+		fn(r_device, r_reason, r_message)
+	}
+}
+
+var cbPtrPopErrorScope = uintptr(unsafe.Pointer(C.WGPUPopErrorScopeCallback(C.goPopErrorScopeCB)))
 
 //export goPopErrorScopeCB
 func goPopErrorScopeCB(c_status C.WGPUPopErrorScopeStatus, c_typeVal C.WGPUErrorType, c_message C.WGPUStringView, userdata1, userdata2 unsafe.Pointer) {
-	h := cgo.Handle(uintptr(userdata1))
-	defer h.Delete()
-	cb := h.Value().(PopErrorScopeFn)
-	status := PopErrorScopeStatus(c_status)
-	err := errorFromErrorType(ErrorType(c_typeVal), cgoGoString(c_message))
-	cb(err, status)
+	r_status := PopErrorScopeStatus(c_status)
+	r_err := ErrorType(c_typeVal)
+	r_message := goStringView(c_message)
+	if fn, ok := takeCBThunk(uintptr(userdata1)).(PopErrorScopeFn); ok && fn != nil {
+		fn(r_status, r_err, r_message)
+	}
 }
+
+var cbPtrQueueWorkDone = uintptr(unsafe.Pointer(C.WGPUQueueWorkDoneCallback(C.goQueueWorkDoneCB)))
 
 //export goQueueWorkDoneCB
 func goQueueWorkDoneCB(c_status C.WGPUQueueWorkDoneStatus, c_message C.WGPUStringView, userdata1, userdata2 unsafe.Pointer) {
-	h := cgo.Handle(uintptr(userdata1))
-	defer h.Delete()
-	cb := h.Value().(QueueWorkDoneFn)
-	status := QueueWorkDoneStatus(c_status)
-	message := cgoGoString(c_message)
-	cb(status, message)
+	r_status := QueueWorkDoneStatus(c_status)
+	r_message := goStringView(c_message)
+	if fn, ok := takeCBThunk(uintptr(userdata1)).(QueueWorkDoneFn); ok && fn != nil {
+		fn(r_status, r_message)
+	}
 }
+
+var cbPtrRequestAdapter = uintptr(unsafe.Pointer(C.WGPURequestAdapterCallback(C.goRequestAdapterCB)))
 
 //export goRequestAdapterCB
 func goRequestAdapterCB(c_status C.WGPURequestAdapterStatus, c_adapter C.WGPUAdapter, c_message C.WGPUStringView, userdata1, userdata2 unsafe.Pointer) {
-	h := cgo.Handle(uintptr(userdata1))
-	defer h.Delete()
-	cb := h.Value().(RequestAdapterFn)
-	status := RequestAdapterStatus(c_status)
-	adapter := Adapter(unsafe.Pointer(c_adapter))
-	message := cgoGoString(c_message)
-	cb(adapter, status, message)
+	r_status := RequestAdapterStatus(c_status)
+	r_adapter := Adapter(unsafe.Pointer(c_adapter))
+	r_message := goStringView(c_message)
+	if fn, ok := takeCBThunk(uintptr(userdata1)).(RequestAdapterFn); ok && fn != nil {
+		fn(r_status, r_adapter, r_message)
+	}
 }
+
+var cbPtrRequestDevice = uintptr(unsafe.Pointer(C.WGPURequestDeviceCallback(C.goRequestDeviceCB)))
 
 //export goRequestDeviceCB
 func goRequestDeviceCB(c_status C.WGPURequestDeviceStatus, c_device C.WGPUDevice, c_message C.WGPUStringView, userdata1, userdata2 unsafe.Pointer) {
-	h := cgo.Handle(uintptr(userdata1))
-	defer h.Delete()
-	cb := h.Value().(RequestDeviceFn)
-	status := RequestDeviceStatus(c_status)
-	device := Device(unsafe.Pointer(c_device))
-	message := cgoGoString(c_message)
-	cb(device, status, message)
+	r_status := RequestDeviceStatus(c_status)
+	r_device := Device(unsafe.Pointer(c_device))
+	r_message := goStringView(c_message)
+	if fn, ok := takeCBThunk(uintptr(userdata1)).(RequestDeviceFn); ok && fn != nil {
+		fn(r_status, r_device, r_message)
+	}
+}
+
+var cbPtrUncapturedError = uintptr(unsafe.Pointer(C.WGPUUncapturedErrorCallback(C.goUncapturedErrorCB)))
+
+//export goUncapturedErrorCB
+func goUncapturedErrorCB(c_device C.WGPUDevice, c_typeVal C.WGPUErrorType, c_message C.WGPUStringView, userdata1, userdata2 unsafe.Pointer) {
+	r_device := Device(unsafe.Pointer(c_device))
+	r_err := ErrorType(c_typeVal)
+	r_message := goStringView(c_message)
+	if fn, ok := loadCBThunk(uintptr(userdata1)).(UncapturedErrorFn); ok && fn != nil {
+		fn(r_device, r_err, r_message)
+	}
 }
 
 func releaseAdapter(p unsafe.Pointer) {
@@ -281,7 +319,7 @@ func CreateInstance(descriptor *InstanceDescriptor) Instance {
 	}
 	c_descriptor := (*C.WGPUInstanceDescriptor)(unsafe.Pointer(descriptor))
 	c_result := C.wgpuCreateInstance(c_descriptor)
-	return wrapInstance(unsafe.Pointer(c_result))
+	return Instance(unsafe.Pointer(c_result))
 }
 
 // Get the list of @ref WGPUInstanceFeatureName values supported by the instance.
@@ -388,16 +426,7 @@ func AdapterGetInfo(a Adapter, info *AdapterInfo) Status {
 	return Status(c_result)
 }
 
-func AdapterRequestDevice(a Adapter, descriptor *DeviceDescriptor) (Device, RequestDeviceStatus, string) {
-	type _res struct {
-		r0 Device
-		r1 RequestDeviceStatus
-		r2 string
-	}
-	_ch := make(chan _res, 1)
-	callback := RequestDeviceFn(func(r0 Device, r1 RequestDeviceStatus, r2 string) {
-		_ch <- _res{r0, r1, r2}
-	})
+func AdapterRequestDevice(a Adapter, descriptor *DeviceDescriptor, callbackInfo RequestDeviceCallbackInfo) Future {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	if descriptor != nil {
@@ -418,23 +447,17 @@ func AdapterRequestDevice(a Adapter, descriptor *DeviceDescriptor) (Device, Requ
 			pinner.Pin(descriptor.RequiredFeatures)
 		}
 	}
+	pinner.Pin(&callbackInfo)
 	c_a := (C.WGPUAdapter)(unsafe.Pointer(a))
 	c_descriptor := (*C.WGPUDeviceDescriptor)(unsafe.Pointer(descriptor))
-	_cbHandle := cgo.NewHandle(callback)
-	var _cbInfo C.WGPURequestDeviceCallbackInfo
-	_cbInfo.mode = C.WGPUCallbackMode_AllowProcessEvents
-	_cbInfo.userdata1 = *(*unsafe.Pointer)(unsafe.Pointer(&_cbHandle))
-	_cbInfo.callback = C.WGPURequestDeviceCallback(C.goRequestDeviceCB)
-	c_result := C.wgpuAdapterRequestDevice(c_a, c_descriptor, _cbInfo)
-	_ = c_result
-	_out := waitRecv(_ch)
-	return _out.r0, _out.r1, _out.r2
+	c_callbackInfo := *(*C.WGPURequestDeviceCallbackInfo)(unsafe.Pointer(&callbackInfo))
+	c_result := C.wgpuAdapterRequestDevice(c_a, c_descriptor, c_callbackInfo)
+	return Future{Id: uint64(c_result.id)}
 }
 
+// AdapterRelease calls wgpuAdapterRelease.
 func AdapterRelease(a Adapter) {
-	if x := a; x != nil {
-		releaseAdapter(unsafe.Pointer(x))
-	}
+	releaseAdapter(unsafe.Pointer(a))
 }
 
 func BindGroupSetLabel(b BindGroup, label string) {
@@ -445,10 +468,9 @@ func BindGroupSetLabel(b BindGroup, label string) {
 	C.wgpuBindGroupSetLabel(c_b, c_label)
 }
 
+// BindGroupRelease calls wgpuBindGroupRelease.
 func BindGroupRelease(b BindGroup) {
-	if x := b; x != nil {
-		releaseBindGroup(unsafe.Pointer(x))
-	}
+	releaseBindGroup(unsafe.Pointer(b))
 }
 
 func BindGroupLayoutSetLabel(b BindGroupLayout, label string) {
@@ -459,34 +481,22 @@ func BindGroupLayoutSetLabel(b BindGroupLayout, label string) {
 	C.wgpuBindGroupLayoutSetLabel(c_b, c_label)
 }
 
+// BindGroupLayoutRelease calls wgpuBindGroupLayoutRelease.
 func BindGroupLayoutRelease(b BindGroupLayout) {
-	if x := b; x != nil {
-		releaseBindGroupLayout(unsafe.Pointer(x))
-	}
+	releaseBindGroupLayout(unsafe.Pointer(b))
 }
 
-func BufferMap(b Buffer, mode MapMode, offset uintptr, size uintptr) (MapAsyncStatus, string) {
-	type _res struct {
-		r0 MapAsyncStatus
-		r1 string
-	}
-	_ch := make(chan _res, 1)
-	callback := BufferMapFn(func(r0 MapAsyncStatus, r1 string) {
-		_ch <- _res{r0, r1}
-	})
+func BufferMapAsync(b Buffer, mode MapMode, offset uintptr, size uintptr, callbackInfo BufferMapCallbackInfo) Future {
+	var pinner runtime.Pinner
+	defer pinner.Unpin()
+	pinner.Pin(&callbackInfo)
 	c_b := (C.WGPUBuffer)(unsafe.Pointer(b))
 	c_mode := (C.WGPUMapMode)(mode)
 	c_offset := (C.size_t)(offset)
 	c_size := (C.size_t)(size)
-	_cbHandle := cgo.NewHandle(callback)
-	var _cbInfo C.WGPUBufferMapCallbackInfo
-	_cbInfo.mode = C.WGPUCallbackMode_AllowProcessEvents
-	_cbInfo.userdata1 = *(*unsafe.Pointer)(unsafe.Pointer(&_cbHandle))
-	_cbInfo.callback = C.WGPUBufferMapCallback(C.goBufferMapCB)
-	c_result := C.wgpuBufferMapAsync(c_b, c_mode, c_offset, c_size, _cbInfo)
-	_ = c_result
-	_out := waitRecv(_ch)
-	return _out.r0, _out.r1
+	c_callbackInfo := *(*C.WGPUBufferMapCallbackInfo)(unsafe.Pointer(&callbackInfo))
+	c_result := C.wgpuBufferMapAsync(c_b, c_mode, c_offset, c_size, c_callbackInfo)
+	return Future{Id: uint64(c_result.id)}
 }
 
 // Returns a mutable pointer to beginning of the mapped range.
@@ -586,10 +596,9 @@ func BufferDestroy(b Buffer) {
 	C.wgpuBufferDestroy(c_b)
 }
 
+// BufferRelease calls wgpuBufferRelease.
 func BufferRelease(b Buffer) {
-	if x := b; x != nil {
-		releaseBuffer(unsafe.Pointer(x))
-	}
+	releaseBuffer(unsafe.Pointer(b))
 }
 
 func CommandBufferSetLabel(c CommandBuffer, label string) {
@@ -600,10 +609,9 @@ func CommandBufferSetLabel(c CommandBuffer, label string) {
 	C.wgpuCommandBufferSetLabel(c_c, c_label)
 }
 
+// CommandBufferRelease calls wgpuCommandBufferRelease.
 func CommandBufferRelease(c CommandBuffer) {
-	if x := c; x != nil {
-		releaseCommandBuffer(unsafe.Pointer(x))
-	}
+	releaseCommandBuffer(unsafe.Pointer(c))
 }
 
 func CommandEncoderFinish(c CommandEncoder, descriptor *CommandBufferDescriptor) CommandBuffer {
@@ -793,10 +801,9 @@ func CommandEncoderSetLabel(c CommandEncoder, label string) {
 	C.wgpuCommandEncoderSetLabel(c_c, c_label)
 }
 
+// CommandEncoderRelease calls wgpuCommandEncoderRelease.
 func CommandEncoderRelease(c CommandEncoder) {
-	if x := c; x != nil {
-		releaseCommandEncoder(unsafe.Pointer(x))
-	}
+	releaseCommandEncoder(unsafe.Pointer(c))
 }
 
 func ComputePassEncoderInsertDebugMarker(c ComputePassEncoder, markerLabel string) {
@@ -879,10 +886,9 @@ func ComputePassEncoderSetLabel(c ComputePassEncoder, label string) {
 	C.wgpuComputePassEncoderSetLabel(c_c, c_label)
 }
 
+// ComputePassEncoderRelease calls wgpuComputePassEncoderRelease.
 func ComputePassEncoderRelease(c ComputePassEncoder) {
-	if x := c; x != nil {
-		releaseComputePassEncoder(unsafe.Pointer(x))
-	}
+	releaseComputePassEncoder(unsafe.Pointer(c))
 }
 
 func ComputePipelineGetBindGroupLayout(c ComputePipeline, groupIndex uint32) BindGroupLayout {
@@ -900,10 +906,9 @@ func ComputePipelineSetLabel(c ComputePipeline, label string) {
 	C.wgpuComputePipelineSetLabel(c_c, c_label)
 }
 
+// ComputePipelineRelease calls wgpuComputePipelineRelease.
 func ComputePipelineRelease(c ComputePipeline) {
-	if x := c; x != nil {
-		releaseComputePipeline(unsafe.Pointer(x))
-	}
+	releaseComputePipeline(unsafe.Pointer(c))
 }
 
 func DeviceCreateBindGroup(d Device, descriptor *BindGroupDescriptor) BindGroup {
@@ -1013,16 +1018,7 @@ func DeviceCreateComputePipeline(d Device, descriptor *ComputePipelineDescriptor
 	return ComputePipeline(unsafe.Pointer(c_result))
 }
 
-func DeviceCreateComputePipelineAsync(d Device, descriptor *ComputePipelineDescriptor) (ComputePipeline, CreatePipelineAsyncStatus, string) {
-	type _res struct {
-		r0 ComputePipeline
-		r1 CreatePipelineAsyncStatus
-		r2 string
-	}
-	_ch := make(chan _res, 1)
-	callback := CreateComputePipelineAsyncFn(func(r0 ComputePipeline, r1 CreatePipelineAsyncStatus, r2 string) {
-		_ch <- _res{r0, r1, r2}
-	})
+func DeviceCreateComputePipelineAsync(d Device, descriptor *ComputePipelineDescriptor, callbackInfo CreateComputePipelineAsyncCallbackInfo) Future {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	if descriptor != nil {
@@ -1040,17 +1036,12 @@ func DeviceCreateComputePipelineAsync(d Device, descriptor *ComputePipelineDescr
 			pinner.Pin(descriptor.Compute.Constants)
 		}
 	}
+	pinner.Pin(&callbackInfo)
 	c_d := (C.WGPUDevice)(unsafe.Pointer(d))
 	c_descriptor := (*C.WGPUComputePipelineDescriptor)(unsafe.Pointer(descriptor))
-	_cbHandle := cgo.NewHandle(callback)
-	var _cbInfo C.WGPUCreateComputePipelineAsyncCallbackInfo
-	_cbInfo.mode = C.WGPUCallbackMode_AllowProcessEvents
-	_cbInfo.userdata1 = *(*unsafe.Pointer)(unsafe.Pointer(&_cbHandle))
-	_cbInfo.callback = C.WGPUCreateComputePipelineAsyncCallback(C.goCreateComputePipelineAsyncCB)
-	c_result := C.wgpuDeviceCreateComputePipelineAsync(c_d, c_descriptor, _cbInfo)
-	_ = c_result
-	_out := waitRecv(_ch)
-	return _out.r0, _out.r1, _out.r2
+	c_callbackInfo := *(*C.WGPUCreateComputePipelineAsyncCallbackInfo)(unsafe.Pointer(&callbackInfo))
+	c_result := C.wgpuDeviceCreateComputePipelineAsync(c_d, c_descriptor, c_callbackInfo)
+	return Future{Id: uint64(c_result.id)}
 }
 
 func DeviceCreatePipelineLayout(d Device, descriptor *PipelineLayoutDescriptor) PipelineLayout {
@@ -1092,16 +1083,7 @@ func DeviceCreateQuerySet(d Device, descriptor *QuerySetDescriptor) QuerySet {
 	return QuerySet(unsafe.Pointer(c_result))
 }
 
-func DeviceCreateRenderPipelineAsync(d Device, descriptor *RenderPipelineDescriptor) (RenderPipeline, CreatePipelineAsyncStatus, string) {
-	type _res struct {
-		r0 RenderPipeline
-		r1 CreatePipelineAsyncStatus
-		r2 string
-	}
-	_ch := make(chan _res, 1)
-	callback := CreateRenderPipelineAsyncFn(func(r0 RenderPipeline, r1 CreatePipelineAsyncStatus, r2 string) {
-		_ch <- _res{r0, r1, r2}
-	})
+func DeviceCreateRenderPipelineAsync(d Device, descriptor *RenderPipelineDescriptor, callbackInfo CreateRenderPipelineAsyncCallbackInfo) Future {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	if descriptor != nil {
@@ -1128,17 +1110,12 @@ func DeviceCreateRenderPipelineAsync(d Device, descriptor *RenderPipelineDescrip
 			pinner.Pin(descriptor.Vertex.Buffers)
 		}
 	}
+	pinner.Pin(&callbackInfo)
 	c_d := (C.WGPUDevice)(unsafe.Pointer(d))
 	c_descriptor := (*C.WGPURenderPipelineDescriptor)(unsafe.Pointer(descriptor))
-	_cbHandle := cgo.NewHandle(callback)
-	var _cbInfo C.WGPUCreateRenderPipelineAsyncCallbackInfo
-	_cbInfo.mode = C.WGPUCallbackMode_AllowProcessEvents
-	_cbInfo.userdata1 = *(*unsafe.Pointer)(unsafe.Pointer(&_cbHandle))
-	_cbInfo.callback = C.WGPUCreateRenderPipelineAsyncCallback(C.goCreateRenderPipelineAsyncCB)
-	c_result := C.wgpuDeviceCreateRenderPipelineAsync(c_d, c_descriptor, _cbInfo)
-	_ = c_result
-	_out := waitRecv(_ch)
-	return _out.r0, _out.r1, _out.r2
+	c_callbackInfo := *(*C.WGPUCreateRenderPipelineAsyncCallbackInfo)(unsafe.Pointer(&callbackInfo))
+	c_result := C.wgpuDeviceCreateRenderPipelineAsync(c_d, c_descriptor, c_callbackInfo)
+	return Future{Id: uint64(c_result.id)}
 }
 
 func DeviceCreateRenderBundleEncoder(d Device, descriptor *RenderBundleEncoderDescriptor) RenderBundleEncoder {
@@ -1346,25 +1323,14 @@ func DevicePushErrorScope(d Device, filter ErrorFilter) {
 // Pops an error scope to the current thread's error scope stack,
 // asynchronously returning the result. See @ref ErrorScopes.
 
-func DevicePopErrorScope(d Device) (error, PopErrorScopeStatus) {
-	type _res struct {
-		r0 error
-		r1 PopErrorScopeStatus
-	}
-	_ch := make(chan _res, 1)
-	callback := PopErrorScopeFn(func(r0 error, r1 PopErrorScopeStatus) {
-		_ch <- _res{r0, r1}
-	})
+func DevicePopErrorScope(d Device, callbackInfo PopErrorScopeCallbackInfo) Future {
+	var pinner runtime.Pinner
+	defer pinner.Unpin()
+	pinner.Pin(&callbackInfo)
 	c_d := (C.WGPUDevice)(unsafe.Pointer(d))
-	_cbHandle := cgo.NewHandle(callback)
-	var _cbInfo C.WGPUPopErrorScopeCallbackInfo
-	_cbInfo.mode = C.WGPUCallbackMode_AllowProcessEvents
-	_cbInfo.userdata1 = *(*unsafe.Pointer)(unsafe.Pointer(&_cbHandle))
-	_cbInfo.callback = C.WGPUPopErrorScopeCallback(C.goPopErrorScopeCB)
-	c_result := C.wgpuDevicePopErrorScope(c_d, _cbInfo)
-	_ = c_result
-	_out := waitRecv(_ch)
-	return _out.r0, _out.r1
+	c_callbackInfo := *(*C.WGPUPopErrorScopeCallbackInfo)(unsafe.Pointer(&callbackInfo))
+	c_result := C.wgpuDevicePopErrorScope(c_d, c_callbackInfo)
+	return Future{Id: uint64(c_result.id)}
 }
 
 func DeviceSetLabel(d Device, label string) {
@@ -1375,10 +1341,9 @@ func DeviceSetLabel(d Device, label string) {
 	C.wgpuDeviceSetLabel(c_d, c_label)
 }
 
+// DeviceRelease calls wgpuDeviceRelease.
 func DeviceRelease(d Device) {
-	if x := d; x != nil {
-		releaseDevice(unsafe.Pointer(x))
-	}
+	releaseDevice(unsafe.Pointer(d))
 }
 
 func ExternalTextureSetLabel(e ExternalTexture, label string) {
@@ -1389,10 +1354,9 @@ func ExternalTextureSetLabel(e ExternalTexture, label string) {
 	C.wgpuExternalTextureSetLabel(c_e, c_label)
 }
 
+// ExternalTextureRelease calls wgpuExternalTextureRelease.
 func ExternalTextureRelease(e ExternalTexture) {
-	if x := e; x != nil {
-		releaseExternalTexture(unsafe.Pointer(x))
-	}
+	releaseExternalTexture(unsafe.Pointer(e))
 }
 
 // Creates a @ref WGPUSurface, see @ref Surface-Creation for more details.
@@ -1447,16 +1411,7 @@ func InstanceProcessEvents(i Instance) {
 	C.wgpuInstanceProcessEvents(c_i)
 }
 
-func InstanceRequestAdapter(i Instance, options *RequestAdapterOptions) (Adapter, RequestAdapterStatus, string) {
-	type _res struct {
-		r0 Adapter
-		r1 RequestAdapterStatus
-		r2 string
-	}
-	_ch := make(chan _res, 1)
-	callback := RequestAdapterFn(func(r0 Adapter, r1 RequestAdapterStatus, r2 string) {
-		_ch <- _res{r0, r1, r2}
-	})
+func InstanceRequestAdapter(i Instance, options *RequestAdapterOptions, callbackInfo RequestAdapterCallbackInfo) Future {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 	if options != nil {
@@ -1465,17 +1420,12 @@ func InstanceRequestAdapter(i Instance, options *RequestAdapterOptions) (Adapter
 			pinner.Pin(options.NextInChain)
 		}
 	}
+	pinner.Pin(&callbackInfo)
 	c_i := (C.WGPUInstance)(unsafe.Pointer(i))
 	c_options := (*C.WGPURequestAdapterOptions)(unsafe.Pointer(options))
-	_cbHandle := cgo.NewHandle(callback)
-	var _cbInfo C.WGPURequestAdapterCallbackInfo
-	_cbInfo.mode = C.WGPUCallbackMode_AllowProcessEvents
-	_cbInfo.userdata1 = *(*unsafe.Pointer)(unsafe.Pointer(&_cbHandle))
-	_cbInfo.callback = C.WGPURequestAdapterCallback(C.goRequestAdapterCB)
-	c_result := C.wgpuInstanceRequestAdapter(c_i, c_options, _cbInfo)
-	_ = c_result
-	_out := waitRecv(_ch)
-	return _out.r0, _out.r1, _out.r2
+	c_callbackInfo := *(*C.WGPURequestAdapterCallbackInfo)(unsafe.Pointer(&callbackInfo))
+	c_result := C.wgpuInstanceRequestAdapter(c_i, c_options, c_callbackInfo)
+	return Future{Id: uint64(c_result.id)}
 }
 
 // Wait for at least one WGPUFuture in `futures` to complete, and call callbacks of the respective completed asynchronous operations.
@@ -1496,11 +1446,9 @@ func InstanceWaitAny(i Instance, futureCount uintptr, futures *FutureWaitInfo, t
 	return WaitStatus(c_result)
 }
 
+// InstanceRelease calls wgpuInstanceRelease.
 func InstanceRelease(i Instance) {
-	if x := i; x != nil {
-		removeInstance(x)
-		releaseInstance(unsafe.Pointer(x))
-	}
+	releaseInstance(unsafe.Pointer(i))
 }
 
 func PipelineLayoutSetLabel(p PipelineLayout, label string) {
@@ -1511,10 +1459,9 @@ func PipelineLayoutSetLabel(p PipelineLayout, label string) {
 	C.wgpuPipelineLayoutSetLabel(c_p, c_label)
 }
 
+// PipelineLayoutRelease calls wgpuPipelineLayoutRelease.
 func PipelineLayoutRelease(p PipelineLayout) {
-	if x := p; x != nil {
-		releasePipelineLayout(unsafe.Pointer(x))
-	}
+	releasePipelineLayout(unsafe.Pointer(p))
 }
 
 func QuerySetSetLabel(q QuerySet, label string) {
@@ -1542,10 +1489,9 @@ func QuerySetDestroy(q QuerySet) {
 	C.wgpuQuerySetDestroy(c_q)
 }
 
+// QuerySetRelease calls wgpuQuerySetRelease.
 func QuerySetRelease(q QuerySet) {
-	if x := q; x != nil {
-		releaseQuerySet(unsafe.Pointer(x))
-	}
+	releaseQuerySet(unsafe.Pointer(q))
 }
 
 func QueueSubmit(q Queue, commands []CommandBuffer) {
@@ -1563,25 +1509,14 @@ func QueueSubmit(q Queue, commands []CommandBuffer) {
 	C.wgpuQueueSubmit(c_q, c_commands_count, c_commands_ptr)
 }
 
-func QueueOnSubmittedWorkDone(q Queue) (QueueWorkDoneStatus, string) {
-	type _res struct {
-		r0 QueueWorkDoneStatus
-		r1 string
-	}
-	_ch := make(chan _res, 1)
-	callback := QueueWorkDoneFn(func(r0 QueueWorkDoneStatus, r1 string) {
-		_ch <- _res{r0, r1}
-	})
+func QueueOnSubmittedWorkDone(q Queue, callbackInfo QueueWorkDoneCallbackInfo) Future {
+	var pinner runtime.Pinner
+	defer pinner.Unpin()
+	pinner.Pin(&callbackInfo)
 	c_q := (C.WGPUQueue)(unsafe.Pointer(q))
-	_cbHandle := cgo.NewHandle(callback)
-	var _cbInfo C.WGPUQueueWorkDoneCallbackInfo
-	_cbInfo.mode = C.WGPUCallbackMode_AllowProcessEvents
-	_cbInfo.userdata1 = *(*unsafe.Pointer)(unsafe.Pointer(&_cbHandle))
-	_cbInfo.callback = C.WGPUQueueWorkDoneCallback(C.goQueueWorkDoneCB)
-	c_result := C.wgpuQueueOnSubmittedWorkDone(c_q, _cbInfo)
-	_ = c_result
-	_out := waitRecv(_ch)
-	return _out.r0, _out.r1
+	c_callbackInfo := *(*C.WGPUQueueWorkDoneCallbackInfo)(unsafe.Pointer(&callbackInfo))
+	c_result := C.wgpuQueueOnSubmittedWorkDone(c_q, c_callbackInfo)
+	return Future{Id: uint64(c_result.id)}
 }
 
 // Produces a @ref DeviceError both content-timeline (`size` alignment) and device-timeline
@@ -1625,10 +1560,9 @@ func QueueSetLabel(q Queue, label string) {
 	C.wgpuQueueSetLabel(c_q, c_label)
 }
 
+// QueueRelease calls wgpuQueueRelease.
 func QueueRelease(q Queue) {
-	if x := q; x != nil {
-		releaseQueue(unsafe.Pointer(x))
-	}
+	releaseQueue(unsafe.Pointer(q))
 }
 
 func RenderBundleSetLabel(r RenderBundle, label string) {
@@ -1639,10 +1573,9 @@ func RenderBundleSetLabel(r RenderBundle, label string) {
 	C.wgpuRenderBundleSetLabel(c_r, c_label)
 }
 
+// RenderBundleRelease calls wgpuRenderBundleRelease.
 func RenderBundleRelease(r RenderBundle) {
-	if x := r; x != nil {
-		releaseRenderBundle(unsafe.Pointer(x))
-	}
+	releaseRenderBundle(unsafe.Pointer(r))
 }
 
 func RenderBundleEncoderSetPipeline(r RenderBundleEncoder, pipeline RenderPipeline) {
@@ -1774,10 +1707,9 @@ func RenderBundleEncoderSetLabel(r RenderBundleEncoder, label string) {
 	C.wgpuRenderBundleEncoderSetLabel(c_r, c_label)
 }
 
+// RenderBundleEncoderRelease calls wgpuRenderBundleEncoderRelease.
 func RenderBundleEncoderRelease(r RenderBundleEncoder) {
-	if x := r; x != nil {
-		releaseRenderBundleEncoder(unsafe.Pointer(x))
-	}
+	releaseRenderBundleEncoder(unsafe.Pointer(r))
 }
 
 func RenderPassEncoderSetPipeline(r RenderPassEncoder, pipeline RenderPipeline) {
@@ -1963,10 +1895,9 @@ func RenderPassEncoderSetLabel(r RenderPassEncoder, label string) {
 	C.wgpuRenderPassEncoderSetLabel(c_r, c_label)
 }
 
+// RenderPassEncoderRelease calls wgpuRenderPassEncoderRelease.
 func RenderPassEncoderRelease(r RenderPassEncoder) {
-	if x := r; x != nil {
-		releaseRenderPassEncoder(unsafe.Pointer(x))
-	}
+	releaseRenderPassEncoder(unsafe.Pointer(r))
 }
 
 func RenderPipelineGetBindGroupLayout(r RenderPipeline, groupIndex uint32) BindGroupLayout {
@@ -1984,10 +1915,9 @@ func RenderPipelineSetLabel(r RenderPipeline, label string) {
 	C.wgpuRenderPipelineSetLabel(c_r, c_label)
 }
 
+// RenderPipelineRelease calls wgpuRenderPipelineRelease.
 func RenderPipelineRelease(r RenderPipeline) {
-	if x := r; x != nil {
-		releaseRenderPipeline(unsafe.Pointer(x))
-	}
+	releaseRenderPipeline(unsafe.Pointer(r))
 }
 
 func SamplerSetLabel(s Sampler, label string) {
@@ -1998,31 +1928,19 @@ func SamplerSetLabel(s Sampler, label string) {
 	C.wgpuSamplerSetLabel(c_s, c_label)
 }
 
+// SamplerRelease calls wgpuSamplerRelease.
 func SamplerRelease(s Sampler) {
-	if x := s; x != nil {
-		releaseSampler(unsafe.Pointer(x))
-	}
+	releaseSampler(unsafe.Pointer(s))
 }
 
-func ShaderModuleGetCompilationInfo(s ShaderModule) (CompilationInfo, CompilationInfoRequestStatus) {
-	type _res struct {
-		r0 CompilationInfo
-		r1 CompilationInfoRequestStatus
-	}
-	_ch := make(chan _res, 1)
-	callback := CompilationInfoFn(func(r0 CompilationInfo, r1 CompilationInfoRequestStatus) {
-		_ch <- _res{r0, r1}
-	})
+func ShaderModuleGetCompilationInfo(s ShaderModule, callbackInfo CompilationInfoCallbackInfo) Future {
+	var pinner runtime.Pinner
+	defer pinner.Unpin()
+	pinner.Pin(&callbackInfo)
 	c_s := (C.WGPUShaderModule)(unsafe.Pointer(s))
-	_cbHandle := cgo.NewHandle(callback)
-	var _cbInfo C.WGPUCompilationInfoCallbackInfo
-	_cbInfo.mode = C.WGPUCallbackMode_AllowProcessEvents
-	_cbInfo.userdata1 = *(*unsafe.Pointer)(unsafe.Pointer(&_cbHandle))
-	_cbInfo.callback = C.WGPUCompilationInfoCallback(C.goCompilationInfoCB)
-	c_result := C.wgpuShaderModuleGetCompilationInfo(c_s, _cbInfo)
-	_ = c_result
-	_out := waitRecv(_ch)
-	return _out.r0, _out.r1
+	c_callbackInfo := *(*C.WGPUCompilationInfoCallbackInfo)(unsafe.Pointer(&callbackInfo))
+	c_result := C.wgpuShaderModuleGetCompilationInfo(c_s, c_callbackInfo)
+	return Future{Id: uint64(c_result.id)}
 }
 
 func ShaderModuleSetLabel(s ShaderModule, label string) {
@@ -2033,10 +1951,9 @@ func ShaderModuleSetLabel(s ShaderModule, label string) {
 	C.wgpuShaderModuleSetLabel(c_s, c_label)
 }
 
+// ShaderModuleRelease calls wgpuShaderModuleRelease.
 func ShaderModuleRelease(s ShaderModule) {
-	if x := s; x != nil {
-		releaseShaderModule(unsafe.Pointer(x))
-	}
+	releaseShaderModule(unsafe.Pointer(s))
 }
 
 // Configures parameters for rendering to `surface`.
@@ -2135,10 +2052,9 @@ func SurfaceSetLabel(s Surface, label string) {
 	C.wgpuSurfaceSetLabel(c_s, c_label)
 }
 
+// SurfaceRelease calls wgpuSurfaceRelease.
 func SurfaceRelease(s Surface) {
-	if x := s; x != nil {
-		releaseSurface(unsafe.Pointer(x))
-	}
+	releaseSurface(unsafe.Pointer(s))
 }
 
 func TextureCreateView(t Texture, descriptor *TextureViewDescriptor) TextureView {
@@ -2226,10 +2142,9 @@ func TextureDestroy(t Texture) {
 	C.wgpuTextureDestroy(c_t)
 }
 
+// TextureRelease calls wgpuTextureRelease.
 func TextureRelease(t Texture) {
-	if x := t; x != nil {
-		releaseTexture(unsafe.Pointer(x))
-	}
+	releaseTexture(unsafe.Pointer(t))
 }
 
 func TextureViewSetLabel(t TextureView, label string) {
@@ -2240,8 +2155,7 @@ func TextureViewSetLabel(t TextureView, label string) {
 	C.wgpuTextureViewSetLabel(c_t, c_label)
 }
 
+// TextureViewRelease calls wgpuTextureViewRelease.
 func TextureViewRelease(t TextureView) {
-	if x := t; x != nil {
-		releaseTextureView(unsafe.Pointer(x))
-	}
+	releaseTextureView(unsafe.Pointer(t))
 }

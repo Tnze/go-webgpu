@@ -38,6 +38,9 @@ func new{{ .Name }}(h webgpu.{{ .Name }}) *{{ .Name }} {
 	}
 	o := &{{ .Name }}{h: h}
 	o.cl = runtime.AddCleanup(o, webgpu.{{ .Name }}Release, h)
+{{- if eq .Name "Instance" }}
+	registerInstance(o)
+{{- end }}
 	return o
 }
 
@@ -58,6 +61,9 @@ func (h *{{ .Name }}) Release() {
 	h.cl.Stop()
 	hh := h.h
 	h.h = nil
+{{- if eq .Name "Instance" }}
+	unregisterInstance(h)
+{{- end }}
 	webgpu.{{ .Name }}Release(hh)
 }
 {{- range .Methods }}

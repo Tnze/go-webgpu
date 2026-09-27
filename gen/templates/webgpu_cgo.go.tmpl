@@ -14,19 +14,17 @@ package webgpu
 #include "webgpu.h"
 #include <stdlib.h>
 {{- range .CallbackInfos }}
-{{- if .HasTrampoline }}
 extern void {{ .ExportName }}({{ range $i, $a := .Args }}{{ if $i }}, {{ end }}{{ $a.ExternType }} {{ $a.YAMLName }}{{ end }}, void* userdata1, void* userdata2);
-{{- end }}
 {{- end }}
 */
 import "C"
 
 import (
 	"runtime"
-	"runtime/cgo"
 	"unsafe"
 )
 
+// cgoStringView converts a Go string to a C WGPUStringView input value.
 func cgoStringView(s string, pinner *runtime.Pinner) C.WGPUStringView {
 	var v C.WGPUStringView
 	if len(s) > 0 {
@@ -38,41 +36,45 @@ func cgoStringView(s string, pinner *runtime.Pinner) C.WGPUStringView {
 	return v
 }
 
-func cgoGoString(v C.WGPUStringView) string {
+// goStringView converts a callback WGPUStringView argument to a Go string.
+func goStringView(v C.WGPUStringView) string {
 	if v.data == nil || v.length == 0 {
 		return ""
 	}
 	return C.GoStringN(v.data, C.int(v.length))
 }
 
+// cbPtr* are the raw C callback entry points used by NewXxxCallbackInfo.
 {{- range .CallbackInfos }}
-{{- if .HasTrampoline }}
-{{- $cb := . }}
+
+var cbPtr{{ .BaseName }} = uintptr(unsafe.Pointer(C.{{ .CFnType }}(C.{{ .ExportName }})))
 
 //export {{ .ExportName }}
 func {{ .ExportName }}({{ range $i, $a := .Args }}{{ if $i }}, {{ end }}{{ $a.Name }} {{ $a.CGoType }}{{ end }}, userdata1, userdata2 unsafe.Pointer) {
-	h := cgo.Handle(uintptr(userdata1))
-	defer h.Delete()
-	cb := h.Value().({{ .FnType }})
 {{- range .Args }}
-{{- if eq .Kind "object" }}
-	{{ .GoName }} := {{ .GoType }}(unsafe.Pointer({{ .Name }}))
-{{- else if eq .Kind "struct_ptr" }}
-	var {{ .GoName }} {{ .GoType }}
-	if {{ .Name }} != nil {
-		{{ .GoName }} = *(*{{ .GoType }})(unsafe.Pointer({{ .Name }}))
-	}
-{{- else if eq .Kind "error_type" }}
-	{{ .GoName }} := {{ $cb.ErrConvert }}
+{{- if eq .Kind "error_msg" }}
+	r_{{ .GoName }} := goStringView({{ .Name }})
 {{- else if eq .Kind "message" }}
-	{{ .GoName }} := cgoGoString({{ .Name }})
-{{- else if or (eq .Kind "enum") (eq .Kind "status") }}
-	{{ .GoName }} := {{ .GoType }}({{ .Name }})
+	r_{{ .GoName }} := goStringView({{ .Name }})
+{{- else if eq .Kind "object" }}
+	r_{{ .GoName }} := {{ .PureType }}(unsafe.Pointer({{ .Name }}))
+{{- else if eq .Kind "struct_ptr" }}
+	var r_{{ .GoName }} {{ .PureType }}
+	if {{ .Name }} != nil {
+		r_{{ .GoName }} = ({{ .PureType }})(unsafe.Pointer({{ .Name }}))
+	}
+{{- else }}
+	r_{{ .GoName }} := {{ .PureType }}({{ .Name }})
 {{- end }}
 {{- end }}
-	cb({{ join .CallArgs ", " }})
+{{- if .OneShot }}
+	if fn, ok := takeCBThunk(uintptr(userdata1)).({{ .FnType }}); ok && fn != nil {
+{{- else }}
+	if fn, ok := loadCBThunk(uintptr(userdata1)).({{ .FnType }}); ok && fn != nil {
+{{- end }}
+		fn({{ range $i, $a := .Args }}{{ if $i }}, {{ end }}r_{{ $a.GoName }}{{ end }})
+	}
 }
-{{- end }}
 {{- end }}
 
 {{- range .Handles }}
@@ -97,37 +99,24 @@ func {{ .Name }}FreeMembers(value *{{ .Name }}) {
 {{- range .Funcs }}
 {{- if .IsRelease }}
 
+// {{ .Name }} calls {{ .CName }}.
 {{ sig . }} {
-	if x := {{ (index .GoArgs 0).Name }}; x != nil {
-{{- if eq .ObjName "Instance" }}
-		removeInstance(x)
-{{- end }}
-		release{{ .ObjName }}(unsafe.Pointer(x))
-	}
+	release{{ .ObjName }}(unsafe.Pointer({{ (index .GoArgs 0).Name }}))
 }
 {{- else }}
 {{ if .Doc }}
 {{ commentLine .Doc }}
 {{ end }}
 {{ sig . }} {
-{{- if .HasCallback }}
-	type _res struct {
-{{- range $i, $r := .BlockResults }}
-		r{{ $i }} {{ $r.GoType }}
-{{- end }}
-	}
-	_ch := make(chan _res, 1)
-	callback := {{ .CallbackFn }}(func({{ range $i, $r := .BlockResults }}{{ if $i }}, {{ end }}r{{ $i }} {{ $r.GoType }}{{ end }}) {
-		_ch <- _res{ {{ range $i, $r := .BlockResults }}{{ if $i }}, {{ end }}r{{ $i }}{{ end }} }
-	})
-{{- end }}
 {{- $needsPinner := false }}
-{{- range .GoArgs }}{{ if or (isStruct .TypeRef) .IsSlice .IsStr }}{{ $needsPinner = true }}{{ end }}{{ end }}
+{{- range .GoArgs }}{{ if or (isStruct .TypeRef) .IsSlice .IsStr .IsCBInfo }}{{ $needsPinner = true }}{{ end }}{{ end }}
 {{- if $needsPinner }}
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 {{- range .GoArgs }}
-{{- if isStruct .TypeRef }}
+{{- if .IsCBInfo }}
+	pinner.Pin(&{{ .Name }})
+{{- else if isStruct .TypeRef }}
 {{- if .IsPtr }}
 	if {{ .Name }} != nil {
 		pinner.Pin({{ .Name }})
@@ -183,10 +172,12 @@ func {{ .Name }}FreeMembers(value *{{ .Name }}) {
 {{- end }}
 {{- end }}
 {{- range .GoArgs }}
-{{- if isHandle .TypeRef }}
-	c_{{ .Name }} := ({{ cgoType .GoType }})(unsafe.Pointer({{ .Name }}))
-{{- else if .IsStr }}
+{{- if .IsStr }}
 	c_{{ .Name }} := cgoStringView({{ .Name }}, &pinner)
+{{- else if .IsCBInfo }}
+	c_{{ .Name }} := *(*{{ cgoType .GoType }})(unsafe.Pointer(&{{ .Name }}))
+{{- else if isHandle .TypeRef }}
+	c_{{ .Name }} := ({{ cgoType .GoType }})(unsafe.Pointer({{ .Name }}))
 {{- else if .IsSlice }}
 	var c_{{ .Name }}_ptr {{ .SliceCPtr }}
 	if len({{ .Name }}) > 0 {
@@ -199,56 +190,32 @@ func {{ .Name }}FreeMembers(value *{{ .Name }}) {
 {{- else }}
 	c_{{ .Name }} := (*{{ cgoType .GoType }})(unsafe.Pointer(&{{ .Name }}))
 {{- end }}
-{{- else if isFuncPtr .TypeRef }}
 {{- else }}
 	c_{{ .Name }} := ({{ cgoType .GoType }})({{ .Name }})
 {{- end }}
 {{- end }}
-{{- if .HasCallback }}
-{{- $cbBase := .CallbackName | pascal }}
-	_cbHandle := cgo.NewHandle(callback)
-	var _cbInfo C.WGPU{{ $cbBase }}CallbackInfo
-	_cbInfo.mode = C.WGPUCallbackMode_AllowProcessEvents
-	_cbInfo.userdata1 = *(*unsafe.Pointer)(unsafe.Pointer(&_cbHandle))
-{{- range $.CallbackInfos }}
-{{- if and .HasTrampoline (eq .BaseName $cbBase) }}
-	_cbInfo.callback = C.{{ .CFnType }}(C.{{ .ExportName }})
-{{- end }}
-{{- end }}
-{{- end }}
 {{- if .ReturnRef }}
-{{- $kind := .RetKind }}
 	c_result := C.{{ .CName }}(
-		{{- range $i, $a := .GoArgs }}{{ if $i }}, {{ end }}{{ if $a.IsSlice }}c_{{ $a.Name }}_count, c_{{ $a.Name }}_ptr{{ else if isFuncPtr $a.TypeRef }}_cbInfo{{ else }}c_{{ $a.Name }}{{ end }}{{ end -}}
+		{{- range $i, $a := .GoArgs }}{{ if $i }}, {{ end }}{{ if $a.IsSlice }}c_{{ $a.Name }}_count, c_{{ $a.Name }}_ptr{{ else }}c_{{ $a.Name }}{{ end }}{{ end -}}
 	)
-{{- if eq $kind "blocking" }}
-	_ = c_result
-	_out := waitRecv(_ch)
-{{- if .BlockResults }}
-	return {{ range $i, $r := .BlockResults }}{{ if $i }}, {{ end }}_out.r{{ $i }}{{ end }}
-{{- end }}
-{{- else if eq $kind "handle" }}
-{{- if eq .GoReturn "Instance" }}
-	return wrapInstance(unsafe.Pointer(c_result))
-{{- else }}
+{{- if eq .RetKind "handle" }}
 	return {{ .GoReturn }}(unsafe.Pointer(c_result))
-{{- end }}
-{{- else if eq $kind "status" }}
+{{- else if eq .RetKind "status" }}
 	return Status(c_result)
-{{- else if eq $kind "wait" }}
+{{- else if eq .RetKind "wait" }}
 	return WaitStatus(c_result)
-{{- else if eq $kind "pointer" }}
+{{- else if eq .RetKind "pointer" }}
 	return unsafe.Pointer(c_result)
-{{- else if eq $kind "bool" }}
+{{- else if eq .RetKind "bool" }}
 	return Bool(c_result)
-{{- else if eq $kind "future" }}
+{{- else if eq .RetKind "future" }}
 	return Future{Id: uint64(c_result.id)}
 {{- else }}
 	return ({{ .GoReturn }})(c_result)
 {{- end }}
 {{- else }}
 	C.{{ .CName }}(
-		{{- range $i, $a := .GoArgs }}{{ if $i }}, {{ end }}{{ if $a.IsSlice }}c_{{ $a.Name }}_count, c_{{ $a.Name }}_ptr{{ else if isFuncPtr $a.TypeRef }}_cbInfo{{ else }}c_{{ $a.Name }}{{ end }}{{ end -}}
+		{{- range $i, $a := .GoArgs }}{{ if $i }}, {{ end }}{{ if $a.IsSlice }}c_{{ $a.Name }}_count, c_{{ $a.Name }}_ptr{{ else }}c_{{ $a.Name }}{{ end }}{{ end -}}
 	)
 {{- end }}
 }

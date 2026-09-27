@@ -94,30 +94,25 @@ type StructMemberData struct {
 
 // FuncData describes one generated function.
 //
-// Return convention: raw C results are surfaced directly — status enums stay
-// enums, handles are type X unsafe.Pointer (nil = failure). Callback APIs
-// become blocking multi-return functions whose last values are the status
-// enum and the C message string.
+// The low-level package mirrors the C API one-to-one: async calls take a raw
+// by-value callback-info record and return a Future; status enums are returned
+// as-is. Blocking wrappers and error folding live in the gpu package.
 type FuncData struct {
-	Name          string
-	CName         string
-	Ident         string // unique Go identifier for internal symbols (proc vars)
-	GoArgs        []FuncArgData
-	GoReturn      string
-	ReturnRef     string // original YAML return type reference
-	RetKind       string // handle | status | pointer | wait | future | bool | value | blocking | none
-	ReturnsError  bool
-	SuccessConst  string
-	OpName        string
-	Doc           string
-	IsMethod      bool
-	IsRelease     bool
-	ObjName       string // receiver type name, e.g. "Device"
-	HasCallback   bool
-	CallbackFn    string // e.g. RequestAdapterFn
-	CallbackName  string // e.g. request_adapter
-	ReturnsFuture bool
-	BlockResults  []CallbackArgData
+	Name         string
+	CName        string
+	Ident        string // unique Go identifier for internal symbols (proc vars)
+	GoArgs       []FuncArgData
+	GoReturn     string
+	ReturnRef    string // original YAML return type reference
+	RetKind      string // handle | status | pointer | wait | future | bool | value | none
+	OpName       string
+	Doc          string
+	IsMethod     bool
+	IsRelease    bool
+	ObjName      string // receiver type name, e.g. "Device"
+	HasCallback  bool   // takes a raw callback-info and returns Future
+	CallbackFn   string // e.g. RequestAdapterFn (consumed by the gpu wrapper)
+	CallbackName string // e.g. request_adapter
 }
 
 // FuncArgData is a function argument.
@@ -130,6 +125,7 @@ type FuncArgData struct {
 	IsOptional  bool
 	IsSlice     bool
 	IsStr       bool
+	IsCBInfo    bool     // by-value WGPUNnnCallbackInfo parameter (async APIs)
 	HasChain    bool     // struct has a NextInChain field
 	SliceFields []string // slice members needing pin
 	StrFields   []string // string members (pin unsafe.StringData)
@@ -141,14 +137,17 @@ type FuncArgData struct {
 type CallbackInfoData struct {
 	Name            string // DeviceLostCallbackInfo
 	CName           string // WGPUDeviceLostCallbackInfo
+	Doc             string
 	FnType          string // DeviceLostFn
 	HasMode         bool   // true except uncaptured_error
 	BaseName        string // RequestAdapter
-	ExportName      string // goRequestAdapterCB; "" if no trampoline
+	ExportName      string // goRequestAdapterCB
 	CFnType         string // WGPURequestAdapterCallback
 	OpName          string
 	Args            []CallbackArgInfo
 	HasTrampoline   bool
+	OneShot         bool     // true for async ops; false for persistent hooks
+	FnParams        []string // pure Go callback signature, C argument order
 	StatusArg       *CallbackArgInfo
 	MessageArg      *CallbackArgInfo
 	ErrorTypeArg    *CallbackArgInfo
@@ -166,6 +165,7 @@ type CallbackArgInfo struct {
 	CGoType    string // cgo type in //export
 	ExternType string // C type in extern decl
 	GoType     string
+	PureType   string // webgpu-level type (no error folding): ErrorType, string, Adapter, …
 	Kind       string // status | message | error_type | error_msg | object | enum | struct_ptr | string | value
 	IsStatus   bool
 	IsMessage  bool

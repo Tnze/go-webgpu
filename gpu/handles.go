@@ -96,9 +96,20 @@ func (h *Adapter) RequestDevice(descriptor *DeviceDescriptor) (device *Device, s
 		t := descriptor.toRaw()
 		descriptorRaw = &t
 	}
-	r0, r1, r2 := webgpu.AdapterRequestDevice(h.h, descriptorRaw)
+	type _res struct {
+		device  *Device
+		status  webgpu.RequestDeviceStatus
+		message string
+	}
+	_ch := make(chan _res, 1)
+	_cbInfo := webgpu.NewRequestDeviceCallbackInfo(webgpu.CallbackModeAllowProcessEvents, webgpu.RequestDeviceFn(func(status webgpu.RequestDeviceStatus, device webgpu.Device, message string) {
+		_ch <- _res{newDevice(device), status, message}
+	}))
+	webgpu.AdapterRequestDevice(h.h, descriptorRaw, _cbInfo)
 	runtime.KeepAlive(descriptor)
-	return newDevice(r0), r1, r2
+	_out := waitRecv(_ch)
+	runtime.KeepAlive(_cbInfo)
+	return _out.device, _out.status, _out.message
 }
 
 type BindGroup struct {
@@ -209,8 +220,18 @@ func (h *Buffer) Release() {
 	webgpu.BufferRelease(hh)
 }
 func (h *Buffer) Map(mode MapMode, offset uintptr, size uintptr) (status webgpu.MapAsyncStatus, message string) {
-	r0, r1 := webgpu.BufferMap(h.h, mode, offset, size)
-	return r0, r1
+	type _res struct {
+		status  webgpu.MapAsyncStatus
+		message string
+	}
+	_ch := make(chan _res, 1)
+	_cbInfo := webgpu.NewBufferMapCallbackInfo(webgpu.CallbackModeAllowProcessEvents, webgpu.BufferMapFn(func(status webgpu.MapAsyncStatus, message string) {
+		_ch <- _res{status, message}
+	}))
+	webgpu.BufferMapAsync(h.h, mode, offset, size, _cbInfo)
+	_out := waitRecv(_ch)
+	runtime.KeepAlive(_cbInfo)
+	return _out.status, _out.message
 }
 
 // Returns a mutable pointer to beginning of the mapped range.
@@ -701,9 +722,20 @@ func (h *Device) CreateComputePipelineAsync(descriptor *ComputePipelineDescripto
 		t := descriptor.toRaw()
 		descriptorRaw = &t
 	}
-	r0, r1, r2 := webgpu.DeviceCreateComputePipelineAsync(h.h, descriptorRaw)
+	type _res struct {
+		computePipeline *ComputePipeline
+		status          webgpu.CreatePipelineAsyncStatus
+		message         string
+	}
+	_ch := make(chan _res, 1)
+	_cbInfo := webgpu.NewCreateComputePipelineAsyncCallbackInfo(webgpu.CallbackModeAllowProcessEvents, webgpu.CreateComputePipelineAsyncFn(func(status webgpu.CreatePipelineAsyncStatus, pipeline webgpu.ComputePipeline, message string) {
+		_ch <- _res{newComputePipeline(pipeline), status, message}
+	}))
+	webgpu.DeviceCreateComputePipelineAsync(h.h, descriptorRaw, _cbInfo)
 	runtime.KeepAlive(descriptor)
-	return newComputePipeline(r0), r1, r2
+	_out := waitRecv(_ch)
+	runtime.KeepAlive(_cbInfo)
+	return _out.computePipeline, _out.status, _out.message
 }
 func (h *Device) CreatePipelineLayout(descriptor *PipelineLayoutDescriptor) (pipelineLayout *PipelineLayout, err error) {
 	var descriptorRaw *webgpu.PipelineLayoutDescriptor
@@ -737,9 +769,20 @@ func (h *Device) CreateRenderPipelineAsync(descriptor *RenderPipelineDescriptor)
 		t := descriptor.toRaw()
 		descriptorRaw = &t
 	}
-	r0, r1, r2 := webgpu.DeviceCreateRenderPipelineAsync(h.h, descriptorRaw)
+	type _res struct {
+		renderPipeline *RenderPipeline
+		status         webgpu.CreatePipelineAsyncStatus
+		message        string
+	}
+	_ch := make(chan _res, 1)
+	_cbInfo := webgpu.NewCreateRenderPipelineAsyncCallbackInfo(webgpu.CallbackModeAllowProcessEvents, webgpu.CreateRenderPipelineAsyncFn(func(status webgpu.CreatePipelineAsyncStatus, pipeline webgpu.RenderPipeline, message string) {
+		_ch <- _res{newRenderPipeline(pipeline), status, message}
+	}))
+	webgpu.DeviceCreateRenderPipelineAsync(h.h, descriptorRaw, _cbInfo)
 	runtime.KeepAlive(descriptor)
-	return newRenderPipeline(r0), r1, r2
+	_out := waitRecv(_ch)
+	runtime.KeepAlive(_cbInfo)
+	return _out.renderPipeline, _out.status, _out.message
 }
 func (h *Device) CreateRenderBundleEncoder(descriptor *RenderBundleEncoderDescriptor) (renderBundleEncoder *RenderBundleEncoder, err error) {
 	var descriptorRaw *webgpu.RenderBundleEncoderDescriptor
@@ -862,8 +905,18 @@ func (h *Device) PushErrorScope(filter ErrorFilter) {
 // Pops an error scope to the current thread's error scope stack,
 // asynchronously returning the result. See @ref ErrorScopes.
 func (h *Device) PopErrorScope() (err error, status webgpu.PopErrorScopeStatus) {
-	r0, r1 := webgpu.DevicePopErrorScope(h.h)
-	return r0, r1
+	type _res struct {
+		err    error
+		status webgpu.PopErrorScopeStatus
+	}
+	_ch := make(chan _res, 1)
+	_cbInfo := webgpu.NewPopErrorScopeCallbackInfo(webgpu.CallbackModeAllowProcessEvents, webgpu.PopErrorScopeFn(func(status webgpu.PopErrorScopeStatus, typeVal webgpu.ErrorType, message string) {
+		_ch <- _res{errorFromErrorType(webgpu.ErrorType(typeVal), message), status}
+	}))
+	webgpu.DevicePopErrorScope(h.h, _cbInfo)
+	_out := waitRecv(_ch)
+	runtime.KeepAlive(_cbInfo)
+	return _out.err, _out.status
 }
 func (h *Device) SetLabel(label string) {
 	webgpu.DeviceSetLabel(h.h, label)
@@ -918,6 +971,7 @@ func newInstance(h webgpu.Instance) *Instance {
 	}
 	o := &Instance{h: h}
 	o.cl = runtime.AddCleanup(o, webgpu.InstanceRelease, h)
+	registerInstance(o)
 	return o
 }
 
@@ -938,6 +992,7 @@ func (h *Instance) Release() {
 	h.cl.Stop()
 	hh := h.h
 	h.h = nil
+	unregisterInstance(h)
 	webgpu.InstanceRelease(hh)
 }
 func CreateInstance(desc *InstanceDescriptor) (*Instance, error) {
@@ -992,9 +1047,20 @@ func (h *Instance) RequestAdapter(options *RequestAdapterOptions) (adapter *Adap
 		t := options.toRaw()
 		optionsRaw = &t
 	}
-	r0, r1, r2 := webgpu.InstanceRequestAdapter(h.h, optionsRaw)
+	type _res struct {
+		adapter *Adapter
+		status  webgpu.RequestAdapterStatus
+		message string
+	}
+	_ch := make(chan _res, 1)
+	_cbInfo := webgpu.NewRequestAdapterCallbackInfo(webgpu.CallbackModeAllowProcessEvents, webgpu.RequestAdapterFn(func(status webgpu.RequestAdapterStatus, adapter webgpu.Adapter, message string) {
+		_ch <- _res{newAdapter(adapter), status, message}
+	}))
+	webgpu.InstanceRequestAdapter(h.h, optionsRaw, _cbInfo)
 	runtime.KeepAlive(options)
-	return newAdapter(r0), r1, r2
+	_out := waitRecv(_ch)
+	runtime.KeepAlive(_cbInfo)
+	return _out.adapter, _out.status, _out.message
 }
 
 // Wait for at least one WGPUFuture in `futures` to complete, and call callbacks of the respective completed asynchronous operations.
@@ -1138,8 +1204,18 @@ func (h *Queue) Submit(commands []*CommandBuffer) {
 	runtime.KeepAlive(commands)
 }
 func (h *Queue) OnSubmittedWorkDone() (status webgpu.QueueWorkDoneStatus, message string) {
-	r0, r1 := webgpu.QueueOnSubmittedWorkDone(h.h)
-	return r0, r1
+	type _res struct {
+		status  webgpu.QueueWorkDoneStatus
+		message string
+	}
+	_ch := make(chan _res, 1)
+	_cbInfo := webgpu.NewQueueWorkDoneCallbackInfo(webgpu.CallbackModeAllowProcessEvents, webgpu.QueueWorkDoneFn(func(status webgpu.QueueWorkDoneStatus, message string) {
+		_ch <- _res{status, message}
+	}))
+	webgpu.QueueOnSubmittedWorkDone(h.h, _cbInfo)
+	_out := waitRecv(_ch)
+	runtime.KeepAlive(_cbInfo)
+	return _out.status, _out.message
 }
 
 // Produces a @ref DeviceError both content-timeline (`size` alignment) and device-timeline
@@ -1538,9 +1614,19 @@ func (h *ShaderModule) Release() {
 	h.h = nil
 	webgpu.ShaderModuleRelease(hh)
 }
-func (h *ShaderModule) GetCompilationInfo() (compilationInfo webgpu.CompilationInfo, status webgpu.CompilationInfoRequestStatus) {
-	r0, r1 := webgpu.ShaderModuleGetCompilationInfo(h.h)
-	return r0, r1
+func (h *ShaderModule) GetCompilationInfo() (compilationInfo *CompilationInfo, status webgpu.CompilationInfoRequestStatus) {
+	type _res struct {
+		compilationInfo *CompilationInfo
+		status          webgpu.CompilationInfoRequestStatus
+	}
+	_ch := make(chan _res, 1)
+	_cbInfo := webgpu.NewCompilationInfoCallbackInfo(webgpu.CallbackModeAllowProcessEvents, webgpu.CompilationInfoFn(func(status webgpu.CompilationInfoRequestStatus, compilationInfo *webgpu.CompilationInfo) {
+		_ch <- _res{compilationInfoFromRawPtr(unsafe.Pointer(compilationInfo)), status}
+	}))
+	webgpu.ShaderModuleGetCompilationInfo(h.h, _cbInfo)
+	_out := waitRecv(_ch)
+	runtime.KeepAlive(_cbInfo)
+	return _out.compilationInfo, _out.status
 }
 func (h *ShaderModule) SetLabel(label string) {
 	webgpu.ShaderModuleSetLabel(h.h, label)
