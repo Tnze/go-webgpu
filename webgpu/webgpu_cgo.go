@@ -227,6 +227,41 @@ func releaseTextureView(p unsafe.Pointer) {
 	C.wgpuTextureViewRelease((C.WGPUTextureView)(p))
 }
 
+// AdapterInfoFreeMembers frees memory allocated by the API inside value.
+func AdapterInfoFreeMembers(value *AdapterInfo) {
+	if value != nil {
+		C.wgpuAdapterInfoFreeMembers(*(*C.WGPUAdapterInfo)(unsafe.Pointer(value)))
+	}
+}
+
+// SupportedFeaturesFreeMembers frees memory allocated by the API inside value.
+func SupportedFeaturesFreeMembers(value *SupportedFeatures) {
+	if value != nil {
+		C.wgpuSupportedFeaturesFreeMembers(*(*C.WGPUSupportedFeatures)(unsafe.Pointer(value)))
+	}
+}
+
+// SupportedInstanceFeaturesFreeMembers frees memory allocated by the API inside value.
+func SupportedInstanceFeaturesFreeMembers(value *SupportedInstanceFeatures) {
+	if value != nil {
+		C.wgpuSupportedInstanceFeaturesFreeMembers(*(*C.WGPUSupportedInstanceFeatures)(unsafe.Pointer(value)))
+	}
+}
+
+// SupportedWGSLLanguageFeaturesFreeMembers frees memory allocated by the API inside value.
+func SupportedWGSLLanguageFeaturesFreeMembers(value *SupportedWGSLLanguageFeatures) {
+	if value != nil {
+		C.wgpuSupportedWGSLLanguageFeaturesFreeMembers(*(*C.WGPUSupportedWGSLLanguageFeatures)(unsafe.Pointer(value)))
+	}
+}
+
+// SurfaceCapabilitiesFreeMembers frees memory allocated by the API inside value.
+func SurfaceCapabilitiesFreeMembers(value *SurfaceCapabilities) {
+	if value != nil {
+		C.wgpuSurfaceCapabilitiesFreeMembers(*(*C.WGPUSurfaceCapabilities)(unsafe.Pointer(value)))
+	}
+}
+
 // Create a WGPUInstance
 
 func CreateInstance(descriptor *InstanceDescriptor) Instance {

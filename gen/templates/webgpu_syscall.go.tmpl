@@ -40,6 +40,11 @@ var (
 {{- range .Funcs }}
 	proc{{ .Ident }} = webgpuDLL.NewProc("{{ .CName }}")
 {{- end }}
+{{- range .Structs }}
+{{- if .FreeMembers }}
+	proc{{ .Name }}FreeMembers = webgpuDLL.NewProc("wgpu{{ .Name }}FreeMembers")
+{{- end }}
+{{- end }}
 )
 
 // wgpuStringView matches C.WGPUStringView (passed by reference on win64).
@@ -114,6 +119,18 @@ var cb{{ .BaseName }} = syscall.NewCallback(func({{ range .Args }}{{ .Name }}, {
 func release{{ .Name }}(p unsafe.Pointer) {
 	proc{{ .Name }}Release.Call(uintptr(p))
 }
+{{- end }}
+
+{{- range .Structs }}
+{{- if .FreeMembers }}
+
+// {{ .Name }}FreeMembers frees memory allocated by the API inside value.
+func {{ .Name }}FreeMembers(value *{{ .Name }}) {
+	if value != nil {
+		proc{{ .Name }}FreeMembers.Call(uintptr(unsafe.Pointer(value)))
+	}
+}
+{{- end }}
 {{- end }}
 
 {{- range .Funcs }}

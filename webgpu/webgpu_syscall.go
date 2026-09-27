@@ -210,6 +210,11 @@ var (
 	procTextureRelease                               = webgpuDLL.NewProc("wgpuTextureRelease")
 	procTextureViewSetLabel                          = webgpuDLL.NewProc("wgpuTextureViewSetLabel")
 	procTextureViewRelease                           = webgpuDLL.NewProc("wgpuTextureViewRelease")
+	procAdapterInfoFreeMembers                       = webgpuDLL.NewProc("wgpuAdapterInfoFreeMembers")
+	procSupportedFeaturesFreeMembers                 = webgpuDLL.NewProc("wgpuSupportedFeaturesFreeMembers")
+	procSupportedInstanceFeaturesFreeMembers         = webgpuDLL.NewProc("wgpuSupportedInstanceFeaturesFreeMembers")
+	procSupportedWGSLLanguageFeaturesFreeMembers     = webgpuDLL.NewProc("wgpuSupportedWGSLLanguageFeaturesFreeMembers")
+	procSurfaceCapabilitiesFreeMembers               = webgpuDLL.NewProc("wgpuSurfaceCapabilitiesFreeMembers")
 )
 
 // wgpuStringView matches C.WGPUStringView (passed by reference on win64).
@@ -430,6 +435,41 @@ func releaseTexture(p unsafe.Pointer) {
 
 func releaseTextureView(p unsafe.Pointer) {
 	procTextureViewRelease.Call(uintptr(p))
+}
+
+// AdapterInfoFreeMembers frees memory allocated by the API inside value.
+func AdapterInfoFreeMembers(value *AdapterInfo) {
+	if value != nil {
+		procAdapterInfoFreeMembers.Call(uintptr(unsafe.Pointer(value)))
+	}
+}
+
+// SupportedFeaturesFreeMembers frees memory allocated by the API inside value.
+func SupportedFeaturesFreeMembers(value *SupportedFeatures) {
+	if value != nil {
+		procSupportedFeaturesFreeMembers.Call(uintptr(unsafe.Pointer(value)))
+	}
+}
+
+// SupportedInstanceFeaturesFreeMembers frees memory allocated by the API inside value.
+func SupportedInstanceFeaturesFreeMembers(value *SupportedInstanceFeatures) {
+	if value != nil {
+		procSupportedInstanceFeaturesFreeMembers.Call(uintptr(unsafe.Pointer(value)))
+	}
+}
+
+// SupportedWGSLLanguageFeaturesFreeMembers frees memory allocated by the API inside value.
+func SupportedWGSLLanguageFeaturesFreeMembers(value *SupportedWGSLLanguageFeatures) {
+	if value != nil {
+		procSupportedWGSLLanguageFeaturesFreeMembers.Call(uintptr(unsafe.Pointer(value)))
+	}
+}
+
+// SurfaceCapabilitiesFreeMembers frees memory allocated by the API inside value.
+func SurfaceCapabilitiesFreeMembers(value *SurfaceCapabilities) {
+	if value != nil {
+		procSurfaceCapabilitiesFreeMembers.Call(uintptr(unsafe.Pointer(value)))
+	}
 }
 
 // Create a WGPUInstance

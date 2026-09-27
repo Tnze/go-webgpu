@@ -82,6 +82,18 @@ func release{{ .Name }}(p unsafe.Pointer) {
 }
 {{- end }}
 
+{{- range .Structs }}
+{{- if .FreeMembers }}
+
+// {{ .Name }}FreeMembers frees memory allocated by the API inside value.
+func {{ .Name }}FreeMembers(value *{{ .Name }}) {
+	if value != nil {
+		C.wgpu{{ .Name }}FreeMembers(*(*C.WGPU{{ .Name }})(unsafe.Pointer(value)))
+	}
+}
+{{- end }}
+{{- end }}
+
 {{- range .Funcs }}
 {{- if .IsRelease }}
 
