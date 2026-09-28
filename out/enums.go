@@ -1,6 +1,6 @@
 // Code generated; DO NOT EDIT.
 // Copyright 2019-2023 WebGPU-Native developers
-//
+// 
 // SPDX-License-Identifier: BSD-3-Clause
 
 package webgpu
@@ -140,12 +140,13 @@ var (
 )
 
 // The callback mode controls how a callback for an asynchronous operation may be fired. See @ref Asynchronous-Operations for how these are used.
+
 type CallbackMode int32
 
 var (
 	// Callbacks created with `WGPUCallbackMode_WaitAnyOnly`:
 	// - fire when the asynchronous operation's future is passed to a call to @ref wgpuInstanceWaitAny
-	//   AND the operation has already completed or it completes inside the call to @ref wgpuInstanceWaitAny.
+	// AND the operation has already completed or it completes inside the call to @ref wgpuInstanceWaitAny.
 	CallbackModeWaitAnyOnly CallbackMode = 0x00000001
 
 	// Callbacks created with `WGPUCallbackMode_AllowProcessEvents`:
@@ -156,9 +157,9 @@ var (
 	// Callbacks created with `WGPUCallbackMode_AllowSpontaneous`:
 	// - fire for the same reasons as callbacks created with `WGPUCallbackMode_AllowProcessEvents`
 	// - **may** fire spontaneously on an arbitrary or application thread, when the WebGPU implementations discovers that the asynchronous operation is complete.
-	//
-	//   Implementations _should_ fire spontaneous callbacks as soon as possible.
-	//
+	// 
+	// Implementations _should_ fire spontaneous callbacks as soon as possible.
+	// 
 	// @note Because spontaneous callbacks may fire at an arbitrary time on an arbitrary thread, applications should take extra care when acquiring locks or mutating state inside the callback. It undefined behavior to re-entrantly call into the webgpu.h API if the callback fires while inside the callstack of another webgpu.h function that is not `wgpuInstanceWaitAny` or `wgpuInstanceProcessEvents`.
 	CallbackModeAllowSpontaneous CallbackMode = 0x00000003
 )
@@ -231,6 +232,7 @@ var (
 )
 
 // Describes how frames are composited with other contents on the screen when @ref wgpuSurfacePresent is called.
+
 type CompositeAlphaMode int32
 
 var (
@@ -314,6 +316,7 @@ var (
 )
 
 // See @ref WGPURequestAdapterOptions::featureLevel.
+
 type FeatureLevel int32
 
 var (
@@ -507,6 +510,7 @@ var (
 )
 
 // Describes when and in which order frames are presented on the screen when @ref wgpuSurfacePresent is called.
+
 type PresentMode int32
 
 var (
@@ -651,11 +655,14 @@ var (
 // Status code returned (synchronously) from many operations. Generally
 // indicates an invalid input like an unknown enum value or @ref OutStructChainError.
 // Read the function's documentation for specific error conditions.
+
 type Status int32
 
 var (
+	
 	StatusSuccess Status = 0x00000001
 
+	
 	StatusError Status = 0x00000002
 )
 
@@ -712,6 +719,7 @@ var (
 )
 
 // The status enum for @ref wgpuSurfaceGetCurrentTexture.
+
 type SurfaceGetCurrentTextureStatus int32
 
 var (
@@ -1118,6 +1126,7 @@ var (
 )
 
 // Status returned from a call to ::wgpuInstanceWaitAny.
+
 type WaitStatus int32
 
 var (
@@ -1163,3 +1172,4 @@ var (
 
 	WGSLLanguageFeatureNameFragmentDepth WGSLLanguageFeatureName = 0x0000000E
 )
+

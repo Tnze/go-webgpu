@@ -2,6 +2,7 @@ package main
 
 import (
 	"html/template"
+	"strconv"
 	"strings"
 	"unicode"
 )
@@ -11,7 +12,8 @@ var tmplFuncs = template.FuncMap{
 		var out strings.Builder
 		for line := range strings.Lines(input) {
 			out.WriteString("// ")
-			out.WriteString(line)
+			out.WriteString(strings.TrimSpace(line))
+			out.WriteString("\n")
 		}
 		return out.String()
 	},
@@ -20,7 +22,8 @@ var tmplFuncs = template.FuncMap{
 		for line := range strings.Lines(input) {
 			out.WriteString(indent)
 			out.WriteString("// ")
-			out.WriteString(line)
+			out.WriteString(strings.TrimSpace(line))
+			out.WriteString("\n")
 		}
 		return out.String()
 	},
@@ -55,6 +58,14 @@ var tmplFuncs = template.FuncMap{
 			return "math.NaN()"
 		default:
 			return s
+		}
+	},
+	"bitFlagValue": func(v int) string {
+		switch v {
+		case 0:
+			return "0"
+		default:
+			return "1 << " + strconv.Itoa(v-1)
 		}
 	},
 	"trimSpace": strings.TrimSpace,

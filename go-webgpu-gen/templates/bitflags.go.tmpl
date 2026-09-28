@@ -1,0 +1,23 @@
+// Code generated; DO NOT EDIT.
+{{ .Copyright | singleLineComments }}
+package {{ .Name }}
+
+type Flags uint64
+{{ range .Bitflags }}
+{{if ne (trimSpace .Doc) "TODO" }}{{ .Doc | trimSpace | singleLineComments }}
+{{ end }}{{ $bitFlagName := .Name | pascalCase -}}
+type {{ $bitFlagName }} Flags
+
+var ({{ range $index, $entry := .Entries }}{{ if $entry }}
+	{{ if ne (trimSpace $entry.Doc) "TODO" }}{{ singleLineCommentsIndent ($entry.Doc) "\t" | trimSpace }}
+	{{ end }}{{ $bitFlagName }}{{ $entry.Name | pascalCase }} {{ $bitFlagName }} = {{ if $entry.Value -}}
+        {{ $entry.Value | toGoLiteral }}
+    {{- else if $entry.ValueCombination -}}
+        {{ range $index, $comb := $entry.ValueCombination -}}
+            {{ if $index }} | {{ end }}{{ $bitFlagName }}{{ $comb | pascalCase }}
+        {{- end }}
+    {{- else -}}
+        {{ $index | bitFlagValue }}
+    {{- end }}
+{{ end }}{{ end }})
+{{ end }}
