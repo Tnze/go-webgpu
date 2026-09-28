@@ -1,0 +1,43 @@
+// Code generated; DO NOT EDIT.
+// +build cgo
+{{ .Copyright | singleLineComments }}
+package {{ .Name }}
+
+// #cgo CFLAGS: -I${SRCDIR}/../webgpu-headers
+// #include <webgpu.h>
+import "C"
+
+import "unsafe"
+{{ range .Objects }}{{ $object := . }}{{ range .Methods }}
+{{ if ne (trimSpace .Doc) "TODO" }}{{ .Doc | trimSpace | singleLineComments }}
+{{- end }}func {{ $object.Name | pascalCase }}{{ .Name | pascalCase }}(
+	{{- $object.Name | camelCase }} {{ $object.Name | pascalCase }}
+	{{- range .Args -}}
+		, {{ if arrayElem .Type }}
+			{{ .Name }} []{{ arrayElem .Type | goType }}
+		{{- else -}}
+			{{ .Name }} {{ if and .Pointer (.Type | goType | ne "unsafe.Pointer") }}*{{ end }}{{ .Type | goType }}
+		{{- end }}
+	{{- end }}) {{ if .Returns }}{{ .Returns.Type | goType }} {{ end }}{
+	{{ if .Returns }}return {{ .Returns.Type | goType }}({{ end -}}
+	C.wgpu{{ $object.Name | pascalCase }}{{ .Name | pascalCase }}(
+		C.WGPU{{ $object.Name | pascalCase }}({{ $object.Name | camelCase }}),
+	{{- range .Args }}{{ $conv := cType .Type }}
+		{{ if arrayElem .Type -}}
+			C.size_t(len({{ .Name }})), (*C.{{ .Type | arrayElem | cType }})(&{{ .Name }}[0])
+		{{- else if eq $conv "void*" -}}
+			unsafe.Pointer({{ .Name }})
+		{{- else if .Pointer -}}
+			(*C.{{ $conv }})(unsafe.Pointer({{ .Name }}))
+		{{- else if eq $conv "WGPUStringView" -}}
+			C.WGPUStringView{
+			data:   (*C.char)(unsafe.Pointer({{ .Name }}.data)),
+			length: C.size_t({{ .Name }}.length),
+		}
+		{{- else -}}
+			C.{{ $conv }}({{ .Name }})
+		{{- end }},
+	{{- end }}
+	){{ if .Returns }}){{ end }};
+}
+{{ end }}{{ end }}

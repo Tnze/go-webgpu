@@ -1,8 +1,12 @@
 {
     "cSpell.words": [
+        "bitflag",
         "Bitflags",
         "Codegen",
+        "conv",
+        "uintptr",
         "usize",
-        "webgpu"
+        "webgpu",
+        "wgpu"
     ]
 }

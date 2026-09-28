@@ -1,0 +1,19 @@
+// Code generated; DO NOT EDIT.
+{{ .Copyright | singleLineComments }}
+package {{ .Name }}
+
+import "structs"
+{{ range .Structs }}
+{{ if ne (trimSpace .Doc) "TODO" }}{{ .Doc | trimSpace | singleLineComments }}
+{{ end }}type {{ .Name | pascalCase }} struct {
+	_ structs.HostLayout
+{{ range .Members }}
+	{{ if ne (trimSpace .Doc) "TODO" }}{{ singleLineCommentsIndent (trimSpace .Doc) "\t" | trimSpace }}
+	{{ end }}{{ .Name  | pascalCase }} {{ if arrayElem .Type -}}
+		{{ printf "[]%s" (arrayElem .Type | goType) }}
+	{{- else -}}
+		{{ .Type | goType }}
+	{{- end}}
+{{ end }}}
+
+{{ end }}

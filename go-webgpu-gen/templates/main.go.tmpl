@@ -2,3 +2,15 @@
 {{ .Copyright | singleLineComments }}
 {{ .Doc | singleLineComments -}}
 package {{ .Name }}
+
+type StringView struct {
+	data   *byte
+	length uintptr
+}
+
+type Bool uint32
+
+const (
+	True  Bool = 1
+	False Bool = 0
+)
