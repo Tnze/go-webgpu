@@ -1,0 +1,13 @@
+// Code generated; DO NOT EDIT.
+{{ .Copyright | singleLineComments }}
+package {{ .Name }}
+
+import "math"
+{{ range .Constants }}
+{{ .Doc | singleLineComments -}}
+{{ if eq .Value "nan" -}}
+// const {{ .Name | constantCase }} = {{ .Value | toGoLiteral }}
+{{- else -}}
+const {{ .Name | constantCase }} = {{ .Value | toGoLiteral }}
+{{- end }}
+{{ end }}

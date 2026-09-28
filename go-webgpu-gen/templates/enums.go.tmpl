@@ -1,0 +1,13 @@
+// Code generated; DO NOT EDIT.
+{{ .Copyright | singleLineComments }}
+package {{ .Name }}
+{{ range .Enums }}
+{{if ne (trimSpace .Doc) "TODO" }}{{ .Doc | trimSpace | singleLineComments }}
+{{ end }}{{ $enumName := .Name | pascalCase -}}
+type {{ $enumName }} int32 {{- /* Assumes the C enum has 4 bytes size */}}
+
+var ({{ range $index, $entry := .Entries }}{{ if $entry }}
+	{{ if ne (trimSpace $entry.Doc) "TODO" }}{{ singleLineCommentsIndent ($entry.Doc) "    " | trimSpace }}
+	{{ end }}{{ $enumName }}{{ $entry.Name | pascalCase }} {{ $enumName }} = {{ if $entry.Value }}{{ $entry.Value | toGoLiteral }}{{ else }}{{ $index | printf "0x%.8X"}}{{ end }}
+{{ end }}{{ end }})
+{{ end }}
