@@ -1,6 +1,7 @@
 // Code generated; DO NOT EDIT.
-// +build cgo
-{{ .Copyright | singleLineComments }}
+{{ goDoc .Copyright "" }}
+//go:build cgo
+
 package {{ .Name }}
 
 // #cgo CFLAGS: -I${SRCDIR}/../webgpu-headers
@@ -9,8 +10,8 @@ import "C"
 
 import "unsafe"
 {{ range .Objects }}{{ $object := . }}{{ range .Methods }}
-{{ if ne (trimSpace .Doc) "TODO" }}{{ .Doc | trimSpace | singleLineComments }}
-{{- end }}func {{ $object.Name | pascalCase }}{{ .Name | pascalCase }}(
+{{ goDoc .Doc "" -}}
+func {{ $object.Name | pascalCase }}{{ .Name | pascalCase }}(
 	{{- $object.Name | camelCase }} {{ $object.Name | pascalCase }}
 	{{- range .Args -}}
 		, {{ if arrayElem .Type -}}

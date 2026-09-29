@@ -1,5 +1,5 @@
 // Code generated; DO NOT EDIT.
-{{ .Copyright | singleLineComments }}
+{{ goDoc .Copyright "" }}
 package {{ .Name }}
 
 import (
@@ -7,15 +7,19 @@ import (
 	"unsafe"
 )
 {{ range .Structs }}
-{{ if ne (trimSpace .Doc) "TODO" }}{{ .Doc | trimSpace | singleLineComments }}{{ end -}}
+{{ goDoc .Doc "" -}}
 type {{ .Name | pascalCase }} struct {
 	_ structs.HostLayout
 {{ range .Members }}
-	{{ if and .Doc (ne (trimSpace .Doc) "TODO") }}{{ singleLineCommentsIndent (trimSpace .Doc) "\t" | trimSpace }}
-	{{ end }}{{ .Name  | pascalCase }} {{ if arrayElem .Type -}}
-		{{ printf "[]%s" (arrayElem .Type | goType) }}
+	{{ if arrayElem .Type -}}
+	// Array count for {{ .Name  | pascalCase }}
+	{{ .Name  | pascalCase }}Count uint
+
+	{{ goDoc .Doc "\t" -}}
+	{{ .Name  | pascalCase }} *{{ arrayElem .Type | goType }}
 	{{- else -}}
-		{{ .Type | goType }}
-	{{- end}}
+	{{ goDoc .Doc "\t" -}}
+	{{ .Name  | pascalCase }} {{ .Type | goType }}
+	{{- end }}
 {{ end }}}
 {{ end }}

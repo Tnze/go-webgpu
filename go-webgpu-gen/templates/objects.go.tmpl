@@ -1,9 +1,9 @@
 // Code generated; DO NOT EDIT.
-{{ .Copyright | singleLineComments }}
+{{ goDoc .Copyright "" }}
 package {{ .Name }}
 
 import "unsafe"
 {{ range .Objects }}
-{{ if ne (trimSpace .Doc) "TODO" }}{{ .Doc | trimSpace | singleLineComments }}
-{{- end }}{{ $object := . }}type {{ .Name | pascalCase }} unsafe.Pointer
+{{ goDoc .Doc "" -}}
+{{ $object := . }}type {{ .Name | pascalCase }} unsafe.Pointer
 {{ end }}

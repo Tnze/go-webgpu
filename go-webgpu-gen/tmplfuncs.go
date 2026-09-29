@@ -8,6 +8,25 @@ import (
 )
 
 var tmplFuncs = template.FuncMap{
+	"goDoc": func(doc, indent string) string {
+		doc = strings.TrimSpace(doc)
+
+		if doc == "TODO" {
+			return ""
+		}
+
+		var out strings.Builder
+		for line := range strings.Lines(doc) {
+			out.WriteString("//")
+			if line := strings.TrimSpace(line); line != "" {
+				out.WriteByte(' ')
+				out.WriteString(line)
+			}
+			out.WriteString("\n")
+			out.WriteString(indent)
+		}
+		return out.String()
+	},
 	"singleLineComments": func(input string) string {
 		var out strings.Builder
 		for line := range strings.Lines(input) {

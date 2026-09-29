@@ -2,6 +2,7 @@
     "cSpell.words": [
         "bitflag",
         "Bitflags",
+        "CFLAGS",
         "Codegen",
         "conv",
         "uintptr",

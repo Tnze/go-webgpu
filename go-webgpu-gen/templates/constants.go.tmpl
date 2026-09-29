@@ -1,10 +1,10 @@
 // Code generated; DO NOT EDIT.
-{{ .Copyright | singleLineComments }}
+{{ goDoc .Copyright "" }}
 package {{ .Name }}
 
 import "math"
 {{ range .Constants }}
-{{ .Doc | singleLineComments -}}
+{{ goDoc .Doc "" -}}
 {{ if eq .Value "nan" -}}
 // const {{ .Name | pascalCase }} = {{ .Value | toGoLiteral }}
 {{- else -}}
