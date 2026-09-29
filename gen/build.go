@@ -37,6 +37,16 @@ func buildTemplateData(spec *parser.Spec) *TemplateData {
 	td.Structs = buildStructs(spec)
 	td.Funcs = buildFuncs(spec)
 
+	// Bodies are backend-specific; render them once here so the templates
+	// only stitch lines (see callbody.go).
+	for i := range td.Funcs {
+		if td.Funcs[i].IsRelease {
+			continue
+		}
+		td.Funcs[i].CgoBody = tabBody(callBody(td.Funcs[i], BackendCGO))
+		td.Funcs[i].SyscallBody = tabBody(callBody(td.Funcs[i], BackendSyscall))
+	}
+
 	return td
 }
 

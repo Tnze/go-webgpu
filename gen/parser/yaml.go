@@ -147,6 +147,7 @@ type Function struct {
 type ReturnType struct {
 	Doc                 string `yaml:"doc"`
 	Type                string `yaml:"type"`
+	Pointer             string `yaml:"pointer"` // immutable | mutable
 	PassedWithOwnership bool   `yaml:"passed_with_ownership"`
 	Optional            bool   `yaml:"optional"`
 }

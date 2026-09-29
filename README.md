@@ -1,227 +1,173 @@
 # go-webgpu
 
-Go bindings for [WebGPU](https://www.w3.org/TR/webgpu/), auto-generated from the
+Go bindings for [WebGPU](https://www.w3.org/TR/webgpu/), generated from the
 [webgpu-native/webgpu-headers](https://github.com/webgpu-native/webgpu-headers)
-specification (`webgpu.yml`).
+spec (`webgpu.yml`).
 
-## Architecture
+Two packages:
 
-```
-go-webgpu/
-├── gen/                        # code generator (not imported by users)
-│   ├── main.go                 # entrypoint
-│   ├── helpers.go              # type mapping, name conversion, template data
-│   ├── parser/yaml.go          # webgpu.yml parser
-│   └── templates/              # text/template files
-│       ├── webgpu.go.tmpl              # constants, enums, bitflags, structs, handles
-│       ├── webgpu_defaults.go.tmpl     # NewXxx() default-value constructors
-│       ├── webgpu_cgo.go.tmpl          # CGO backend
-│       └── webgpu_syscall.go.tmpl      # Windows syscall backend
-├── webgpu/                     # generated Go package (package webgpu)
-│   ├── webgpu.go               # common types — no build tags
-│   ├── webgpu_defaults.go      # struct default constructors
-│   ├── webgpu_cgo.go           # CGO function wrappers (//go:build cgo)
-│   └── webgpu_syscall.go       # syscall wrappers (//go:build windows && !cgo)
-├── third_party/                # fetched by scripts/fetch-deps.sh
-│   └── wgpu-native/<plat>/lib/ # libwgpu_native.* / wgpu_native.dll
-└── webgpu.yml                  # upstream spec (fetched by user)
-```
+- **`webgpu`** — 1:1 mirror of the C API (types, enums, handles, raw functions).
+- **`gpu`** — ergonomic wrapper on top of `webgpu` (Go methods, GC cleanup,
+  blocking async). Most users want this one.
 
-### Dual-backend strategy
-
-The library supports two mutually-exclusive calling conventions, selected by
-build tags at compile time:
-
-| Backend | Build constraint | When used | Requires |
-|---------|-----------------|-----------|----------|
-| **CGO** | `//go:build cgo` | Default on all platforms when CGO is enabled | `webgpu.h` header + native library |
-| **Syscall** | `//go:build windows && !cgo` | Windows only, when `CGO_ENABLED=0` | `wgpu_native.dll` |
-
-Both backends share the same public API defined in `webgpu.go` (types, constants,
-handles). Only the function *implementations* differ.
-
-CGO backend:
 ```go
-func DeviceCreateBindGroup(d Device, descriptor *BindGroupDescriptor) BindGroup {
-    c_d := (C.WGPUDevice)(unsafe.Pointer(d))
-    c_descriptor := (*C.WGPUBindGroupDescriptor)(unsafe.Pointer(descriptor))
-    c_result := C.wgpuDeviceCreateBindGroup(c_d, c_descriptor)
-    return BindGroup(unsafe.Pointer(c_result))
+import "github.com/Tnze/go-webgpu/gpu"
+
+instance, err := gpu.CreateInstance(nil)
+if err != nil {
+	log.Fatal(err)
 }
-```
+defer instance.Release()
 
-Syscall backend:
-```go
-func DeviceCreateBindGroup(d Device, descriptor *BindGroupDescriptor) BindGroup {
-    r1, _, _ := procDeviceCreateBindGroup.Call(uintptr(unsafe.Pointer(d)), uintptr(unsafe.Pointer(descriptor)))
-    return BindGroup(unsafe.Pointer(r1))
-}
-```
-
-### Handle representation
-
-All WebGPU opaque objects (`WGPUDevice`, `WGPUBuffer`, …) are defined types
-over `unsafe.Pointer`, matching the C layout (`WGPUNnnImpl *`). Zero is nil:
-
-```go
-type Device unsafe.Pointer // nil is null
-```
-
-Struct fields that hold objects use the same handle types, so they can be
-assigned directly (`colorAtt.View = view`).
-
-Go does not allow methods on types whose underlying type is `unsafe.Pointer`,
-so the generated API is package-level functions rather than methods
-(`DeviceCreateBuffer(d, …)` instead of `d.CreateBuffer(…)`).
-
-### Object lifetime
-
-WebGPU objects are reference-counted. Each returned Go handle owns one
-reference. The binding does **not** install GC cleanup — the caller controls
-lifetime and must call the matching `*Release` when done:
-
-```go
-buf := webgpu.DeviceCreateBuffer(d, &webgpu.BufferDescriptor{ /* ... */ })
-defer webgpu.BufferRelease(buf)
-```
-
-`*Destroy` (Buffer, Device, Texture, QuerySet) destroys the GPU resource but
-does not drop the reference — call `*Release` afterwards. Do not use a handle
-after `*Release`.
-
-## Type mapping reference
-
-| webgpu.yml type | Go type | CGO type | Notes |
-|---|---|---|---|
-| `uint8/16/32/64` | `uint8/16/32/64` | `C.uint8_t` … `C.uint64_t` | |
-| `int32/64` | `int32/64` | `C.int32_t` / `C.int64_t` | |
-| `float32/64` | `float32/64` | `C.float` / `C.double` | |
-| `bool` | `Bool` | `C.WGPUBool` | `type Bool uint32`; `True` / `False` |
-| `usize` | `uintptr` | `C.size_t` | |
-| `string_with_default_empty` | `string` | `*C.char` | CGO: `C.CString` + `defer C.free` |
-| `nullable_float32` | `*float32` | — | |
-| `enum.*` | `type X uint32` | `C.WGPUXxx` | Prefixed names: `BlendFactorZero` |
-| `bitflag.*` | `type X uint64` | `C.WGPUXxx` | Auto `1<<N` values |
-| `struct.*` | `*T` (pointer) | `*C.WGPUXxx` | Descriptors and out-params are passed as pointers |
-| `object.*` | `X` (handle) | `C.WGPUXxx` | `type X unsafe.Pointer`; nil is null |
-| `callback.*` | internal only | — | blocking wrappers hide C futures/callbacks |
-
-### Errors and blocking
-
-Operations surface raw C results: status enums stay enums, handles are
-nil on failure, mapped pointers are nil on failure. Callback APIs
-(`wgpuInstanceRequestAdapter`, `wgpuBufferMapAsync`, …) are wrapped in
-blocking functions that wait on an internal channel while pumping events and
-return the C message string alongside the status:
-
-```go
-adapter, status, msg := webgpu.InstanceRequestAdapter(instance, &webgpu.RequestAdapterOptions{})
-if status != webgpu.RequestAdapterStatusSuccess {
+adapter, status, msg := instance.RequestAdapter(&gpu.RequestAdapterOptions{})
+if status != gpu.RequestAdapterStatusSuccess {
 	log.Fatalf("request adapter: %d: %s", status, msg)
 }
-
-status, msg = webgpu.BufferMap(buf, webgpu.MapModeRead, 0, size) // not MapAsync
+defer adapter.Release()
 ```
 
-`error_type` callbacks (`uncaptured_error`, `pop_error_scope`) fold the
-message into a typed `error` (`*ValidationError`, `*OutOfMemoryError`, …).
-| `c_void_*` | `unsafe.Pointer` | `unsafe.Pointer` | Platform-specific window handles |
-| `array<T>` | `[]T` | ptr + count | Expanded to two C args |
-
-### Default value mapping
-
-Struct fields with `default:` in the YAML get explicit values in `NewXxx()`
-constructors. The YAML defaults are the canonical WebGPU defaults — they are
-**not** inferred from Go zero values.
-
-| YAML default | Go expression | Example |
-|---|---|---|
-| `false` | `false` | `MappedAtCreation: false` |
-| `0` | `0` | `MinBindingSize: 0` |
-| `1` | `1` | `SampleCount: 1` |
-| `0xFFFFFFFF` | `0xFFFFFFFF` | `StencilReadMask: 0xFFFFFFFF` |
-| `constant.whole_size` | `WholeSize` | `Size: WholeSize` |
-| `constant.limit_u32_undefined` | `LimitU32Undefined` | All limit fields |
-| `constant.depth_clear_value_undefined` | `&DepthClearValueUndefined` | `*float32` pointer |
-| `none` (bitflag) | `XxxNone` | `Usage: BufferUsageNone` |
-| `all` (bitflag) | `XxxAll` | `WriteMask: ColorWriteMaskAll` |
-| `zero` (struct) | `Xxx{}` | `Buffer: BufferBindingLayout{}` |
-| bare enum value | `EnumName + Value` | `AlphaMode: CompositeAlphaModeAuto` |
-
-## Generating bindings
-
-### Prerequisites
-
-- Go 1.21+
-- The `webgpu.yml` spec file (from
-  [webgpu-native/webgpu-headers](https://github.com/webgpu-native/webgpu-headers))
-
-### Fetch the spec
+## Getting started
 
 ```bash
-curl -sL https://raw.githubusercontent.com/webgpu-native/webgpu-headers/main/webgpu.yml \
-  -o webgpu.yml
+# 1. Fetch the headers and the wgpu-native library for your platform
+./scripts/fetch-deps.sh
+
+# 2. Run an example
+go run ./examples/compute
+go run ./examples/buffer
 ```
 
-### Run the generator
+`scripts/fetch-deps.sh` populates `third_party/` with `webgpu.h` and the
+wgpu-native binaries for your OS.
+
+## Linking modes
+
+Two independent choices: **how Go calls the C API**, and **how C symbols bind
+to the underlying library**. Both are selected with build tags.
+
+### 1. Go → C API
+
+| Mode | Build tag | How it works |
+|------|-----------|--------------|
+| **Linker** (default) | *(none — requires cgo)* | The Go toolchain links `wgpu*` symbols at build time. |
+| **Runtime load** | `webgpu_dynload` | Go loads the shared library and looks up symbols at startup. Windows uses `LoadLibrary`, macOS/Linux use `dlopen`. |
+
+### 2. C symbols → native library (linker mode only)
+
+| Mode | Build tag | Linker input | Runtime needs |
+|------|-----------|--------------|---------------|
+| **Dynamic** (default) | *(none)* | shared library (`wgpu_native.dll` / `libwgpu_native.so`) | the shared library |
+| **DLL file** | `webgpu_dll` | the `.dll` / `.so` file path directly | the shared library |
+| **Import library** | `webgpu_dllib` | `wgpu_native.dll.lib` (Windows import library) | `wgpu_native.dll` |
+| **Static** | `webgpu_static` | `wgpu_native_static.lib` / `libwgpu_native.a` | nothing |
 
 ```bash
-go run ./gen/ -spec webgpu.yml -out webgpu
+go build ./examples/compute                     # dynamic (default)
+go build -tags webgpu_static ./examples/compute  # fully static
+go build -tags webgpu_dynload ./examples/compute # runtime symbol lookup
+go build -tags webgpu_dll ./examples/compute     # link the .dll file directly
+go build -tags webgpu_dllib ./examples/compute   # link the import library
 ```
 
-Flags:
-- `-spec` — path to `webgpu.yml` (default: `webgpu.yml`)
-- `-out` — output directory (default: `webgpu`)
+Notes:
 
-### Build
+- **`webgpu_static` on Windows** links `wgpu_native_static.lib`, which is an
+  MSVC build. Use `clang` from a Visual Studio developer prompt
+  (`vcvars64.bat` + `CC=clang`). MinGW's `gcc` cannot resolve the MSVC CRT
+  symbols it needs.
+- **`webgpu_dynload`** needs no link-time wgpu library at all. On Windows it
+  works with `CGO_ENABLED=0`. On macOS/Linux it uses cgo for `dlopen`.
+- **`webgpu_dllib`** is Windows-only in practice; on Unix it falls back to the
+  shared library.
 
-```bash
-# With CGO (needs webgpu.h + native library installed)
-go build ./webgpu/
+### Finding the shared library at runtime
 
-# Windows, no CGO (needs wgpu_native.dll next to the binary or in PATH;
-# dev builds via `go run` also find it under third_party/wgpu-native/)
-CGO_ENABLED=0 GOOS=windows go build ./webgpu/
-```
+The dynamic and runtime-load modes look for `wgpu_native.dll` /
+`libwgpu_native.so` in this order:
 
-#### Windows + CGO
+1. `WGPU_NATIVE_DLL` environment variable (full path)
+2. Next to the executable
+3. `third_party/wgpu-native/<platform>/lib/` (development builds)
+4. The system library search path
 
-Build from a Visual Studio developer environment so clang can find the MSVC
-headers/libs (`vcvars64.bat` or "x64 Native Tools Command Prompt"):
+## Building with cgo on Windows
 
 ```bat
-:: after scripts/fetch-deps.sh (Git Bash) has populated third_party/
+:: after scripts/fetch-deps.sh has populated third_party/
 vcvars64.bat
 set CC=clang
 set CGO_ENABLED=1
 go build ./webgpu/
 ```
 
-`third_party/wgpu-native/windows-x86_64-msvc/lib/wgpu_native.lib` must be the
-DLL import library (`wgpu_native.dll.lib`); `fetch-deps.sh` copies it into
-place. At runtime `wgpu_native.dll` must sit next to the executable or be on
-PATH.
+With `CGO_ENABLED=0` on Windows the pure-Go syscall backend is used and no C
+toolchain is required.
+
+## Examples
+
+| Example | What it shows |
+|---------|---------------|
+| `examples/compute` | Instance → adapter → device → storage buffer → compute dispatch → map-read |
+| `examples/buffer` | Buffer write / read round-trip |
+| `go-ecs-std/examples/sprite` | Window + surface + render pipeline + textured sprite |
+
+## API notes
+
+### Handles
+
+Opaque WebGPU objects (`Device`, `Buffer`, `Texture`, …) are `unsafe.Pointer`
+handles. In `gpu` they are wrapped structs with GC cleanup; call `Release()`
+when done. In `webgpu` they are bare `unsafe.Pointer` types with package-level
+functions (`DeviceCreateBuffer(d, …)`).
+
+### Errors and blocking
+
+Async C APIs are wrapped as blocking methods that wait on an internal channel
+while pumping events:
+
+```go
+adapter, status, msg := instance.RequestAdapter(&gpu.RequestAdapterOptions{})
+if status != gpu.RequestAdapterStatusSuccess {
+	log.Fatalf("request adapter: %d: %s", status, msg)
+}
+
+status, msg = buf.Map(gpu.MapModeRead, 0, size) // blocking, not MapAsync
+```
+
+Create-style calls return `(T, error)`. Status-returning calls surface the raw
+status enum alongside a message string.
+
+## Regenerating the bindings
+
+Only needed when `webgpu.yml` changes or you modify the generator.
+
+```bash
+# fetch the spec
+curl -sL https://raw.githubusercontent.com/webgpu-native/webgpu-headers/main/webgpu.yml \
+  -o webgpu.yml
+
+# regenerate webgpu/ and gpu/
+go run ./gen/ -spec webgpu.yml -out webgpu -out-wrap gpu
+```
+
+Flags:
+
+- `-spec` — path to `webgpu.yml` (default `webgpu.yml`)
+- `-out` — output directory for `package webgpu` (default `webgpu`)
+- `-out-wrap` — output directory for `package gpu` (default `gpu`)
 
 ## Name conversion
 
-The generator converts C names to idiomatic Go names:
+| C name | Go name |
+|---|---|
+| `WGPUBlendFactor_Zero` | `BlendFactorZero` |
+| `WGPUBufferUsage_MapRead` | `BufferUsageMapRead` |
+| `WGPUBufferDescriptor` | `BufferDescriptor` |
+| `wgpuDeviceCreateBuffer` | `DeviceCreateBuffer` |
+| `wgpuCreateInstance` | `CreateInstance` |
+| `array_layer_count_undefined` | `ArrayLayerCountUndefined` |
 
-| C name | Go name | Convention |
-|---|---|---|
-| `WGPUBlendFactor_Zero` | `BlendFactorZero` | Enum: prefix + PascalCase |
-| `WGPUBufferUsage_MapRead` | `BufferUsageMapRead` | Bitflag: prefix + PascalCase |
-| `WGPUBufferDescriptor` | `BufferDescriptor` | Struct: PascalCase |
-| `wgpuDeviceCreateBuffer` | `DeviceCreateBuffer` | Object method: `Type + PascalCase` |
-| `wgpuCreateInstance` | `CreateInstance` | Function: PascalCase |
-| `array_layer_count_undefined` | `ArrayLayerCountUndefined` | Constant: PascalCase |
-
-Object methods become package-level functions named `TypeMethod`
-(`wgpuDeviceCreateBuffer` → `DeviceCreateBuffer`) with the handle as the first
-parameter. Top-level functions such as `wgpuCreateInstance` keep their plain
-PascalCase names.
-
-Go keywords (`type`, `range`, etc.) get a `Val` suffix to avoid collisions:
-`type` → `typeVal`.
+Go keywords get a `Val` suffix: `type` → `typeVal`.
 
 ## License
 

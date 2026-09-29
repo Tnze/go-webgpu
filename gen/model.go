@@ -113,6 +113,9 @@ type FuncData struct {
 	HasCallback  bool   // takes a raw callback-info and returns Future
 	CallbackFn   string // e.g. RequestAdapterFn (consumed by the gpu wrapper)
 	CallbackName string // e.g. request_adapter
+	// Precomputed function bodies, one line each (no leading tab).
+	CgoBody    []string
+	SyscallBody []string
 }
 
 // FuncArgData is a function argument.

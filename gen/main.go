@@ -46,14 +46,16 @@ func main() {
 	}
 }
 
-// generate renders the low-level webgpu package templates.
+// generate renders the low-level webgpu package templates plus the
+// link-mode / dynload files that select how C symbols bind to the native
+// library.
 func generate(spec *parser.Spec) (map[string][]byte, error) {
 	tmpls, err := loadTemplates()
 	if err != nil {
 		return nil, err
 	}
 	data := buildTemplateData(spec)
-	files := make(map[string][]byte, len(tmpls))
+	files := make(map[string][]byte, len(tmpls)+8)
 	for name, t := range tmpls {
 		var buf bytes.Buffer
 		if err := t.Execute(&buf, data); err != nil {
@@ -61,13 +63,54 @@ func generate(spec *parser.Spec) (map[string][]byte, error) {
 		}
 		files[name] = formatSource(name, buf.Bytes())
 	}
+
+	linkFiles, err := generateLinkFiles(spec)
+	if err != nil {
+		return nil, fmt.Errorf("generate link files: %w", err)
+	}
+	for name, data := range linkFiles {
+		files[name] = data
+	}
+
+	shim, err := generateDynloadShim(spec)
+	if err != nil {
+		return nil, fmt.Errorf("generate dynload shim: %w", err)
+	}
+	files["webgpu_shim.c"] = shim
+
+	dynload, err := generateDynloadUnix(spec)
+	if err != nil {
+		return nil, fmt.Errorf("generate dynload unix: %w", err)
+	}
+	files["webgpu_dynload_unix.go"] = dynload
+
 	return files, nil
 }
 
-// writeFiles creates dir and writes the generated sources.
+// writeFiles creates dir, replaces any previously generated sources, and
+// writes the new ones.
 func writeFiles(dir string, files map[string][]byte) error {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return fmt.Errorf("mkdir %s: %w", dir, err)
+	}
+	// Drop stale generated files so renamed outputs do not linger.
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return fmt.Errorf("read %s: %w", dir, err)
+	}
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		name := e.Name()
+		if !strings.HasSuffix(name, ".go") && !strings.HasSuffix(name, ".c") {
+			continue
+		}
+		if _, keep := files[name]; !keep {
+			if err := os.Remove(filepath.Join(dir, name)); err != nil {
+				return fmt.Errorf("remove stale %s: %w", filepath.Join(dir, name), err)
+			}
+		}
 	}
 	for name, data := range files {
 		p := filepath.Join(dir, name)
