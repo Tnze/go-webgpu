@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 	"unicode"
+
+	"github.com/Tnze/go-webgpu/go-webgpu-gen/spec"
 )
 
 var tmplFuncs = template.FuncMap{
@@ -27,25 +29,6 @@ var tmplFuncs = template.FuncMap{
 		}
 		return out.String()
 	},
-	"singleLineComments": func(input string) string {
-		var out strings.Builder
-		for line := range strings.Lines(input) {
-			out.WriteString("// ")
-			out.WriteString(strings.TrimSpace(line))
-			out.WriteString("\n")
-		}
-		return out.String()
-	},
-	"singleLineCommentsIndent": func(input, indent string) string {
-		var out strings.Builder
-		for line := range strings.Lines(input) {
-			out.WriteString(indent)
-			out.WriteString("// ")
-			out.WriteString(strings.TrimSpace(line))
-			out.WriteString("\n")
-		}
-		return out.String()
-	},
 	"pascalCase": pascalCase,
 	"camelCase":  camelCase,
 	"toGoLiteral": func(s string) string {
@@ -61,6 +44,28 @@ var tmplFuncs = template.FuncMap{
 		default:
 			return s
 		}
+	},
+	"structDefaultValue": func(input spec.ParameterType) string {
+		if input.Default == nil {
+			return ""
+		}
+		if val, found := strings.CutPrefix(*input.Default, "constant."); found {
+			return pascalCase(val)
+		}
+		if *input.Default == "zero" || *input.Default == "false" || *input.Default == "0" || *input.Default == "0.0" {
+			return ""
+		}
+		if input.Type == "float32" || input.Type == "float64" {
+			return *input.Default
+		}
+		if typ, found := strings.CutPrefix(input.Type, "bitflag."); found {
+			return pascalCase(typ) + pascalCase(*input.Default)
+		}
+		if typ, found := strings.CutPrefix(input.Type, "enum."); found {
+			return pascalCase(typ) + pascalCase(*input.Default)
+		}
+
+		return *input.Default
 	},
 	"bitFlagValue": func(v int) string {
 		switch v {
@@ -81,6 +86,13 @@ var tmplFuncs = template.FuncMap{
 	"trimSpace": strings.TrimSpace,
 	"hasPrefix": strings.HasPrefix,
 	"hasSuffix": strings.HasSuffix,
+	"isZeroValue": func(input string) bool {
+		switch input {
+		case "zero", "false", "0", "0.0":
+			return true
+		}
+		return false
+	},
 }
 
 func pascalCase(s string) string {

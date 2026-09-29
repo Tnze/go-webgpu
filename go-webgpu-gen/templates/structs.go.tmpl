@@ -6,20 +6,20 @@ import (
 	"structs"
 	"unsafe"
 )
-{{ range .Structs }}
+{{ range .Structs }}{{ $structName := pascalCase .Name}}
 {{ goDoc .Doc "" -}}
-type {{ .Name | pascalCase }} struct {
+type {{ $structName }} struct {
 	_ structs.HostLayout
-{{ range .Members }}
+{{ range .Members }}{{ $fieldName := pascalCase .Name}}
 	{{ if arrayElem .Type -}}
-	// Array count for {{ .Name  | pascalCase }}
-	{{ .Name  | pascalCase }}Count uint
+	// Array count for {{ $fieldName }}
+	{{ $fieldName }}Count uint
 
 	{{ goDoc .Doc "\t" -}}
-	{{ .Name  | pascalCase }} *{{ arrayElem .Type | goType }}
+	{{ $fieldName }} *{{ arrayElem .Type | goType }}
 	{{- else -}}
 	{{ goDoc .Doc "\t" -}}
-	{{ .Name  | pascalCase }} {{ .Type | goType }}
+	{{ $fieldName }} {{ .Type | goType }}
 	{{- end }}
 {{ end }}}
 {{ end }}
