@@ -14,3 +14,8 @@ const (
 	True  Bool = 1
 	False Bool = 0
 )
+
+type ChainedStruct struct {
+	Next  *ChainedStruct
+	SType SType
+}

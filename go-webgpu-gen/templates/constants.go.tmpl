@@ -6,8 +6,8 @@ import "math"
 {{ range .Constants }}
 {{ .Doc | singleLineComments -}}
 {{ if eq .Value "nan" -}}
-// const {{ .Name | constantCase }} = {{ .Value | toGoLiteral }}
+// const {{ .Name | pascalCase }} = {{ .Value | toGoLiteral }}
 {{- else -}}
-const {{ .Name | constantCase }} = {{ .Value | toGoLiteral }}
+const {{ .Name | pascalCase }} = {{ .Value | toGoLiteral }}
 {{- end }}
 {{ end }}

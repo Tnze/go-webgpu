@@ -27,9 +27,8 @@ var tmplFuncs = template.FuncMap{
 		}
 		return out.String()
 	},
-	"constantCase": strings.ToUpper,
-	"pascalCase":   pascalCase,
-	"camelCase":    camelCase,
+	"pascalCase": pascalCase,
+	"camelCase":  camelCase,
 	"toGoLiteral": func(s string) string {
 		switch s {
 		case "usize_max":
@@ -104,6 +103,9 @@ func camelCase(s string) string {
 }
 
 func goType(t string) string {
+	if strings.HasPrefix(t, "callback.") {
+		return pascalCase(t[9:]) + "CallbackInfo"
+	}
 	if dot := strings.IndexByte(t, '.'); dot > 0 {
 		return pascalCase(t[dot+1:])
 	}
@@ -111,9 +113,12 @@ func goType(t string) string {
 	case "out_string", "string_with_default_empty", "nullable_string":
 		return "StringView"
 	case "uint8", "uint16", "uint32", "uint64",
-		"int8", "int16", "int32", "int64",
-		"float32", "float64":
+		"int8", "int16", "int32", "int64":
 		return t
+	case "float32", "nullable_float32":
+		return "float32"
+	case "float64", "float64_supertype":
+		return "float64"
 	case "usize":
 		return "uintptr"
 	case "c_void",
@@ -133,6 +138,9 @@ func goType(t string) string {
 }
 
 func cType(t string) (ctype string) {
+	if strings.HasPrefix(t, "callback.") {
+		return "WGPU" + pascalCase(t[9:]) + "CallbackInfo"
+	}
 	if dot := strings.IndexByte(t, '.'); dot > 0 {
 		return "WGPU" + pascalCase(t[dot+1:])
 	}

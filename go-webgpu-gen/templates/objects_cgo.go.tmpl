@@ -13,18 +13,25 @@ import "unsafe"
 {{- end }}func {{ $object.Name | pascalCase }}{{ .Name | pascalCase }}(
 	{{- $object.Name | camelCase }} {{ $object.Name | pascalCase }}
 	{{- range .Args -}}
-		, {{ if arrayElem .Type }}
+		, {{ if arrayElem .Type -}}
 			{{ .Name }} []{{ arrayElem .Type | goType }}
 		{{- else -}}
 			{{ .Name }} {{ if and .Pointer (.Type | goType | ne "unsafe.Pointer") }}*{{ end }}{{ .Type | goType }}
 		{{- end }}
 	{{- end }}) {{ if .Returns }}{{ .Returns.Type | goType }} {{ end }}{
-	{{ if .Returns }}return {{ .Returns.Type | goType }}({{ end -}}
+	{{ if .Returns -}}
+		{{ if eq .Returns.Type "struct.future" -}}
+		return Future{ Id: uint64(
+		{{- else -}}
+		return {{ .Returns.Type | goType }}(
+		{{- end }}
+	{{- end -}}
 	C.wgpu{{ $object.Name | pascalCase }}{{ .Name | pascalCase }}(
 		C.WGPU{{ $object.Name | pascalCase }}({{ $object.Name | camelCase }}),
 	{{- range .Args }}{{ $conv := cType .Type }}
 		{{ if arrayElem .Type -}}
-			C.size_t(len({{ .Name }})), (*C.{{ .Type | arrayElem | cType }})(&{{ .Name }}[0])
+			C.size_t(len({{ .Name }})),
+		(*C.{{ .Type | arrayElem | cType }})(unsafe.Pointer(&{{ .Name }}[0]))
 		{{- else if eq $conv "void*" -}}
 			unsafe.Pointer({{ .Name }})
 		{{- else if .Pointer -}}
@@ -38,6 +45,18 @@ import "unsafe"
 			C.{{ $conv }}({{ .Name }})
 		{{- end }},
 	{{- end }}
-	){{ if .Returns }}){{ end }};
+	{{- if and .Callback (hasPrefix .Callback "callback.") }}
+		C.WGPU{{ slice .Callback 9 | pascalCase }}CallbackInfo{
+			// TODO
+		},
+	{{- end }}
+	)
+	{{- if .Returns -}}
+		{{ if eq .Returns.Type "struct.future" -}}
+			.id) }
+		{{- else -}}
+			)
+		{{- end }}
+	{{- end }}
 }
 {{ end }}{{ end }}
