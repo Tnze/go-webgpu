@@ -1,6 +1,6 @@
 // Code generated; DO NOT EDIT.
 {{ goDoc .Copyright "" }}
-package {{ .Name }}
+package {{ .PackageName }}
 {{ range .Structs }}{{ $structName := pascalCase .Name}}
 func Default{{ $structName }}() {{ $structName }} {
 	return {{ $structName }}{

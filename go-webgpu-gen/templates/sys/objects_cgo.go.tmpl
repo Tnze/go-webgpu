@@ -2,17 +2,17 @@
 {{ goDoc .Copyright "" }}
 //go:build cgo
 
-package {{ .Name }}
+package {{ .PackageName }}
 
-// #cgo CFLAGS: -I${SRCDIR}/../webgpu-headers
+// #cgo CFLAGS: -I${SRCDIR}/../../webgpu-headers
 // #include <webgpu.h>
 import "C"
 
 import "unsafe"
 {{ range .Objects }}{{ $object := . }}{{ range .Methods }}
 {{ goDoc .Doc "" -}}
-func {{ $object.Name | pascalCase }}{{ .Name | pascalCase }}(
-	{{- $object.Name | camelCase }} {{ $object.Name | pascalCase }}
+func {{ pascalCase $object.Name }}{{ pascalCase .Name }}(
+	{{- camelCase $object.Name }} {{ pascalCase $object.Name }}
 	{{- range .Args -}}
 		, {{ if arrayElem .Type -}}
 			{{ .Name }} []{{ arrayElem .Type | goType }}

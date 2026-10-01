@@ -1,0 +1,24 @@
+// Code generated; DO NOT EDIT.
+{{ goDoc .Copyright "" }}
+
+package {{ .PackageName }}
+
+type Flags uint64
+{{ range .Bitflags }}
+{{ goDoc .Doc "" -}}
+{{ $bitFlagName := pascalCase .Name -}}
+type {{ $bitFlagName }} Flags
+
+const ({{ range $index, $entry := .Entries }}{{ if $entry }}
+	{{ goDoc $entry.Doc "\t" -}}
+	{{ $bitFlagName }}{{ pascalCase $entry.Name }} {{ $bitFlagName }} = {{ if $entry.Value -}}
+		{{ $entry.Value | toGoLiteral }}
+	{{- else if $entry.ValueCombination -}}
+		{{ range $index, $comb := $entry.ValueCombination -}}
+			{{ if $index }} | {{ end }}{{ $bitFlagName }}{{ pascalCase $comb }}
+		{{- end }}
+	{{- else -}}
+		{{ $index | bitFlagValue }}
+	{{- end }}
+{{ end }}{{ end }})
+{{ end }}

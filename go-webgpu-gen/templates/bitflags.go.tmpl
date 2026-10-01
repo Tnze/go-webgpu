@@ -1,25 +1,16 @@
 // Code generated; DO NOT EDIT.
 {{ goDoc .Copyright "" }}
-//go:build cgo
+package {{ .PackageName }}
 
-package {{ .Name }}
-
-type Flags uint64
+import {{ $importPath := .ImportPath }}{{ printf "%q" (printf "%s/sys" $importPath) }}
 {{ range .Bitflags }}
 {{ goDoc .Doc "" -}}
-{{ $bitFlagName := .Name | pascalCase -}}
-type {{ $bitFlagName }} Flags
+{{ $bitFlagName := pascalCase .Name -}}
+type {{ $bitFlagName }} = sys.{{ $bitFlagName }}
 
-var ({{ range $index, $entry := .Entries }}{{ if $entry }}
-	{{ goDoc $entry.Doc "\t" -}}
-	{{ $bitFlagName }}{{ $entry.Name | pascalCase }} {{ $bitFlagName }} = {{ if $entry.Value -}}
-		{{ $entry.Value | toGoLiteral }}
-	{{- else if $entry.ValueCombination -}}
-		{{ range $index, $comb := $entry.ValueCombination -}}
-			{{ if $index }} | {{ end }}{{ $bitFlagName }}{{ $comb | pascalCase }}
-		{{- end }}
-	{{- else -}}
-		{{ $index | bitFlagValue }}
-	{{- end }}
-{{ end }}{{ end }})
+const ({{ range $index, $entry := .Entries }}{{ if $entry }}
+	{{ goDoc $entry.Doc "\t" }}{{ $varientName := printf "%s%s" $bitFlagName (pascalCase $entry.Name) -}}
+	{{ $varientName }} {{ $bitFlagName }} = sys.{{ $varientName }}
+{{- end }}{{ end }}
+)
 {{ end }}

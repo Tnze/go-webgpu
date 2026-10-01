@@ -1,25 +1,23 @@
 // Code generated; DO NOT EDIT.
 {{ goDoc .Copyright "" }}
-package {{ .Name }}
+package {{ .PackageName }}
 
-import (
-	"structs"
-	"unsafe"
-)
+import "unsafe"
 {{ range .Structs }}{{ $structName := pascalCase .Name}}
 {{ goDoc .Doc "" -}}
 type {{ $structName }} struct {
-	_ structs.HostLayout
-{{ range .Members }}{{ $fieldName := pascalCase .Name}}
+	{{- range .Members }}{{ $fieldName := pascalCase .Name }}
+	{{ goDoc .Doc "\t" -}}
 	{{ if arrayElem .Type -}}
-	// Array count for {{ $fieldName }}
-	{{ $fieldName }}Count uint
-
-	{{ goDoc .Doc "\t" -}}
-	{{ $fieldName }} *{{ arrayElem .Type | goType }}
+	{{ $fieldName }} []{{ arrayElem .Type | goType }}
+	{{- else -}}{{ $fieldType := goType .Type -}}
+	{{ $fieldName }} {{ if .Pointer }}*{{ end }}
+	{{- if eq $fieldType "StringView" -}}
+		string
 	{{- else -}}
-	{{ goDoc .Doc "\t" -}}
-	{{ $fieldName }} {{ .Type | goType }}
+		{{ goType .Type }}
 	{{- end }}
-{{ end }}}
+	{{- end }}
+	{{- end }}
+}
 {{ end }}

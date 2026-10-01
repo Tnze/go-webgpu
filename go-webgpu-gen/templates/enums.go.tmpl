@@ -1,13 +1,17 @@
 // Code generated; DO NOT EDIT.
 {{ goDoc .Copyright "" }}
-package {{ .Name }}
+package {{ .PackageName }}
+
+import {{ $importPath := .ImportPath }}{{ printf "%q" (printf "%s/sys" $importPath) }}
 {{ range .Enums }}
 {{ goDoc .Doc "" -}}
-{{ $enumName := .Name | pascalCase -}}
-type {{ $enumName }} int32 {{- /* WebGPU enum is always 32-bit */}}
+{{ $enumName := pascalCase .Name -}}
+type {{ $enumName }} = sys.{{ $enumName }}
 
-var ({{ range $index, $entry := .Entries }}{{ if $entry }}
+const ({{ range $index, $entry := .Entries }}{{ if $entry }}
 	{{ goDoc $entry.Doc "\t" -}}
-	{{ $enumName }}{{ $entry.Name | pascalCase }} {{ $enumName }} = {{ if $entry.Value }}{{ $entry.Value | toGoLiteral }}{{ else }}{{ $index | printf "0x%.8X"}}{{ end }}
-{{ end }}{{ end }})
+	{{ $varientName := printf "%s%s" $enumName (pascalCase $entry.Name) -}}
+	{{ $varientName }} {{ $enumName }} = sys.{{ $varientName }}
+{{- end }}{{ end }}
+)
 {{ end }}

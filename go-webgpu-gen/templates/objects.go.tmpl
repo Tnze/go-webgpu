@@ -1,9 +1,131 @@
 // Code generated; DO NOT EDIT.
 {{ goDoc .Copyright "" }}
-package {{ .Name }}
+package {{ .PackageName }}
 
-import "unsafe"
+import (
+	"unsafe"
+
+	{{ $importPath := .ImportPath }}{{ printf "%q" (printf "%s/sys" $importPath) }}
+)
 {{ range .Objects }}
 {{ goDoc .Doc "" -}}
-{{ $object := . }}type {{ .Name | pascalCase }} unsafe.Pointer
-{{ end }}
+{{ $object := . }}type {{ pascalCase .Name }} struct {
+	inner sys.{{ pascalCase .Name }}
+}
+{{ range .Methods }}{{ $methodReceiver := slice $object.Name 0 1 }}
+func ({{ $methodReceiver }} *{{ pascalCase $object.Name }}) {{ pascalCase .Name }}(
+	{{- range $index, $arg := .Args -}}
+		{{ if ne $index 0 }}, {{ end }}
+		{{- if arrayElem .Type -}}
+			{{ .Name }} []{{ arrayElem .Type | goType }}
+		{{- else -}}
+			{{ .Name }} {{ if and .Pointer (.Type | goType | ne "unsafe.Pointer") }}*{{ end }}
+			{{- $argType := goType .Type }}
+			{{- if eq $argType "StringView" -}}
+				string
+			{{- else -}}
+				{{ $argType }}
+			{{- end }}
+		{{- end }}
+	{{- end -}}
+) {{ if .Returns }}{{ .Returns.Type | goType }} {{ end }}{
+	{{- range $arg := .Args }}
+	{{- /* Struct preprocess */ -}}
+	{{ if hasPrefix $arg.Type "struct." }}
+	_{{ $arg.Name }} := sys.Default{{ goType $arg.Type }}()
+	{{- range (getDef $arg.Type).Members }}{{ $fieldName := printf "%s.%s" $arg.Name (pascalCase .Name)}}
+	{{- if eq .Type "out_string" }}{{ continue }}{{ end }}
+	{{- $arrayElem := arrayElem .Type }}{{ if $arrayElem }}
+	if {{ $arg.Name }} != nil {
+		{{ $targetArray := $fieldName -}}
+		{{ if hasPrefix $arrayElem "struct." -}}
+		{{ $targetArray = camelCase .Name -}}
+		{{ $targetArray }} := make([]sys.{{ goType $arrayElem }}, len({{ $fieldName }}))
+		for i := range {{ $targetArray }} {
+			dst := &{{ $targetArray }}[i]
+			src := &{{ $fieldName }}[i]
+			*dst = sys.Default{{ goType $arrayElem }}()
+			{{- range (getDef $arrayElem).Members -}}
+			{{ if hasPrefix .Type "object." }}
+			dst.{{ pascalCase .Name }} = src.{{ pascalCase .Name }}.inner
+			{{- else if hasPrefix .Type "struct." -}}{{ $target := pascalCase .Name }}
+			{{- range (getDef .Type).Members }}
+			dst.{{ $target }}.{{ pascalCase .Name }} = src.{{ $target }}.{{ pascalCase .Name }}
+			{{- end }}
+			{{- else }}
+			dst.{{ pascalCase .Name }} = src.{{ pascalCase .Name }}
+			{{- end }}
+			{{- end }}
+		}
+		{{- else if hasPrefix $arrayElem "object." -}}
+		{{ $targetArray = printf "_%s" .Name }}
+		{{ $targetArray }} := make([]sys.{{ goType $arrayElem }}, len({{ $fieldName }}))
+		for i := range {{ $targetArray }} {
+			{{ $targetArray }}[i] = {{ $fieldName }}[i].inner
+		}
+		{{- end }}
+		_{{ $fieldName }}Count = uint(len({{ $targetArray }}))
+		_{{ $fieldName }} = &{{ $targetArray }}[0] // {{ .Type }}
+	}
+	{{- else if hasPrefix .Type "object." }}
+	_{{ $fieldName }} = {{ $fieldName }}.inner // {{ .Type }}
+	{{- else if eq .Type "string_with_default_empty" }}
+	_{{ $fieldName }}.Length = uint(len({{ $fieldName }}))
+	_{{ $fieldName }}.Data = unsafe.StringData({{ $fieldName }}) // {{ .Type }}
+	{{- else -}}
+	{{ if hasPrefix .Type "struct." }}
+	{{ $tmp := printf "_%s%s" $arg.Name (pascalCase .Name) -}}
+	{{ $tmp }} := sys.Default{{ goType .Type }}()
+	_{{ $fieldName }} = {{ if .Pointer }}&{{ end }}{{ $tmp }} // {{ .Type }}
+	{{- else }}
+	_{{ $fieldName }} = {{ $fieldName }} // {{ .Type }}
+	{{- end }}
+	{{- end }}
+	{{- end }}
+	{{ end }}
+
+	{{- /* Object array preprocess */ -}}
+	{{ $arrayElem := arrayElem .Type }}{{ if $arrayElem }}{{ if hasPrefix $arrayElem "object." }}
+	_{{ .Name }} := make([]sys.{{ goType $arrayElem }}, len({{ .Name }}))
+	for i := range {{ .Name }} {
+		_{{ .Name }}[i] = {{ .Name }}[i].inner
+	}
+	{{- end }}{{ end }}
+	{{- end }}
+	{{ if .Returns }}ret := {{ end -}}
+	sys.{{ pascalCase $object.Name }}{{ pascalCase .Name }}(
+		{{ $methodReceiver }}.inner,{{ range .Args }}
+		{{ $arrayElem := arrayElem .Type -}}
+		{{ if and $arrayElem (hasPrefix $arrayElem "object.") -}}
+			_{{ .Name }},
+		{{- else if hasPrefix .Type "object." -}}
+			{{ .Name }}.inner,
+		{{- else if hasPrefix .Type "struct." -}}
+			&_{{ .Name }},
+		{{- else if eq .Type "string_with_default_empty" -}}
+		sys.StringView {
+			Length: uint(len({{ .Name }})),
+			Data:   unsafe.StringData({{ .Name }}),
+		},
+		{{- else -}}
+		{{ .Name }},
+		{{- end }}
+		{{- end }}
+	)
+	{{- /* Struct postprocess */ -}}
+	{{- range .Args }}{{ if eq .Pointer "mutable" }}
+	/* TODO */
+	{{ end }}{{ end -}}
+	{{ if .Returns }}
+	return {{ if hasPrefix .Returns.Type "object." -}}
+		{{ goType .Returns.Type }}{ inner: ret }
+	{{- else if hasPrefix .Returns.Type "struct." -}}
+		{{ goType .Returns.Type }}{
+		{{- range (getDef .Returns.Type).Members }}
+		{{ pascalCase .Name }}: ret.{{ pascalCase .Name }},
+		{{- end }}
+	}
+	{{- else }}ret{{ end }}
+	{{- end }}
+}
+{{ end }}{{ end }}

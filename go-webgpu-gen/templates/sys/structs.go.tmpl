@@ -1,0 +1,25 @@
+// Code generated; DO NOT EDIT.
+{{ goDoc .Copyright "" }}
+package {{ .PackageName }}
+
+import (
+	"structs"
+	"unsafe"
+)
+{{ range .Structs }}{{ $structName := pascalCase .Name}}
+{{ goDoc .Doc "" -}}
+type {{ $structName }} struct {
+	_ structs.HostLayout
+{{- range .Members }}{{ $fieldName := pascalCase .Name -}}
+	{{ if arrayElem .Type }}
+	// Array count for {{ $fieldName }}
+	{{ $fieldName }}Count uint
+	{{ goDoc .Doc "\t" -}}
+	{{ $fieldName }} *{{ arrayElem .Type | goType }}
+	{{- else }}
+	{{ goDoc .Doc "\t" -}}
+	{{ $fieldName }} {{ if .Pointer }}*{{ end }}{{ goType .Type }}
+	{{- end }}
+{{- end }}
+}
+{{ end }}

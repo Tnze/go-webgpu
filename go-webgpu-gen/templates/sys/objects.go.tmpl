@@ -1,0 +1,9 @@
+// Code generated; DO NOT EDIT.
+{{ goDoc .Copyright "" }}
+package {{ .PackageName }}
+
+import "unsafe"
+{{ range .Objects }}
+{{ goDoc .Doc "" -}}
+{{ $object := . }}type {{ pascalCase .Name }} unsafe.Pointer
+{{ end }}

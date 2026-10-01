@@ -1,0 +1,13 @@
+// Code generated; DO NOT EDIT.
+{{ goDoc .Copyright "" }}
+package {{ .PackageName }}
+{{ range .Enums }}
+{{ goDoc .Doc "" -}}
+{{ $enumName := .Name | pascalCase -}}
+type {{ $enumName }} int32 {{- /* WebGPU enum is always 32-bit */}}
+
+const ({{ range $index, $entry := .Entries }}{{ if $entry }}
+	{{ goDoc $entry.Doc "\t" -}}
+	{{ $enumName }}{{ $entry.Name | pascalCase }} {{ $enumName }} = {{ if $entry.Value }}{{ $entry.Value | toGoLiteral }}{{ else }}{{ $index | printf "0x%.8X"}}{{ end }}
+{{ end }}{{ end }})
+{{ end }}

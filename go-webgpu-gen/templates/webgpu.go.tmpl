@@ -1,0 +1,12 @@
+// Code generated; DO NOT EDIT.
+{{ goDoc .Copyright "" }}
+package {{ .PackageName }}
+
+import {{ $importPath := .ImportPath }}{{ printf "%q" (printf "%s/sys" $importPath) }}
+
+type Bool = sys.Bool
+
+const (
+	True Bool  = sys.True
+	False Bool = sys.False
+)

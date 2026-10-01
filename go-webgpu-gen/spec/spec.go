@@ -1,6 +1,9 @@
 package spec
 
 type Spec struct {
+	PackageName string `yaml:"-"`
+	ImportPath  string `yaml:"-"`
+
 	Copyright  string `yaml:"copyright"`
 	Name       string `yaml:"name"`
 	Doc        string `yaml:"doc"`
