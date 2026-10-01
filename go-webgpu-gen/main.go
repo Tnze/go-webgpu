@@ -32,7 +32,7 @@ func main() {
 
 	var data spec.Spec
 
-	tmplFuncs["getDef"] = func(typeName string) any {
+	getDef := func(typeName string) *spec.Struct {
 		i := strings.IndexByte(typeName, '.')
 		if i == -1 {
 			return nil
@@ -49,6 +49,27 @@ func main() {
 		}
 		return nil
 	}
+	var isPureData func(input *spec.Struct) bool
+	isPureData = func(input *spec.Struct) bool {
+		for _, field := range input.Members {
+			if strings.HasPrefix(field.Type, "array<") ||
+				strings.HasPrefix(field.Type, "object.") {
+				return false
+			}
+			if strings.HasPrefix(field.Type, "struct.") {
+				if !isPureData(getDef(field.Type)) {
+					return false
+				}
+			}
+			switch field.Type {
+			case "nullable_string", "string_with_default_empty", "out_string":
+				return false
+			}
+		}
+		return true
+	}
+	tmplFuncs["getDef"] = getDef
+	tmplFuncs["isPureData"] = isPureData
 
 	// Parse templates
 	tempSys := template.Must(template.

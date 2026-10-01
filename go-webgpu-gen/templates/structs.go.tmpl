@@ -2,9 +2,12 @@
 {{ goDoc .Copyright "" }}
 package {{ .PackageName }}
 
-import "unsafe"
+import {{ $importPath := .ImportPath }}{{ printf "%q" (printf "%s/sys" $importPath) }}
 {{ range .Structs }}{{ $structName := pascalCase .Name}}
 {{ goDoc .Doc "" -}}
+{{ if isPureData . -}}
+type {{ $structName }} = sys.{{ $structName }}
+{{ else -}}
 type {{ $structName }} struct {
 	{{- range .Members }}{{ $fieldName := pascalCase .Name }}
 	{{ goDoc .Doc "\t" -}}
@@ -20,4 +23,4 @@ type {{ $structName }} struct {
 	{{- end }}
 	{{- end }}
 }
-{{ end }}
+{{ end }}{{ end }}

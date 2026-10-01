@@ -1,0 +1,69 @@
+// Code generated; DO NOT EDIT.
+{{ goDoc .Copyright "" }}
+package {{ .PackageName }}
+
+import (
+	"unsafe"
+	{{ $importPath := .ImportPath }}{{ printf "%q" (printf "%s/sys" $importPath) }}
+)
+{{ range .Structs }}{{ $structName := pascalCase .Name}}
+{{- if isPureData . }}{{ continue }}{{ end -}}
+{{ $r := slice .Name 0 1 }}
+func ({{ $r }} *{{ $structName }}) unwrap() (out sys.{{ $structName }}) {
+	{{- range .Members }}{{ $fieldName := pascalCase .Name }}
+	{{- /* string */}}
+	{{ if eq (goType .Type) "StringView" -}}
+	out.{{ $fieldName }} = sys.StringView{
+		Length: uint(len({{ $r }}.{{ $fieldName }})),
+		Data:   unsafe.StringData({{ $r }}.{{ $fieldName }}),
+	}
+	{{- /* struct */}}
+	{{- else if hasPrefix .Type "struct." -}}{{ $isPure := getDef .Type | isPureData }}
+	{{- if .Pointer -}}
+	if {{ $r }}.{{ $fieldName }} != nil {
+		out.{{ $fieldName }} = {{ if $isPure }}{{ $r }}.{{ $fieldName }}
+		{{- else }}new({{ $r }}.{{ $fieldName }}.unwrap()){{ end }}
+	}
+	{{- else -}}
+	out.{{ $fieldName }} = {{ $r }}.{{ $fieldName }}{{ if not $isPure }}.unwrap(){{ end }}
+	{{- end }}
+	{{- /* object */}}
+	{{- else if hasPrefix .Type "object." -}}
+	out.{{ $fieldName }} = {{ $r }}.{{ $fieldName }}.inner
+	{{- else -}}
+	{{ $arrayElem := arrayElem .Type -}}
+	{{ if $arrayElem -}}
+	{{- /* array */ -}}
+	{{- $targetArray := printf "%s.%s" $r $fieldName -}}
+	{{- /* array of structs */ -}}
+	{{ if hasPrefix $arrayElem "struct." -}}
+	out.{{ $fieldName }}Count = uint(len({{ $r }}.{{ $fieldName }}))
+	{{ if getDef $arrayElem | isPureData | not -}}
+	{{ $targetArray = camelCase .Name -}}
+	{{ $targetArray }} := make([]sys.{{ goType $arrayElem }}, len({{ $r }}.{{ $fieldName }}))
+	for i := range {{ $targetArray }} {
+		{{ $targetArray }}[i] = {{ $r }}.{{ $fieldName }}[i].unwrap()
+	}
+	{{- end }}
+	{{- /* array of objects*/ -}}
+	{{- else if hasPrefix $arrayElem "object." -}}
+	{{ $targetArray = camelCase .Name -}}
+	{{ $targetArray }} := make([]sys.{{ goType $arrayElem }}, len({{ $r }}.{{ $fieldName }}))
+	for i := range {{ $targetArray }} {
+		{{ $targetArray }}[i] = {{ $r }}.{{ $fieldName }}[i].inner
+	}
+	{{- end }}
+	out.{{ $fieldName }} = &{{ $targetArray }}[0]
+	{{- else -}}
+	{{- /* other */ -}}
+	out.{{ $fieldName }} = {{ $r }}.{{ $fieldName }} // {{ .Type }}
+	{{- end }}
+	{{- end }}
+	{{- end }}
+	return
+}
+
+func ({{ $r }} *{{ $structName }}) wrap(in *sys.{{ $structName }}) {
+	panic("TODO")
+}
+{{ end }}

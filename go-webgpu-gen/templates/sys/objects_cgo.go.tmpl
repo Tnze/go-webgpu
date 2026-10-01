@@ -39,8 +39,8 @@ func {{ pascalCase $object.Name }}{{ pascalCase .Name }}(
 			(*C.{{ $conv }})(unsafe.Pointer({{ .Name }}))
 		{{- else if eq $conv "WGPUStringView" -}}
 			C.WGPUStringView{
-			data:   (*C.char)(unsafe.Pointer({{ .Name }}.data)),
-			length: C.size_t({{ .Name }}.length),
+			data:   (*C.char)(unsafe.Pointer({{ .Name }}.Data)),
+			length: C.size_t({{ .Name }}.Length),
 		}
 		{{- else -}}
 			C.{{ $conv }}({{ .Name }})
