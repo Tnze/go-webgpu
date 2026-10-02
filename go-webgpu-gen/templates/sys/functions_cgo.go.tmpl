@@ -1,0 +1,34 @@
+// Code generated; DO NOT EDIT.
+{{ goDoc .Copyright "" }}
+//go:build cgo
+
+package {{ .PackageName }}
+
+// #cgo CFLAGS: -I${SRCDIR}/../../webgpu-headers
+// #include <webgpu.h>
+import "C"
+
+import "unsafe"
+{{ range .Functions }}
+{{ goDoc .Doc "" -}}
+func {{ pascalCase .Name }}({{ range $index, $arg := .Args -}}
+{{ if ne $index 0 }}, {{ end -}}
+{{ camelCase .Name }} {{ if .Pointer }}*{{ end }}{{ goType .Type -}}
+{{ end }}) {{ if .Returns }}{{ goType .Returns.Type }} {{ end -}} {
+	{{ if .Returns -}}
+	return {{ goType .Returns.Type }}(
+	{{- end -}}
+	C.wgpu{{ pascalCase .Name }}(
+	{{- range .Args }}{{ $conv := cType .Type }}
+		{{ if .Pointer -}}
+			(*C.{{ $conv }})(unsafe.Pointer({{ .Name }}))
+		{{- else -}}
+			C.{{ $conv }}({{ .Name }})
+		{{- end }},
+	{{- end }}
+	)
+	{{- if .Returns -}}
+	)
+	{{- end }}
+}
+{{ end }}
