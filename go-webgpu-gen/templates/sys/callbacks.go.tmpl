@@ -1,13 +1,18 @@
 // Code generated; DO NOT EDIT.
-// +build cgo
 {{ goDoc .Copyright "" }}
+//go:build cgo
+
 package {{ .PackageName }}
 
-import "unsafe"
+import (
+	"structs"
+	"unsafe"
+)
 {{ range .Callbacks }}
 {{ goDoc .Doc "" -}}
 type {{ .Name | pascalCase }}CallbackInfo struct {
-	NextInChain          ChainedStruct{{ if eq .Style "callback_mode" }}
+	_                    structs.HostLayout
+	NextInChain          *ChainedStruct{{ if eq .Style "callback_mode" }}
 	Mode                 CallbackMode{{ end }}
 	Callback             unsafe.Pointer
 	Userdata1, Userdata2 unsafe.Pointer

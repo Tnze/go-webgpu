@@ -1,0 +1,48 @@
+// Code generated; DO NOT EDIT.
+{{ goDoc .Copyright "" }}
+//go:build cgo
+
+package {{ .PackageName }}
+
+// #cgo CFLAGS: -I${SRCDIR}/../webgpu-headers
+// #include <webgpu.h>
+//{{ range .Callbacks }}{{ $callbackName := pascalCase .Name }}
+// void gowebgpu{{ $callbackName }}Callback(
+	{{- range $index, $arg := .Args -}}
+	{{ if ne $index 0 }}, {{ end }}
+	{{- cType .Type }}{{ if .Pointer }}*{{ end }}
+	{{- end }}{{ if .Args }}, {{ end }}void* userdata1, void* userdata2);
+{{- end }}
+import "C"
+
+import (
+	"unsafe"
+
+	{{ $importPath := .ImportPath }}{{ printf "%q" (printf "%s/sys" $importPath) }}
+)
+{{ range .Callbacks }}{{ $callbackName := pascalCase .Name }}
+{{- if ne .Style "callback_mode" }}{{ continue }}{{ end }}
+{{- goDoc .Doc "" }}
+type {{ $callbackName }}Callback func({{ range $index, $arg := .Args }}{{ $argType := goType .Type -}}
+{{ if ne $index 0 }}, {{ end -}}
+{{ goIdent .Name .Type }} {{ if eq $argType "StringView" }}string{{ else }}{{ $argType }}{{ end }}
+{{- end }})
+
+func New{{ $callbackName }}Callback(callback  {{ $callbackName }}Callback,userdata2 unsafe.Pointer) sys.{{ $callbackName }}CallbackInfo {
+	return sys.{{ $callbackName }}CallbackInfo{
+		Mode: sys.CallbackModeAllowProcessEvents,
+		Callback: C.gowebgpu{{ $callbackName }}Callback,
+		// Userdata1: TODO,
+		Userdata2: userdata2,
+	}
+}
+
+//export gowebgpu{{ $callbackName }}Callback
+func gowebgpu{{ $callbackName }}Callback(
+{{- range $index, $arg := .Args }}
+{{- if ne $index 0 }}, {{ end -}}
+{{ goIdent .Name .Type }} {{ if .Pointer }}*{{ end }}C.{{ cType .Type -}}
+{{- end }}, userdata1, userdata2 unsafe.Pointer) {
+
+}
+{{ end }}

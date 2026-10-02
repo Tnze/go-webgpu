@@ -19,7 +19,11 @@ func {{ pascalCase $object.Name }}{{ pascalCase .Name }}(
 		{{- else -}}
 			{{ .Name }} {{ if and .Pointer (.Type | goType | ne "unsafe.Pointer") }}*{{ end }}{{ .Type | goType }}
 		{{- end }}
-	{{- end }}) {{ if .Returns }}{{ .Returns.Type | goType }} {{ end }}{
+	{{- end -}}
+	{{- if .Callback -}}
+		, callback {{ goType .Callback }}
+	{{- end -}}
+) {{ if .Returns }}{{ .Returns.Type | goType }} {{ end }}{
 	{{ if .Returns -}}
 		{{ if eq .Returns.Type "struct.future" -}}
 		return Future{ Id: uint64(
@@ -47,8 +51,12 @@ func {{ pascalCase $object.Name }}{{ pascalCase .Name }}(
 		{{- end }},
 	{{- end }}
 	{{- if and .Callback (hasPrefix .Callback "callback.") }}
-		C.WGPU{{ slice .Callback 9 | pascalCase }}CallbackInfo{
-			// TODO
+		C.{{ cType .Callback }}{
+			nextInChain: (*C.WGPUChainedStruct)(unsafe.Pointer(callback.NextInChain)),
+			mode:        C.WGPUCallbackMode(callback.Mode),
+			callback:    C.WGPU{{ slice .Callback 9 | pascalCase }}Callback(callback.Callback),
+			userdata1:   callback.Userdata1,
+			userdata2:   callback.Userdata2,
 		},
 	{{- end }}
 	)

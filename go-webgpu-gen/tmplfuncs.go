@@ -81,8 +81,22 @@ var tmplFuncs = template.FuncMap{
 		}
 		return ""
 	},
-	"goType":    goType,
-	"cType":     cType,
+	"goType": goType,
+	"cType":  cType,
+	"goIdent": func(name, backupName string) string {
+		switch name {
+		case "break", "default", "func", "interface", "select",
+			"case", "defer", "go", "map", "struct",
+			"chan", "else", "goto", "package", "switch",
+			"const", "fallthrough", "if", "range", "type",
+			"continue", "for", "import", "return", "var":
+			if i := strings.IndexByte(backupName, '.'); i > 0 {
+				backupName = backupName[i+1:]
+			}
+			return camelCase(backupName)
+		}
+		return camelCase(name)
+	},
 	"trimSpace": strings.TrimSpace,
 	"hasPrefix": strings.HasPrefix,
 	"hasSuffix": strings.HasSuffix,
