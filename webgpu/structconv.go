@@ -28,12 +28,12 @@ func (a *AdapterInfo) unwrap() (out sys.AdapterInfo) {
 		Length: uint(len(a.Description)),
 		Data:   unsafe.StringData(a.Description),
 	}
-	out.BackendType = a.BackendType         // enum.backend_type
-	out.AdapterType = a.AdapterType         // enum.adapter_type
-	out.VendorID = a.VendorID               // uint32
-	out.DeviceID = a.DeviceID               // uint32
-	out.SubgroupMinSize = a.SubgroupMinSize // uint32
-	out.SubgroupMaxSize = a.SubgroupMaxSize // uint32
+	out.BackendType = a.BackendType
+	out.AdapterType = a.AdapterType
+	out.VendorID = a.VendorID
+	out.DeviceID = a.DeviceID
+	out.SubgroupMinSize = a.SubgroupMinSize
+	out.SubgroupMaxSize = a.SubgroupMaxSize
 	return
 }
 
@@ -63,10 +63,10 @@ func (b *BindGroupDescriptor) wrap(in *sys.BindGroupDescriptor) {
 
 func (b *BindGroupEntry) unwrap() (out sys.BindGroupEntry) {
 	out.Chain = b.Chain
-	out.Binding = b.Binding // uint32
+	out.Binding = b.Binding
 	out.Buffer = b.Buffer.inner
-	out.Offset = b.Offset // uint64
-	out.Size = b.Size     // uint64
+	out.Offset = b.Offset
+	out.Size = b.Size
 	out.Sampler = b.Sampler.inner
 	out.TextureView = b.TextureView.inner
 	return
@@ -83,7 +83,6 @@ func (b *BindGroupLayoutDescriptor) unwrap() (out sys.BindGroupLayoutDescriptor)
 		Data:   unsafe.StringData(b.Label),
 	}
 	out.EntriesCount = uint(len(b.Entries))
-
 	out.Entries = &b.Entries[0]
 	return
 }
@@ -98,9 +97,9 @@ func (b *BufferDescriptor) unwrap() (out sys.BufferDescriptor) {
 		Length: uint(len(b.Label)),
 		Data:   unsafe.StringData(b.Label),
 	}
-	out.Usage = b.Usage                       // bitflag.buffer_usage
-	out.Size = b.Size                         // uint64
-	out.MappedAtCreation = b.MappedAtCreation // bool
+	out.Usage = b.Usage
+	out.Size = b.Size
+	out.MappedAtCreation = b.MappedAtCreation
 	return
 }
 
@@ -155,11 +154,11 @@ func (c *CompilationMessage) unwrap() (out sys.CompilationMessage) {
 		Length: uint(len(c.Message)),
 		Data:   unsafe.StringData(c.Message),
 	}
-	out.Type = c.Type       // enum.compilation_message_type
-	out.LineNum = c.LineNum // uint64
-	out.LinePos = c.LinePos // uint64
-	out.Offset = c.Offset   // uint64
-	out.Length = c.Length   // uint64
+	out.Type = c.Type
+	out.LineNum = c.LineNum
+	out.LinePos = c.LinePos
+	out.Offset = c.Offset
+	out.Length = c.Length
 	return
 }
 
@@ -224,7 +223,7 @@ func (c *ConstantEntry) unwrap() (out sys.ConstantEntry) {
 		Length: uint(len(c.Key)),
 		Data:   unsafe.StringData(c.Key),
 	}
-	out.Value = c.Value // float64_supertype
+	out.Value = c.Value
 	return
 }
 
@@ -238,14 +237,14 @@ func (d *DeviceDescriptor) unwrap() (out sys.DeviceDescriptor) {
 		Length: uint(len(d.Label)),
 		Data:   unsafe.StringData(d.Label),
 	}
-
+	out.RequiredFeaturesCount = uint(len(d.RequiredFeatures))
 	out.RequiredFeatures = &d.RequiredFeatures[0]
 	if d.RequiredLimits != nil {
 		out.RequiredLimits = d.RequiredLimits
 	}
 	out.DefaultQueue = d.DefaultQueue.unwrap()
-	out.DeviceLostCallbackInfo = d.DeviceLostCallbackInfo           // callback.device_lost
-	out.UncapturedErrorCallbackInfo = d.UncapturedErrorCallbackInfo // callback.uncaptured_error
+	out.DeviceLostCallbackInfo = d.DeviceLostCallbackInfo
+	out.UncapturedErrorCallbackInfo = d.UncapturedErrorCallbackInfo
 	return
 }
 
@@ -277,7 +276,6 @@ func (f *FragmentState) unwrap() (out sys.FragmentState) {
 	}
 	out.Constants = &constants[0]
 	out.TargetsCount = uint(len(f.Targets))
-
 	out.Targets = &f.Targets[0]
 	return
 }
@@ -288,7 +286,7 @@ func (f *FragmentState) wrap(in *sys.FragmentState) {
 
 func (i *InstanceDescriptor) unwrap() (out sys.InstanceDescriptor) {
 	out.Chain = i.Chain
-
+	out.RequiredFeaturesCount = uint(len(i.RequiredFeatures))
 	out.RequiredFeatures = &i.RequiredFeatures[0]
 	if i.RequiredLimits != nil {
 		out.RequiredLimits = i.RequiredLimits
@@ -303,8 +301,8 @@ func (i *InstanceDescriptor) wrap(in *sys.InstanceDescriptor) {
 func (p *PassTimestampWrites) unwrap() (out sys.PassTimestampWrites) {
 	out.Chain = p.Chain
 	out.QuerySet = p.QuerySet.inner
-	out.BeginningOfPassWriteIndex = p.BeginningOfPassWriteIndex // uint32
-	out.EndOfPassWriteIndex = p.EndOfPassWriteIndex             // uint32
+	out.BeginningOfPassWriteIndex = p.BeginningOfPassWriteIndex
+	out.EndOfPassWriteIndex = p.EndOfPassWriteIndex
 	return
 }
 
@@ -318,12 +316,13 @@ func (p *PipelineLayoutDescriptor) unwrap() (out sys.PipelineLayoutDescriptor) {
 		Length: uint(len(p.Label)),
 		Data:   unsafe.StringData(p.Label),
 	}
+	out.BindGroupLayoutsCount = uint(len(p.BindGroupLayouts))
 	bindGroupLayouts := make([]sys.BindGroupLayout, len(p.BindGroupLayouts))
 	for i := range bindGroupLayouts {
 		bindGroupLayouts[i] = p.BindGroupLayouts[i].inner
 	}
 	out.BindGroupLayouts = &bindGroupLayouts[0]
-	out.ImmediateSize = p.ImmediateSize // uint32
+	out.ImmediateSize = p.ImmediateSize
 	return
 }
 
@@ -337,8 +336,8 @@ func (q *QuerySetDescriptor) unwrap() (out sys.QuerySetDescriptor) {
 		Length: uint(len(q.Label)),
 		Data:   unsafe.StringData(q.Label),
 	}
-	out.Type = q.Type   // enum.query_type
-	out.Count = q.Count // uint32
+	out.Type = q.Type
+	out.Count = q.Count
 	return
 }
 
@@ -378,12 +377,12 @@ func (r *RenderBundleEncoderDescriptor) unwrap() (out sys.RenderBundleEncoderDes
 		Length: uint(len(r.Label)),
 		Data:   unsafe.StringData(r.Label),
 	}
-
+	out.ColorFormatsCount = uint(len(r.ColorFormats))
 	out.ColorFormats = &r.ColorFormats[0]
-	out.DepthStencilFormat = r.DepthStencilFormat // enum.texture_format
-	out.SampleCount = r.SampleCount               // uint32
-	out.DepthReadOnly = r.DepthReadOnly           // bool
-	out.StencilReadOnly = r.StencilReadOnly       // bool
+	out.DepthStencilFormat = r.DepthStencilFormat
+	out.SampleCount = r.SampleCount
+	out.DepthReadOnly = r.DepthReadOnly
+	out.StencilReadOnly = r.StencilReadOnly
 	return
 }
 
@@ -394,10 +393,10 @@ func (r *RenderBundleEncoderDescriptor) wrap(in *sys.RenderBundleEncoderDescript
 func (r *RenderPassColorAttachment) unwrap() (out sys.RenderPassColorAttachment) {
 	out.Chain = r.Chain
 	out.View = r.View.inner
-	out.DepthSlice = r.DepthSlice // uint32
+	out.DepthSlice = r.DepthSlice
 	out.ResolveTarget = r.ResolveTarget.inner
-	out.LoadOp = r.LoadOp   // enum.load_op
-	out.StoreOp = r.StoreOp // enum.store_op
+	out.LoadOp = r.LoadOp
+	out.StoreOp = r.StoreOp
 	out.ClearValue = r.ClearValue
 	return
 }
@@ -409,14 +408,14 @@ func (r *RenderPassColorAttachment) wrap(in *sys.RenderPassColorAttachment) {
 func (r *RenderPassDepthStencilAttachment) unwrap() (out sys.RenderPassDepthStencilAttachment) {
 	out.Chain = r.Chain
 	out.View = r.View.inner
-	out.DepthLoadOp = r.DepthLoadOp             // enum.load_op
-	out.DepthStoreOp = r.DepthStoreOp           // enum.store_op
-	out.DepthClearValue = r.DepthClearValue     // nullable_float32
-	out.DepthReadOnly = r.DepthReadOnly         // bool
-	out.StencilLoadOp = r.StencilLoadOp         // enum.load_op
-	out.StencilStoreOp = r.StencilStoreOp       // enum.store_op
-	out.StencilClearValue = r.StencilClearValue // uint32
-	out.StencilReadOnly = r.StencilReadOnly     // bool
+	out.DepthLoadOp = r.DepthLoadOp
+	out.DepthStoreOp = r.DepthStoreOp
+	out.DepthClearValue = r.DepthClearValue
+	out.DepthReadOnly = r.DepthReadOnly
+	out.StencilLoadOp = r.StencilLoadOp
+	out.StencilStoreOp = r.StencilStoreOp
+	out.StencilClearValue = r.StencilClearValue
+	out.StencilReadOnly = r.StencilReadOnly
 	return
 }
 
@@ -475,10 +474,10 @@ func (r *RenderPipelineDescriptor) wrap(in *sys.RenderPipelineDescriptor) {
 
 func (r *RequestAdapterOptions) unwrap() (out sys.RequestAdapterOptions) {
 	out.Chain = r.Chain
-	out.FeatureLevel = r.FeatureLevel                 // enum.feature_level
-	out.PowerPreference = r.PowerPreference           // enum.power_preference
-	out.ForceFallbackAdapter = r.ForceFallbackAdapter // bool
-	out.BackendType = r.BackendType                   // enum.backend_type
+	out.FeatureLevel = r.FeatureLevel
+	out.PowerPreference = r.PowerPreference
+	out.ForceFallbackAdapter = r.ForceFallbackAdapter
+	out.BackendType = r.BackendType
 	out.CompatibleSurface = r.CompatibleSurface.inner
 	return
 }
@@ -493,16 +492,16 @@ func (s *SamplerDescriptor) unwrap() (out sys.SamplerDescriptor) {
 		Length: uint(len(s.Label)),
 		Data:   unsafe.StringData(s.Label),
 	}
-	out.AddressModeU = s.AddressModeU   // enum.address_mode
-	out.AddressModeV = s.AddressModeV   // enum.address_mode
-	out.AddressModeW = s.AddressModeW   // enum.address_mode
-	out.MagFilter = s.MagFilter         // enum.filter_mode
-	out.MinFilter = s.MinFilter         // enum.filter_mode
-	out.MipmapFilter = s.MipmapFilter   // enum.mipmap_filter_mode
-	out.LodMinClamp = s.LodMinClamp     // float32
-	out.LodMaxClamp = s.LodMaxClamp     // float32
-	out.Compare = s.Compare             // enum.compare_function
-	out.MaxAnisotropy = s.MaxAnisotropy // uint16
+	out.AddressModeU = s.AddressModeU
+	out.AddressModeV = s.AddressModeV
+	out.AddressModeW = s.AddressModeW
+	out.MagFilter = s.MagFilter
+	out.MinFilter = s.MinFilter
+	out.MipmapFilter = s.MipmapFilter
+	out.LodMinClamp = s.LodMinClamp
+	out.LodMaxClamp = s.LodMaxClamp
+	out.Compare = s.Compare
+	out.MaxAnisotropy = s.MaxAnisotropy
 	return
 }
 
@@ -538,6 +537,7 @@ func (s *ShaderSourceWGSL) wrap(in *sys.ShaderSourceWGSL) {
 
 func (s *SupportedFeatures) unwrap() (out sys.SupportedFeatures) {
 
+	out.FeaturesCount = uint(len(s.Features))
 	out.Features = &s.Features[0]
 	return
 }
@@ -548,6 +548,7 @@ func (s *SupportedFeatures) wrap(in *sys.SupportedFeatures) {
 
 func (s *SupportedInstanceFeatures) unwrap() (out sys.SupportedInstanceFeatures) {
 
+	out.FeaturesCount = uint(len(s.Features))
 	out.Features = &s.Features[0]
 	return
 }
@@ -558,6 +559,7 @@ func (s *SupportedInstanceFeatures) wrap(in *sys.SupportedInstanceFeatures) {
 
 func (s *SupportedWGSLLanguageFeatures) unwrap() (out sys.SupportedWGSLLanguageFeatures) {
 
+	out.FeaturesCount = uint(len(s.Features))
 	out.Features = &s.Features[0]
 	return
 }
@@ -568,12 +570,12 @@ func (s *SupportedWGSLLanguageFeatures) wrap(in *sys.SupportedWGSLLanguageFeatur
 
 func (s *SurfaceCapabilities) unwrap() (out sys.SurfaceCapabilities) {
 	out.Chain = s.Chain
-	out.Usages = s.Usages // bitflag.texture_usage
-
+	out.Usages = s.Usages
+	out.FormatsCount = uint(len(s.Formats))
 	out.Formats = &s.Formats[0]
-
+	out.PresentModesCount = uint(len(s.PresentModes))
 	out.PresentModes = &s.PresentModes[0]
-
+	out.AlphaModesCount = uint(len(s.AlphaModes))
 	out.AlphaModes = &s.AlphaModes[0]
 	return
 }
@@ -585,14 +587,14 @@ func (s *SurfaceCapabilities) wrap(in *sys.SurfaceCapabilities) {
 func (s *SurfaceConfiguration) unwrap() (out sys.SurfaceConfiguration) {
 	out.Chain = s.Chain
 	out.Device = s.Device.inner
-	out.Format = s.Format // enum.texture_format
-	out.Usage = s.Usage   // bitflag.texture_usage
-	out.Width = s.Width   // uint32
-	out.Height = s.Height // uint32
-
+	out.Format = s.Format
+	out.Usage = s.Usage
+	out.Width = s.Width
+	out.Height = s.Height
+	out.ViewFormatsCount = uint(len(s.ViewFormats))
 	out.ViewFormats = &s.ViewFormats[0]
-	out.AlphaMode = s.AlphaMode     // enum.composite_alpha_mode
-	out.PresentMode = s.PresentMode // enum.present_mode
+	out.AlphaMode = s.AlphaMode
+	out.PresentMode = s.PresentMode
 	return
 }
 
@@ -616,7 +618,7 @@ func (s *SurfaceDescriptor) wrap(in *sys.SurfaceDescriptor) {
 func (s *SurfaceTexture) unwrap() (out sys.SurfaceTexture) {
 	out.Chain = s.Chain
 	out.Texture = s.Texture.inner
-	out.Status = s.Status // enum.surface_get_current_texture_status
+	out.Status = s.Status
 	return
 }
 
@@ -638,9 +640,9 @@ func (t *TexelCopyBufferInfo) wrap(in *sys.TexelCopyBufferInfo) {
 func (t *TexelCopyTextureInfo) unwrap() (out sys.TexelCopyTextureInfo) {
 
 	out.Texture = t.Texture.inner
-	out.MipLevel = t.MipLevel // uint32
+	out.MipLevel = t.MipLevel
 	out.Origin = t.Origin
-	out.Aspect = t.Aspect // enum.texture_aspect
+	out.Aspect = t.Aspect
 	return
 }
 
@@ -654,13 +656,13 @@ func (t *TextureDescriptor) unwrap() (out sys.TextureDescriptor) {
 		Length: uint(len(t.Label)),
 		Data:   unsafe.StringData(t.Label),
 	}
-	out.Usage = t.Usage         // bitflag.texture_usage
-	out.Dimension = t.Dimension // enum.texture_dimension
+	out.Usage = t.Usage
+	out.Dimension = t.Dimension
 	out.Size = t.Size
-	out.Format = t.Format               // enum.texture_format
-	out.MipLevelCount = t.MipLevelCount // uint32
-	out.SampleCount = t.SampleCount     // uint32
-
+	out.Format = t.Format
+	out.MipLevelCount = t.MipLevelCount
+	out.SampleCount = t.SampleCount
+	out.ViewFormatsCount = uint(len(t.ViewFormats))
 	out.ViewFormats = &t.ViewFormats[0]
 	return
 }
@@ -675,14 +677,14 @@ func (t *TextureViewDescriptor) unwrap() (out sys.TextureViewDescriptor) {
 		Length: uint(len(t.Label)),
 		Data:   unsafe.StringData(t.Label),
 	}
-	out.Format = t.Format                   // enum.texture_format
-	out.Dimension = t.Dimension             // enum.texture_view_dimension
-	out.BaseMipLevel = t.BaseMipLevel       // uint32
-	out.MipLevelCount = t.MipLevelCount     // uint32
-	out.BaseArrayLayer = t.BaseArrayLayer   // uint32
-	out.ArrayLayerCount = t.ArrayLayerCount // uint32
-	out.Aspect = t.Aspect                   // enum.texture_aspect
-	out.Usage = t.Usage                     // bitflag.texture_usage
+	out.Format = t.Format
+	out.Dimension = t.Dimension
+	out.BaseMipLevel = t.BaseMipLevel
+	out.MipLevelCount = t.MipLevelCount
+	out.BaseArrayLayer = t.BaseArrayLayer
+	out.ArrayLayerCount = t.ArrayLayerCount
+	out.Aspect = t.Aspect
+	out.Usage = t.Usage
 	return
 }
 
@@ -692,10 +694,9 @@ func (t *TextureViewDescriptor) wrap(in *sys.TextureViewDescriptor) {
 
 func (v *VertexBufferLayout) unwrap() (out sys.VertexBufferLayout) {
 	out.Chain = v.Chain
-	out.StepMode = v.StepMode       // enum.vertex_step_mode
-	out.ArrayStride = v.ArrayStride // uint64
+	out.StepMode = v.StepMode
+	out.ArrayStride = v.ArrayStride
 	out.AttributesCount = uint(len(v.Attributes))
-
 	out.Attributes = &v.Attributes[0]
 	return
 }

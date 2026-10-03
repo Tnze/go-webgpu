@@ -12,8 +12,8 @@ type {{ $structName }} struct {
 	{{ if eq .Type "extensible" }}Chain *sys.ChainedStruct{{ end }}
 	{{- range .Members }}{{ $fieldName := pascalCase .Name }}
 	{{ goDoc .Doc "\t" -}}
-	{{ if arrayElem .Type -}}
-	{{ $fieldName }} []{{ arrayElem .Type | goType }}
+	{{ $arrayElem := arrayElem .Type }}{{ if $arrayElem -}}
+	{{ $fieldName }} []{{ if hasPrefix $arrayElem "object." }}*{{ end }}{{ arrayElem .Type | goType }}
 	{{- else -}}{{ $fieldType := goType .Type -}}
 	{{ $fieldName }} {{ if or .Pointer (hasPrefix .Type "object.") }}*{{ end }}
 	{{- if eq $fieldType "StringView" -}}

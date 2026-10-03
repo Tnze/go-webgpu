@@ -305,7 +305,7 @@ func (p *PassTimestampWrites) Extend(e Extension) *PassTimestampWrites {
 type PipelineLayoutDescriptor struct {
 	Chain            *sys.ChainedStruct
 	Label            string
-	BindGroupLayouts []BindGroupLayout
+	BindGroupLayouts []*BindGroupLayout
 	ImmediateSize    uint32
 }
 

@@ -37,15 +37,15 @@ func ({{ $r }} *{{ $structName }}) unwrap() (out sys.{{ $structName }}) {
 	{{- /* array */ -}}
 	{{- $targetArray := printf "%s.%s" $r $fieldName -}}
 	{{- /* array of structs */ -}}
-	{{ if hasPrefix $arrayElem "struct." -}}
 	out.{{ $fieldName }}Count = uint(len({{ $r }}.{{ $fieldName }}))
+	{{ if hasPrefix $arrayElem "struct." -}}
 	{{ if $.GetDef $arrayElem | $.IsPureData | not -}}
 	{{ $targetArray = camelCase .Name -}}
 	{{ $targetArray }} := make([]sys.{{ goType $arrayElem }}, len({{ $r }}.{{ $fieldName }}))
 	for i := range {{ $targetArray }} {
 		{{ $targetArray }}[i] = {{ $r }}.{{ $fieldName }}[i].unwrap()
 	}
-	{{- end }}
+	{{ end }}
 	{{- /* array of objects*/ -}}
 	{{- else if hasPrefix $arrayElem "object." -}}
 	{{ $targetArray = camelCase .Name -}}
@@ -53,11 +53,11 @@ func ({{ $r }} *{{ $structName }}) unwrap() (out sys.{{ $structName }}) {
 	for i := range {{ $targetArray }} {
 		{{ $targetArray }}[i] = {{ $r }}.{{ $fieldName }}[i].inner
 	}
-	{{- end }}
+	{{ end -}}
 	out.{{ $fieldName }} = &{{ $targetArray }}[0]
 	{{- else -}}
 	{{- /* other */ -}}
-	out.{{ $fieldName }} = {{ $r }}.{{ $fieldName }} // {{ .Type }}
+	out.{{ $fieldName }} = {{ $r }}.{{ $fieldName }}
 	{{- end }}
 	{{- end }}
 	{{- end }}
