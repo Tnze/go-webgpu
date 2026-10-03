@@ -34,7 +34,7 @@ func gowebgpu{{ $callbackName }}Callback(
 		{{ $argName }}: {{ if hasPrefix .Type "struct." -}}
 			({{ if .Pointer }}*{{ end }}{{ goType .Type }})(unsafe.Pointer({{ $argName }}))
 		{{- else if hasPrefix .Type "object." -}}
-			{{ goType .Type }}{ inner: sys.{{ goType .Type }}({{ $argName }}) }
+			new({{ goType .Type }}{ inner: sys.{{ goType .Type }}({{ $argName }}) }).owned()
 		{{- else if eq .Type "out_string" -}}
 			C.GoStringN({{ $argName }}.data, C.int({{ $argName }}.length))
 		{{- else -}}
@@ -52,8 +52,8 @@ type {{ $callbackName }}Callback struct {
 {{ $r := slice $callbackName 0 1 }}
 func ({{ $r }} *{{ $callbackName }}Callback) info() sys.{{ pascalCase .Name }}CallbackInfo {
 	return sys.{{ pascalCase .Name }}CallbackInfo{
-		Mode:     CallbackModeAllowProcessEvents,
-		Callback: C.gowebgpu{{ pascalCase .Name }}Callback,
+		Mode:      CallbackModeAllowProcessEvents,
+		Callback:  C.gowebgpu{{ pascalCase .Name }}Callback,
 		Userdata1: unsafe.Pointer({{ $r }}),
 	}
 }

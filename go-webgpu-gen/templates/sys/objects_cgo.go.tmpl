@@ -9,10 +9,13 @@ package {{ .PackageName }}
 import "C"
 
 import "unsafe"
-{{ range .Objects }}{{ $object := . }}{{ range .Methods }}
+{{ range .Objects -}}
+{{ $object := . -}}
+{{ $objectName := pascalCase .Name -}}
+{{ range .Methods }}
 {{ goDoc .Doc "" -}}
-func {{ pascalCase $object.Name }}{{ pascalCase .Name }}(
-	{{- camelCase $object.Name }} {{ pascalCase $object.Name }}
+func {{ $objectName }}{{ pascalCase .Name }}(
+	{{- camelCase $object.Name }} {{ $objectName }}
 	{{- range .Args -}}
 		, {{ if arrayElem .Type -}}
 			{{ .Name }} []{{ arrayElem .Type | goType }}
@@ -31,8 +34,8 @@ func {{ pascalCase $object.Name }}{{ pascalCase .Name }}(
 		return {{ .Returns.Type | goType }}(
 		{{- end }}
 	{{- end -}}
-	C.wgpu{{ $object.Name | pascalCase }}{{ .Name | pascalCase }}(
-		C.WGPU{{ $object.Name | pascalCase }}({{ $object.Name | camelCase }}),
+	C.wgpu{{ $objectName }}{{ .Name | pascalCase }}(
+		C.WGPU{{ $objectName }}({{ camelCase $object.Name }}),
 	{{- range .Args }}{{ $conv := cType .Type }}
 		{{ if arrayElem .Type -}}
 			C.size_t(len({{ .Name }})),
@@ -68,4 +71,13 @@ func {{ pascalCase $object.Name }}{{ pascalCase .Name }}(
 		{{- end }}
 	{{- end }}
 }
-{{ end }}{{ end }}
+{{ end }}
+{{- $r := camelCase $object.Name }}
+func {{ $objectName }}AddRef({{ $r }} {{ $objectName }}) {
+	C.wgpu{{ $objectName }}AddRef(C.WGPU{{ $objectName }}({{ $r }}))
+}
+
+func {{ $objectName }}Release({{- $r }} {{ $objectName }}) {
+	C.wgpu{{ $objectName }}Release(C.WGPU{{ $objectName }}({{ $r }}))
+}
+{{ end }}

@@ -5,7 +5,7 @@ package {{ .PackageName }}
 type {{ $callbackName }}CallbackResult struct {
 {{- range .Args }}
 	{{- $type := goType .Type }}{{ if eq $type "StringView" }}{{ $type = "string" }}{{ end }}
-	{{ goIdent .Name .Type }} {{ if hasPrefix .Type "object." | not | and .Pointer }}*{{ end }}{{ $type }}
+	{{ goIdent .Name .Type }} {{ if or .Pointer (hasPrefix .Type "object.") }}*{{ end }}{{ $type }}
 {{- end }}
 }
 {{ end }}

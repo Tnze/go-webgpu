@@ -3,17 +3,20 @@
 package {{ .PackageName }}
 
 import (
+	"runtime"
 	"unsafe"
 
 	{{ $importPath := .ImportPath }}{{ printf "%q" (printf "%s/sys" $importPath) }}
 )
 {{ range .Objects }}
-{{ goDoc .Doc "" -}}
-{{ $object := . }}type {{ pascalCase .Name }} struct {
-	inner sys.{{ pascalCase .Name }}
+{{ goDoc .Doc "" }}{{ $object := . -}}{{ $objectName := pascalCase .Name }}
+type {{ $objectName }} struct {
+	inner sys.{{ $objectName }}
+	cleanup runtime.Cleanup
 }
-{{ range .Methods }}{{ $methodReceiver := slice $object.Name 0 1 }}
-func ({{ $methodReceiver }} *{{ pascalCase $object.Name }}) {{ pascalCase .Name }}(
+{{ $r := slice $object.Name 0 1 -}}
+{{ range .Methods }}
+func ({{ $r }} *{{ pascalCase $object.Name }}) {{ pascalCase .Name }}(
 	{{- range $index, $arg := .Args -}}
 		{{ if ne $index 0 }}, {{ end }}
 		{{- if arrayElem .Type -}}
@@ -29,14 +32,14 @@ func ({{ $methodReceiver }} *{{ pascalCase $object.Name }}) {{ pascalCase .Name 
 		{{- end }}
 	{{- end -}}
 )
-{{- if .Returns }} {{ .Returns.Type | goType }}
+{{- if .Returns }} {{ if hasPrefix .Returns.Type "object." }}*{{ end }}{{ goType .Returns.Type }}
 {{- else if .Callback }}
 	{{- with $.GetDef .Callback }} ({{ range $index, $arg := .Args -}}
 		{{ if ne $index 0 }}, {{ end }}{{ $argType := goType .Type }}
 		{{- if eq $argType "StringView" -}}
 			string
 		{{- else -}}
-			{{ if .Pointer }}*{{ end }}{{ $argType }}
+			{{ if or .Pointer (hasPrefix .Type "object.") }}*{{ end }}{{ $argType }}
 		{{- end }}
 	{{- end }}
 {{- end }})
@@ -68,7 +71,7 @@ func ({{ $methodReceiver }} *{{ pascalCase $object.Name }}) {{ pascalCase .Name 
 	{{ end }}
 	{{ if .Returns }}ret := {{ end -}}
 	sys.{{ pascalCase $object.Name }}{{ pascalCase .Name }}(
-		{{ $methodReceiver }}.inner,
+		{{ $r }}.inner,
 		{{- range .Args }}{{ $argName := camelCase .Name }}
 		{{ $arrayElem := arrayElem .Type -}}
 		{{ if and $arrayElem (hasPrefix $arrayElem "object.") -}}
@@ -106,7 +109,7 @@ func ({{ $methodReceiver }} *{{ pascalCase $object.Name }}) {{ pascalCase .Name 
 	{{- end }}{{ end }}{{ end }}{{ end -}}
 	{{ if .Returns }}
 	return {{ if hasPrefix .Returns.Type "object." -}}
-		{{ goType .Returns.Type }}{ inner: ret }
+		new({{ goType .Returns.Type }}{ inner: ret }).owned()
 	{{- else if hasPrefix .Returns.Type "struct." -}}
 		{{ goType .Returns.Type }}{
 		{{- range ($.GetDef .Returns.Type).Members }}
@@ -120,4 +123,14 @@ func ({{ $methodReceiver }} *{{ pascalCase $object.Name }}) {{ pascalCase .Name 
 	{{ end }}
 	{{- end }}
 }
-{{ end }}{{ end }}
+{{ end }}
+func ({{ $r }} *{{ $objectName }}) owned() *{{ $objectName }} {
+	{{ $r }}.cleanup = runtime.AddCleanup({{ $r }}, sys.{{ $objectName }}Release, {{ $r}}.inner)
+	return {{ $r }}
+}
+
+func ({{ $r }} *{{ $objectName }}) Release() {
+	{{ $r }}.cleanup.Stop()
+	sys.{{ $objectName}}Release({{ $r }}.inner)
+}
+{{ end }}
