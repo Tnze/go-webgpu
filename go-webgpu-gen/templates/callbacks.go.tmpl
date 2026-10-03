@@ -1,0 +1,11 @@
+// Code generated; DO NOT EDIT.
+{{ goDoc .Copyright "" }}
+package {{ .PackageName }}
+{{ range .Callbacks }}{{ $callbackName := camelCase .Name }}
+type {{ $callbackName }}CallbackResult struct {
+{{- range .Args }}
+	{{- $type := goType .Type }}{{ if eq $type "StringView" }}{{ $type = "string" }}{{ end }}
+	{{ goIdent .Name .Type }} {{ if hasPrefix .Type "object." | not | and .Pointer }}*{{ end }}{{ $type }}
+{{- end }}
+}
+{{ end }}

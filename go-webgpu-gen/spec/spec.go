@@ -1,5 +1,7 @@
 package spec
 
+import "strings"
+
 type Spec struct {
 	PackageName string `yaml:"-"`
 	ImportPath  string `yaml:"-"`
@@ -99,4 +101,47 @@ type Object struct {
 	Methods []Function `yaml:"methods"`
 
 	IsStruct bool `yaml:"-"`
+}
+
+func (s *Spec) GetDef(typeName string) any {
+	i := strings.IndexByte(typeName, '.')
+	if i == -1 {
+		return nil
+	}
+	name := typeName[i+1:]
+
+	switch typeName[:i] {
+	case "struct":
+		for i := range s.Structs {
+			if s.Structs[i].Name == name {
+				return &s.Structs[i]
+			}
+		}
+	case "callback":
+		for i := range s.Callbacks {
+			if s.Callbacks[i].Name == name {
+				return &s.Callbacks[i]
+			}
+		}
+	}
+	return nil
+}
+
+func (s *Spec) IsPureData(input *Struct) bool {
+	for _, field := range input.Members {
+		if strings.HasPrefix(field.Type, "array<") ||
+			strings.HasPrefix(field.Type, "object.") {
+			return false
+		}
+		if strings.HasPrefix(field.Type, "struct.") {
+			if !s.IsPureData(s.GetDef(field.Type).(*Struct)) {
+				return false
+			}
+		}
+		switch field.Type {
+		case "nullable_string", "string_with_default_empty", "out_string":
+			return false
+		}
+	}
+	return true
 }

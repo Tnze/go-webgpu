@@ -28,11 +28,23 @@ func ({{ $methodReceiver }} *{{ pascalCase $object.Name }}) {{ pascalCase .Name 
 			{{- end }}
 		{{- end }}
 	{{- end -}}
-) {{ if .Returns }}{{ .Returns.Type | goType }} {{ end }}{
+)
+{{- if .Returns }} {{ .Returns.Type | goType }}
+{{- else if .Callback }}
+	{{- with $.GetDef .Callback }} ({{ range $index, $arg := .Args -}}
+		{{ if ne $index 0 }}, {{ end }}{{ $argType := goType .Type }}
+		{{- if eq $argType "StringView" -}}
+			string
+		{{- else -}}
+			{{ if .Pointer }}*{{ end }}{{ $argType }}
+		{{- end }}
+	{{- end }}
+{{- end }})
+  {{- end }} {
 	{{- range $arg := .Args }}{{ $argName := camelCase .Name }}
 	{{- /* Struct preprocess */ -}}
 	{{ if hasPrefix .Type "struct." -}}
-	{{ if and .Pointer (getDef .Type | isPureData | not) }}
+	{{ if and .Pointer ($.GetDef .Type | $.IsPureData | not) }}
 	var _{{ $argName }} *sys.{{ goType .Type}}
 	if {{ $argName }} != nil {
 		_{{ $argName }} = new({{ $argName }}.unwrap())
@@ -48,16 +60,23 @@ func ({{ $methodReceiver }} *{{ pascalCase $object.Name }}) {{ pascalCase .Name 
 	}
 	{{- end }}{{ end }}
 	{{- end }}
+
+	{{- if .Callback }}
+	callback := {{ slice .Callback 9 | camelCase }}Callback{
+		C: make(chan {{ slice .Callback 9 | camelCase }}CallbackResult, 1),
+	}
+	{{ end }}
 	{{ if .Returns }}ret := {{ end -}}
 	sys.{{ pascalCase $object.Name }}{{ pascalCase .Name }}(
-		{{ $methodReceiver }}.inner,{{ range .Args }}{{ $argName := camelCase .Name }}
+		{{ $methodReceiver }}.inner,
+		{{- range .Args }}{{ $argName := camelCase .Name }}
 		{{ $arrayElem := arrayElem .Type -}}
 		{{ if and $arrayElem (hasPrefix $arrayElem "object.") -}}
 			_{{ .Name }},
 		{{- else if hasPrefix .Type "object." -}}
 			{{ $argName }}.inner,
 		{{- else if hasPrefix .Type "struct." -}}
-			{{ if getDef .Type | isPureData -}}
+			{{ if $.GetDef .Type | $.IsPureData -}}
 			{{ $argName }},
 			{{- else -}}
 			_{{ $argName }},
@@ -71,9 +90,15 @@ func ({{ $methodReceiver }} *{{ pascalCase $object.Name }}) {{ pascalCase .Name 
 		{{ $argName }},
 		{{- end }}
 		{{- end }}
+		{{- if .Callback }}
+		callback.info(),
+		{{- end }}
 	)
+	{{- if .Callback }}
+	ret := <-callback.C
+	{{- end }}
 	{{- /* Struct postprocess */ -}}
-	{{- range .Args }}{{ if eq .Pointer "mutable" }}{{ if hasPrefix .Type "struct." }}{{ if getDef .Type | isPureData | not }}
+	{{- range .Args }}{{ if eq .Pointer "mutable" }}{{ if hasPrefix .Type "struct." }}{{ if $.GetDef .Type | $.IsPureData | not }}
 	{{ $argName := camelCase .Name }}
 	if {{ $argName }} != nil {
 		{{ $argName }}.wrap(_{{ $argName }})
@@ -84,11 +109,15 @@ func ({{ $methodReceiver }} *{{ pascalCase $object.Name }}) {{ pascalCase .Name 
 		{{ goType .Returns.Type }}{ inner: ret }
 	{{- else if hasPrefix .Returns.Type "struct." -}}
 		{{ goType .Returns.Type }}{
-		{{- range (getDef .Returns.Type).Members }}
+		{{- range ($.GetDef .Returns.Type).Members }}
 		{{ pascalCase .Name }}: ret.{{ pascalCase .Name }},
 		{{- end }}
 	}
 	{{- else }}ret{{ end }}
+	{{- else if .Callback }}
+	return {{ range $ident, $arg := ($.GetDef .Callback).Args -}}
+	{{ if ne $ident 0 }}, {{ end }}ret.{{ goIdent .Name .Type -}}
+	{{ end }}
 	{{- end }}
 }
 {{ end }}{{ end }}

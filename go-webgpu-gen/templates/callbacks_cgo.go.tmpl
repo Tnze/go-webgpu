@@ -22,27 +22,39 @@ import (
 )
 {{ range .Callbacks }}{{ $callbackName := pascalCase .Name }}
 {{- if ne .Style "callback_mode" }}{{ continue }}{{ end }}
-{{- goDoc .Doc "" }}
-type {{ $callbackName }}Callback func({{ range $index, $arg := .Args }}{{ $argType := goType .Type -}}
-{{ if ne $index 0 }}, {{ end -}}
-{{ goIdent .Name .Type }} {{ if eq $argType "StringView" }}string{{ else }}{{ $argType }}{{ end }}
-{{- end }})
-
-func New{{ $callbackName }}Callback(callback  {{ $callbackName }}Callback,userdata2 unsafe.Pointer) sys.{{ $callbackName }}CallbackInfo {
-	return sys.{{ $callbackName }}CallbackInfo{
-		Mode: sys.CallbackModeAllowProcessEvents,
-		Callback: C.gowebgpu{{ $callbackName }}Callback,
-		// Userdata1: TODO,
-		Userdata2: userdata2,
-	}
-}
-
 //export gowebgpu{{ $callbackName }}Callback
 func gowebgpu{{ $callbackName }}Callback(
 {{- range $index, $arg := .Args }}
 {{- if ne $index 0 }}, {{ end -}}
 {{ goIdent .Name .Type }} {{ if .Pointer }}*{{ end }}C.{{ cType .Type -}}
 {{- end }}, userdata1, userdata2 unsafe.Pointer) {
-
+	{{ $callbackName := camelCase .Name -}}
+	(*{{ $callbackName }}Callback)(userdata1).C <- {{ $callbackName }}CallbackResult{
+		{{- range .Args }}{{ $argName := goIdent .Name .Type }}
+		{{ $argName }}: {{ if hasPrefix .Type "struct." -}}
+			({{ if .Pointer }}*{{ end }}{{ goType .Type }})(unsafe.Pointer({{ $argName }}))
+		{{- else if hasPrefix .Type "object." -}}
+			{{ goType .Type }}{ inner: sys.{{ goType .Type }}({{ $argName }}) }
+		{{- else if eq .Type "out_string" -}}
+			C.GoStringN({{ $argName }}.data, C.int({{ $argName }}.length))
+		{{- else -}}
+			{{ goType .Type }}({{ $argName }})
+		{{- end }},
+		{{- end }}
+	}
 }
 {{ end }}
+{{- range .Callbacks }}{{ $callbackName := camelCase .Name }}
+{{- if ne .Style "callback_mode" }}{{ continue }}{{ end }}
+type {{ $callbackName }}Callback struct {
+	C chan {{ $callbackName }}CallbackResult
+}
+{{ $r := slice $callbackName 0 1 }}
+func ({{ $r }} *{{ $callbackName }}Callback) info() sys.{{ pascalCase .Name }}CallbackInfo {
+	return sys.{{ pascalCase .Name }}CallbackInfo{
+		Mode:     CallbackModeAllowProcessEvents,
+		Callback: C.gowebgpu{{ pascalCase .Name }}Callback,
+		Userdata1: unsafe.Pointer({{ $r }}),
+	}
+}
+{{- end }}

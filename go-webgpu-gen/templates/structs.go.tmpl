@@ -5,7 +5,7 @@ package {{ .PackageName }}
 import {{ $importPath := .ImportPath }}{{ printf "%q" (printf "%s/sys" $importPath) }}
 {{ range .Structs }}{{ $structName := pascalCase .Name}}
 {{ goDoc .Doc "" -}}
-{{ if isPureData . -}}
+{{ if $.IsPureData . -}}
 type {{ $structName }} = sys.{{ $structName }}
 {{ else -}}
 type {{ $structName }} struct {
@@ -17,8 +17,10 @@ type {{ $structName }} struct {
 	{{ $fieldName }} {{ if .Pointer }}*{{ end }}
 	{{- if eq $fieldType "StringView" -}}
 		string
+	{{- else if hasPrefix .Type "callback." -}}
+		sys.{{ $fieldType }}
 	{{- else -}}
-		{{ goType .Type }}
+		{{ $fieldType }}
 	{{- end }}
 	{{- end }}
 	{{- end }}

@@ -7,7 +7,7 @@ import (
 	{{ $importPath := .ImportPath }}{{ printf "%q" (printf "%s/sys" $importPath) }}
 )
 {{ range .Structs }}{{ $structName := pascalCase .Name}}
-{{- if isPureData . }}{{ continue }}{{ end -}}
+{{- if $.IsPureData . }}{{ continue }}{{ end -}}
 {{ $r := slice .Name 0 1 }}
 func ({{ $r }} *{{ $structName }}) unwrap() (out sys.{{ $structName }}) {
 	{{- range .Members }}{{ $fieldName := pascalCase .Name }}
@@ -18,7 +18,7 @@ func ({{ $r }} *{{ $structName }}) unwrap() (out sys.{{ $structName }}) {
 		Data:   unsafe.StringData({{ $r }}.{{ $fieldName }}),
 	}
 	{{- /* struct */}}
-	{{- else if hasPrefix .Type "struct." -}}{{ $isPure := getDef .Type | isPureData }}
+	{{- else if hasPrefix .Type "struct." -}}{{ $isPure := $.GetDef .Type | $.IsPureData }}
 	{{- if .Pointer -}}
 	if {{ $r }}.{{ $fieldName }} != nil {
 		out.{{ $fieldName }} = {{ if $isPure }}{{ $r }}.{{ $fieldName }}
@@ -38,7 +38,7 @@ func ({{ $r }} *{{ $structName }}) unwrap() (out sys.{{ $structName }}) {
 	{{- /* array of structs */ -}}
 	{{ if hasPrefix $arrayElem "struct." -}}
 	out.{{ $fieldName }}Count = uint(len({{ $r }}.{{ $fieldName }}))
-	{{ if getDef $arrayElem | isPureData | not -}}
+	{{ if $.GetDef $arrayElem | $.IsPureData | not -}}
 	{{ $targetArray = camelCase .Name -}}
 	{{ $targetArray }} := make([]sys.{{ goType $arrayElem }}, len({{ $r }}.{{ $fieldName }}))
 	for i := range {{ $targetArray }} {

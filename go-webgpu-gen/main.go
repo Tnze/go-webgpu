@@ -31,45 +31,8 @@ func main() {
 	flag.Parse()
 
 	var data spec.Spec
-
-	getDef := func(typeName string) *spec.Struct {
-		i := strings.IndexByte(typeName, '.')
-		if i == -1 {
-			return nil
-		}
-		name := typeName[i+1:]
-
-		switch typeName[:i] {
-		case "struct":
-			for i := range data.Structs {
-				if data.Structs[i].Name == name {
-					return &data.Structs[i]
-				}
-			}
-		}
-		return nil
-	}
-	var isPureData func(input *spec.Struct) bool
-	isPureData = func(input *spec.Struct) bool {
-		for _, field := range input.Members {
-			if strings.HasPrefix(field.Type, "array<") ||
-				strings.HasPrefix(field.Type, "object.") {
-				return false
-			}
-			if strings.HasPrefix(field.Type, "struct.") {
-				if !isPureData(getDef(field.Type)) {
-					return false
-				}
-			}
-			switch field.Type {
-			case "nullable_string", "string_with_default_empty", "out_string":
-				return false
-			}
-		}
-		return true
-	}
-	tmplFuncs["getDef"] = getDef
-	tmplFuncs["isPureData"] = isPureData
+	// tmplFuncs["getDef"] = data.GetDef
+	// tmplFuncs["isPureData"] = data.IsPureData
 
 	// Parse templates
 	tempSys := template.Must(template.
