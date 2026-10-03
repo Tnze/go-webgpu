@@ -326,7 +326,7 @@ func (c *CommandEncoder) BeginRenderPass(descriptor *RenderPassDescriptor) *Rend
 	return new(RenderPassEncoder{inner: ret}).owned()
 }
 
-func (c *CommandEncoder) CopyBufferToBuffer(source Buffer, sourceOffset uint64, destination Buffer, destinationOffset uint64, size uint64) {
+func (c *CommandEncoder) CopyBufferToBuffer(source *Buffer, sourceOffset uint64, destination *Buffer, destinationOffset uint64, size uint64) {
 	sys.CommandEncoderCopyBufferToBuffer(
 		c.inner,
 		source.inner,
@@ -394,7 +394,7 @@ func (c *CommandEncoder) CopyTextureToTexture(source *TexelCopyTextureInfo, dest
 	)
 }
 
-func (c *CommandEncoder) ClearBuffer(buffer Buffer, offset uint64, size uint64) {
+func (c *CommandEncoder) ClearBuffer(buffer *Buffer, offset uint64, size uint64) {
 	sys.CommandEncoderClearBuffer(
 		c.inner,
 		buffer.inner,
@@ -429,7 +429,7 @@ func (c *CommandEncoder) PushDebugGroup(groupLabel string) {
 	)
 }
 
-func (c *CommandEncoder) ResolveQuerySet(querySet QuerySet, firstQuery uint32, queryCount uint32, destination Buffer, destinationOffset uint64) {
+func (c *CommandEncoder) ResolveQuerySet(querySet *QuerySet, firstQuery uint32, queryCount uint32, destination *Buffer, destinationOffset uint64) {
 	sys.CommandEncoderResolveQuerySet(
 		c.inner,
 		querySet.inner,
@@ -440,7 +440,7 @@ func (c *CommandEncoder) ResolveQuerySet(querySet QuerySet, firstQuery uint32, q
 	)
 }
 
-func (c *CommandEncoder) WriteTimestamp(querySet QuerySet, queryIndex uint32) {
+func (c *CommandEncoder) WriteTimestamp(querySet *QuerySet, queryIndex uint32) {
 	sys.CommandEncoderWriteTimestamp(
 		c.inner,
 		querySet.inner,
@@ -499,14 +499,14 @@ func (c *ComputePassEncoder) PushDebugGroup(groupLabel string) {
 	)
 }
 
-func (c *ComputePassEncoder) SetPipeline(pipeline ComputePipeline) {
+func (c *ComputePassEncoder) SetPipeline(pipeline *ComputePipeline) {
 	sys.ComputePassEncoderSetPipeline(
 		c.inner,
 		pipeline.inner,
 	)
 }
 
-func (c *ComputePassEncoder) SetBindGroup(groupIndex uint32, group BindGroup, dynamicOffsets []uint32) {
+func (c *ComputePassEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, dynamicOffsets []uint32) {
 	sys.ComputePassEncoderSetBindGroup(
 		c.inner,
 		groupIndex,
@@ -533,7 +533,7 @@ func (c *ComputePassEncoder) DispatchWorkgroups(workgroupCountX uint32, workgrou
 	)
 }
 
-func (c *ComputePassEncoder) DispatchWorkgroupsIndirect(indirectBuffer Buffer, indirectOffset uint64) {
+func (c *ComputePassEncoder) DispatchWorkgroupsIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
 	sys.ComputePassEncoderDispatchWorkgroupsIndirect(
 		c.inner,
 		indirectBuffer.inner,
@@ -1128,7 +1128,7 @@ func (q *Queue) OnSubmittedWorkDone() (QueueWorkDoneStatus, string) {
 	return ret.status, ret.message
 }
 
-func (q *Queue) WriteBuffer(buffer Buffer, bufferOffset uint64, data unsafe.Pointer, size uintptr) {
+func (q *Queue) WriteBuffer(buffer *Buffer, bufferOffset uint64, data unsafe.Pointer, size uintptr) {
 	sys.QueueWriteBuffer(
 		q.inner,
 		buffer.inner,
@@ -1204,14 +1204,14 @@ type RenderBundleEncoder struct {
 	cleanup runtime.Cleanup
 }
 
-func (r *RenderBundleEncoder) SetPipeline(pipeline RenderPipeline) {
+func (r *RenderBundleEncoder) SetPipeline(pipeline *RenderPipeline) {
 	sys.RenderBundleEncoderSetPipeline(
 		r.inner,
 		pipeline.inner,
 	)
 }
 
-func (r *RenderBundleEncoder) SetBindGroup(groupIndex uint32, group BindGroup, dynamicOffsets []uint32) {
+func (r *RenderBundleEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, dynamicOffsets []uint32) {
 	sys.RenderBundleEncoderSetBindGroup(
 		r.inner,
 		groupIndex,
@@ -1250,7 +1250,7 @@ func (r *RenderBundleEncoder) DrawIndexed(indexCount uint32, instanceCount uint3
 	)
 }
 
-func (r *RenderBundleEncoder) DrawIndirect(indirectBuffer Buffer, indirectOffset uint64) {
+func (r *RenderBundleEncoder) DrawIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
 	sys.RenderBundleEncoderDrawIndirect(
 		r.inner,
 		indirectBuffer.inner,
@@ -1258,7 +1258,7 @@ func (r *RenderBundleEncoder) DrawIndirect(indirectBuffer Buffer, indirectOffset
 	)
 }
 
-func (r *RenderBundleEncoder) DrawIndexedIndirect(indirectBuffer Buffer, indirectOffset uint64) {
+func (r *RenderBundleEncoder) DrawIndexedIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
 	sys.RenderBundleEncoderDrawIndexedIndirect(
 		r.inner,
 		indirectBuffer.inner,
@@ -1292,7 +1292,7 @@ func (r *RenderBundleEncoder) PushDebugGroup(groupLabel string) {
 	)
 }
 
-func (r *RenderBundleEncoder) SetVertexBuffer(slot uint32, buffer Buffer, offset uint64, size uint64) {
+func (r *RenderBundleEncoder) SetVertexBuffer(slot uint32, buffer *Buffer, offset uint64, size uint64) {
 	sys.RenderBundleEncoderSetVertexBuffer(
 		r.inner,
 		slot,
@@ -1302,7 +1302,7 @@ func (r *RenderBundleEncoder) SetVertexBuffer(slot uint32, buffer Buffer, offset
 	)
 }
 
-func (r *RenderBundleEncoder) SetIndexBuffer(buffer Buffer, format IndexFormat, offset uint64, size uint64) {
+func (r *RenderBundleEncoder) SetIndexBuffer(buffer *Buffer, format IndexFormat, offset uint64, size uint64) {
 	sys.RenderBundleEncoderSetIndexBuffer(
 		r.inner,
 		buffer.inner,
@@ -1350,14 +1350,14 @@ type RenderPassEncoder struct {
 	cleanup runtime.Cleanup
 }
 
-func (r *RenderPassEncoder) SetPipeline(pipeline RenderPipeline) {
+func (r *RenderPassEncoder) SetPipeline(pipeline *RenderPipeline) {
 	sys.RenderPassEncoderSetPipeline(
 		r.inner,
 		pipeline.inner,
 	)
 }
 
-func (r *RenderPassEncoder) SetBindGroup(groupIndex uint32, group BindGroup, dynamicOffsets []uint32) {
+func (r *RenderPassEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, dynamicOffsets []uint32) {
 	sys.RenderPassEncoderSetBindGroup(
 		r.inner,
 		groupIndex,
@@ -1396,7 +1396,7 @@ func (r *RenderPassEncoder) DrawIndexed(indexCount uint32, instanceCount uint32,
 	)
 }
 
-func (r *RenderPassEncoder) DrawIndirect(indirectBuffer Buffer, indirectOffset uint64) {
+func (r *RenderPassEncoder) DrawIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
 	sys.RenderPassEncoderDrawIndirect(
 		r.inner,
 		indirectBuffer.inner,
@@ -1404,7 +1404,7 @@ func (r *RenderPassEncoder) DrawIndirect(indirectBuffer Buffer, indirectOffset u
 	)
 }
 
-func (r *RenderPassEncoder) DrawIndexedIndirect(indirectBuffer Buffer, indirectOffset uint64) {
+func (r *RenderPassEncoder) DrawIndexedIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
 	sys.RenderPassEncoderDrawIndexedIndirect(
 		r.inner,
 		indirectBuffer.inner,
@@ -1485,7 +1485,7 @@ func (r *RenderPassEncoder) SetScissorRect(x uint32, y uint32, width uint32, hei
 	)
 }
 
-func (r *RenderPassEncoder) SetVertexBuffer(slot uint32, buffer Buffer, offset uint64, size uint64) {
+func (r *RenderPassEncoder) SetVertexBuffer(slot uint32, buffer *Buffer, offset uint64, size uint64) {
 	sys.RenderPassEncoderSetVertexBuffer(
 		r.inner,
 		slot,
@@ -1495,7 +1495,7 @@ func (r *RenderPassEncoder) SetVertexBuffer(slot uint32, buffer Buffer, offset u
 	)
 }
 
-func (r *RenderPassEncoder) SetIndexBuffer(buffer Buffer, format IndexFormat, offset uint64, size uint64) {
+func (r *RenderPassEncoder) SetIndexBuffer(buffer *Buffer, format IndexFormat, offset uint64, size uint64) {
 	sys.RenderPassEncoderSetIndexBuffer(
 		r.inner,
 		buffer.inner,
@@ -1659,7 +1659,7 @@ func (s *Surface) Configure(config *SurfaceConfiguration) {
 	)
 }
 
-func (s *Surface) GetCapabilities(adapter Adapter, capabilities *SurfaceCapabilities) Status {
+func (s *Surface) GetCapabilities(adapter *Adapter, capabilities *SurfaceCapabilities) Status {
 	var _capabilities *sys.SurfaceCapabilities
 	if capabilities != nil {
 		_capabilities = new(capabilities.unwrap())

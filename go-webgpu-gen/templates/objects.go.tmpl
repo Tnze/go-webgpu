@@ -22,7 +22,7 @@ func ({{ $r }} *{{ pascalCase $object.Name }}) {{ pascalCase .Name }}(
 		{{- if arrayElem .Type -}}
 			{{ camelCase .Name }} []{{ arrayElem .Type | goType }}
 		{{- else -}}
-			{{ camelCase .Name }} {{ if and .Pointer (.Type | goType | ne "unsafe.Pointer") }}*{{ end }}
+			{{ camelCase .Name }} {{ if and (or .Pointer (hasPrefix .Type "object.")) (.Type | goType | ne "unsafe.Pointer") }}*{{ end }}
 			{{- $argType := goType .Type }}
 			{{- if eq $argType "StringView" -}}
 				string
