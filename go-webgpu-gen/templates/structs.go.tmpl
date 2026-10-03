@@ -9,12 +9,13 @@ import {{ $importPath := .ImportPath }}{{ printf "%q" (printf "%s/sys" $importPa
 type {{ $structName }} = sys.{{ $structName }}
 {{ else -}}
 type {{ $structName }} struct {
+	{{ if eq .Type "extensible" }}Chain *sys.ChainedStruct{{ end }}
 	{{- range .Members }}{{ $fieldName := pascalCase .Name }}
 	{{ goDoc .Doc "\t" -}}
 	{{ if arrayElem .Type -}}
 	{{ $fieldName }} []{{ arrayElem .Type | goType }}
 	{{- else -}}{{ $fieldType := goType .Type -}}
-	{{ $fieldName }} {{ if .Pointer }}*{{ end }}
+	{{ $fieldName }} {{ if or .Pointer (hasPrefix .Type "object.") }}*{{ end }}
 	{{- if eq $fieldType "StringView" -}}
 		string
 	{{- else if hasPrefix .Type "callback." -}}
@@ -25,4 +26,19 @@ type {{ $structName }} struct {
 	{{- end }}
 	{{- end }}
 }
+{{ $r := slice (camelCase .Name) 0 1 -}}
+{{ if eq .Type "extensible" -}}
+func ({{ $r }} *{{ $structName }}) Extend(e Extension) *{{ $structName }} {
+	chain := e.Chain()
+	{{ $r }}.Chain, chain.Next = chain, {{ $r }}.Chain
+	return {{ $r }}	
+}
+{{ else if eq .Type "extension" -}}
+func ({{ $r }} *{{ $structName }}) Chain() *sys.ChainedStruct {
+	return &new({{ $r }}.unwrap()).NextInChain
+}
+{{ end }}
 {{ end }}{{ end }}
+type Extension interface {
+	Chain() *sys.ChainedStruct
+}

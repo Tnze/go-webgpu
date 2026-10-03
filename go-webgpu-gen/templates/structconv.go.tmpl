@@ -10,6 +10,7 @@ import (
 {{- if $.IsPureData . }}{{ continue }}{{ end -}}
 {{ $r := slice .Name 0 1 }}
 func ({{ $r }} *{{ $structName }}) unwrap() (out sys.{{ $structName }}) {
+	{{ if eq .Type "extensible" }}out.Chain = {{ $r }}.Chain{{ end }}
 	{{- range .Members }}{{ $fieldName := pascalCase .Name }}
 	{{- /* string */}}
 	{{ if eq (goType .Type) "StringView" -}}

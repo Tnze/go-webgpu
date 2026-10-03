@@ -12,6 +12,7 @@ import (
 
 type AdapterInfo struct {
 	_               structs.HostLayout
+	Chain           *ChainedStruct
 	Vendor          StringView
 	Architecture    StringView
 	Device          StringView
@@ -26,6 +27,7 @@ type AdapterInfo struct {
 
 type BindGroupDescriptor struct {
 	_      structs.HostLayout
+	Chain  *ChainedStruct
 	Label  StringView
 	Layout BindGroupLayout
 	// Array count for Entries
@@ -34,7 +36,8 @@ type BindGroupDescriptor struct {
 }
 
 type BindGroupEntry struct {
-	_ structs.HostLayout
+	_     structs.HostLayout
+	Chain *ChainedStruct
 	// Binding index in the bind group.
 	Binding uint32
 	// Set this if the binding is a buffer object.
@@ -57,6 +60,7 @@ type BindGroupEntry struct {
 
 type BindGroupLayoutDescriptor struct {
 	_     structs.HostLayout
+	Chain *ChainedStruct
 	Label StringView
 	// Array count for Entries
 	EntriesCount uint
@@ -65,6 +69,7 @@ type BindGroupLayoutDescriptor struct {
 
 type BindGroupLayoutEntry struct {
 	_          structs.HostLayout
+	Chain      *ChainedStruct
 	Binding    uint32
 	Visibility ShaderStage
 	// If non-zero, this entry defines a binding array with this size.
@@ -77,6 +82,7 @@ type BindGroupLayoutEntry struct {
 
 type BlendComponent struct {
 	_ structs.HostLayout
+
 	// If set to @ref WGPUBlendOperation_Undefined,
 	// [defaults](@ref SentinelValues) to @ref WGPUBlendOperation_Add.
 	Operation BlendOperation
@@ -89,13 +95,15 @@ type BlendComponent struct {
 }
 
 type BlendState struct {
-	_     structs.HostLayout
+	_ structs.HostLayout
+
 	Color BlendComponent
 	Alpha BlendComponent
 }
 
 type BufferBindingLayout struct {
-	_ structs.HostLayout
+	_     structs.HostLayout
+	Chain *ChainedStruct
 	// If set to @ref WGPUBufferBindingType_Undefined,
 	// [defaults](@ref SentinelValues) to @ref WGPUBufferBindingType_Uniform.
 	Type             BufferBindingType
@@ -105,6 +113,7 @@ type BufferBindingLayout struct {
 
 type BufferDescriptor struct {
 	_     structs.HostLayout
+	Chain *ChainedStruct
 	Label StringView
 	Usage BufferUsage
 	Size  uint64
@@ -119,6 +128,7 @@ type BufferDescriptor struct {
 // If any channel is non-finite, produces a @ref NonFiniteFloatValueError.
 type Color struct {
 	_ structs.HostLayout
+
 	R float64
 	G float64
 	B float64
@@ -126,7 +136,8 @@ type Color struct {
 }
 
 type ColorTargetState struct {
-	_ structs.HostLayout
+	_     structs.HostLayout
+	Chain *ChainedStruct
 	// The texture format of the target. If @ref WGPUTextureFormat_Undefined,
 	// indicates a "hole" in the parent @ref WGPUFragmentState `targets` array:
 	// the pipeline does not output a value at this `location`.
@@ -137,11 +148,13 @@ type ColorTargetState struct {
 
 type CommandBufferDescriptor struct {
 	_     structs.HostLayout
+	Chain *ChainedStruct
 	Label StringView
 }
 
 type CommandEncoderDescriptor struct {
 	_     structs.HostLayout
+	Chain *ChainedStruct
 	Label StringView
 }
 
@@ -150,6 +163,7 @@ type CommandEncoderDescriptor struct {
 // defined in the WebGPU spec.
 type CompatibilityModeLimits struct {
 	_                                 structs.HostLayout
+	NextInChain                       ChainedStruct
 	MaxStorageBuffersInVertexStage    uint32
 	MaxStorageTexturesInVertexStage   uint32
 	MaxStorageBuffersInFragmentStage  uint32
@@ -158,6 +172,7 @@ type CompatibilityModeLimits struct {
 
 type CompilationInfo struct {
 	_ structs.HostLayout
+
 	// Array count for Messages
 	MessagesCount uint
 	Messages      *CompilationMessage
@@ -165,6 +180,7 @@ type CompilationInfo struct {
 
 type CompilationMessage struct {
 	_ structs.HostLayout
+
 	// A @ref LocalizableHumanReadableMessageString.
 	Message StringView
 	// Severity level of the message.
@@ -181,12 +197,14 @@ type CompilationMessage struct {
 
 type ComputePassDescriptor struct {
 	_               structs.HostLayout
+	Chain           *ChainedStruct
 	Label           StringView
 	TimestampWrites *PassTimestampWrites
 }
 
 type ComputePipelineDescriptor struct {
 	_       structs.HostLayout
+	Chain   *ChainedStruct
 	Label   StringView
 	Layout  PipelineLayout
 	Compute ComputeState
@@ -194,6 +212,7 @@ type ComputePipelineDescriptor struct {
 
 type ComputeState struct {
 	_          structs.HostLayout
+	Chain      *ChainedStruct
 	Module     ShaderModule
 	EntryPoint StringView
 	// Array count for Constants
@@ -202,8 +221,9 @@ type ComputeState struct {
 }
 
 type ConstantEntry struct {
-	_   structs.HostLayout
-	Key StringView
+	_     structs.HostLayout
+	Chain *ChainedStruct
+	Key   StringView
 	// Represents a WGSL numeric or boolean value using @ref DoubleAsSupertype.
 	//
 	// If non-finite, produces a @ref NonFiniteFloatValueError.
@@ -212,6 +232,7 @@ type ConstantEntry struct {
 
 type DepthStencilState struct {
 	_                 structs.HostLayout
+	Chain             *ChainedStruct
 	Format            TextureFormat
 	DepthWriteEnabled OptionalBool
 	DepthCompare      CompareFunction
@@ -232,6 +253,7 @@ type DepthStencilState struct {
 
 type DeviceDescriptor struct {
 	_     structs.HostLayout
+	Chain *ChainedStruct
 	Label StringView
 	// Array count for RequiredFeatures
 	RequiredFeaturesCount  uint
@@ -247,7 +269,8 @@ type DeviceDescriptor struct {
 }
 
 type Extent3D struct {
-	_                  structs.HostLayout
+	_ structs.HostLayout
+
 	Width              uint32
 	Height             uint32
 	DepthOrArrayLayers uint32
@@ -256,16 +279,19 @@ type Extent3D struct {
 // Chained in an @ref WGPUBindGroupEntry to set it to an @ref WGPUExternalTexture. This must have a corresponding @ref WGPUExternalTextureBindingLayout in the @ref WGPUBindGroupLayout.
 type ExternalTextureBindingEntry struct {
 	_               structs.HostLayout
+	NextInChain     ChainedStruct
 	ExternalTexture ExternalTexture
 }
 
 // Chained in @ref WGPUBindGroupLayoutEntry to specify that the corresponding entries in an @ref WGPUBindGroup will contain an @ref WGPUExternalTexture.
 type ExternalTextureBindingLayout struct {
-	_ structs.HostLayout
+	_           structs.HostLayout
+	NextInChain ChainedStruct
 }
 
 type FragmentState struct {
 	_          structs.HostLayout
+	Chain      *ChainedStruct
 	Module     ShaderModule
 	EntryPoint StringView
 	// Array count for Constants
@@ -279,6 +305,7 @@ type FragmentState struct {
 // Opaque handle to an asynchronous operation. See @ref Asynchronous-Operations for more information.
 type Future struct {
 	_ structs.HostLayout
+
 	// Opaque id of the @ref WGPUFuture
 	Id uint64
 }
@@ -286,6 +313,7 @@ type Future struct {
 // Struct holding a future to wait on, and a `completed` boolean flag.
 type FutureWaitInfo struct {
 	_ structs.HostLayout
+
 	// The future to wait on.
 	Future Future
 	// Whether or not the future completed.
@@ -293,7 +321,8 @@ type FutureWaitInfo struct {
 }
 
 type InstanceDescriptor struct {
-	_ structs.HostLayout
+	_     structs.HostLayout
+	Chain *ChainedStruct
 	// Array count for RequiredFeatures
 	RequiredFeaturesCount uint
 	RequiredFeatures      *InstanceFeatureName
@@ -301,13 +330,15 @@ type InstanceDescriptor struct {
 }
 
 type InstanceLimits struct {
-	_ structs.HostLayout
+	_     structs.HostLayout
+	Chain *ChainedStruct
 	// The maximum number @ref WGPUFutureWaitInfo supported in a call to ::wgpuInstanceWaitAny with `timeoutNS > 0`.
 	TimedWaitAnyMaxCount uintptr
 }
 
 type Limits struct {
 	_                                         structs.HostLayout
+	Chain                                     *ChainedStruct
 	MaxTextureDimension1D                     uint32
 	MaxTextureDimension2D                     uint32
 	MaxTextureDimension3D                     uint32
@@ -344,6 +375,7 @@ type Limits struct {
 
 type MultisampleState struct {
 	_                      structs.HostLayout
+	Chain                  *ChainedStruct
 	Count                  uint32
 	Mask                   uint32
 	AlphaToCoverageEnabled Bool
@@ -351,13 +383,15 @@ type MultisampleState struct {
 
 type Origin3D struct {
 	_ structs.HostLayout
+
 	X uint32
 	Y uint32
 	Z uint32
 }
 
 type PassTimestampWrites struct {
-	_ structs.HostLayout
+	_     structs.HostLayout
+	Chain *ChainedStruct
 	// Query set to write timestamps to.
 	QuerySet                  QuerySet
 	BeginningOfPassWriteIndex uint32
@@ -366,6 +400,7 @@ type PassTimestampWrites struct {
 
 type PipelineLayoutDescriptor struct {
 	_     structs.HostLayout
+	Chain *ChainedStruct
 	Label StringView
 	// Array count for BindGroupLayouts
 	BindGroupLayoutsCount uint
@@ -374,7 +409,8 @@ type PipelineLayoutDescriptor struct {
 }
 
 type PrimitiveState struct {
-	_ structs.HostLayout
+	_     structs.HostLayout
+	Chain *ChainedStruct
 	// If set to @ref WGPUPrimitiveTopology_Undefined,
 	// [defaults](@ref SentinelValues) to @ref WGPUPrimitiveTopology_TriangleList.
 	Topology         PrimitiveTopology
@@ -390,6 +426,7 @@ type PrimitiveState struct {
 
 type QuerySetDescriptor struct {
 	_     structs.HostLayout
+	Chain *ChainedStruct
 	Label StringView
 	Type  QueryType
 	Count uint32
@@ -397,16 +434,19 @@ type QuerySetDescriptor struct {
 
 type QueueDescriptor struct {
 	_     structs.HostLayout
+	Chain *ChainedStruct
 	Label StringView
 }
 
 type RenderBundleDescriptor struct {
 	_     structs.HostLayout
+	Chain *ChainedStruct
 	Label StringView
 }
 
 type RenderBundleEncoderDescriptor struct {
 	_     structs.HostLayout
+	Chain *ChainedStruct
 	Label StringView
 	// Array count for ColorFormats
 	ColorFormatsCount  uint
@@ -418,7 +458,8 @@ type RenderBundleEncoderDescriptor struct {
 }
 
 type RenderPassColorAttachment struct {
-	_ structs.HostLayout
+	_     structs.HostLayout
+	Chain *ChainedStruct
 	// If `NULL`, indicates a hole in the parent
 	// @ref WGPURenderPassDescriptor::colorAttachments array.
 	View          TextureView
@@ -431,6 +472,7 @@ type RenderPassColorAttachment struct {
 
 type RenderPassDepthStencilAttachment struct {
 	_            structs.HostLayout
+	Chain        *ChainedStruct
 	View         TextureView
 	DepthLoadOp  LoadOp
 	DepthStoreOp StoreOp
@@ -450,6 +492,7 @@ type RenderPassDepthStencilAttachment struct {
 
 type RenderPassDescriptor struct {
 	_     structs.HostLayout
+	Chain *ChainedStruct
 	Label StringView
 	// Array count for ColorAttachments
 	ColorAttachmentsCount  uint
@@ -461,11 +504,13 @@ type RenderPassDescriptor struct {
 
 type RenderPassMaxDrawCount struct {
 	_            structs.HostLayout
+	NextInChain  ChainedStruct
 	MaxDrawCount uint64
 }
 
 type RenderPipelineDescriptor struct {
 	_            structs.HostLayout
+	Chain        *ChainedStruct
 	Label        StringView
 	Layout       PipelineLayout
 	Vertex       VertexState
@@ -476,7 +521,8 @@ type RenderPipelineDescriptor struct {
 }
 
 type RequestAdapterOptions struct {
-	_ structs.HostLayout
+	_     structs.HostLayout
+	Chain *ChainedStruct
 	// "Feature level" for the adapter request. If an adapter is returned, it must support the features and limits in the requested feature level.
 	//
 	// If set to @ref WGPUFeatureLevel_Undefined,
@@ -498,13 +544,15 @@ type RequestAdapterOptions struct {
 
 // Extension providing requestAdapter options for implementations with WebXR interop (i.e. Wasm).
 type RequestAdapterWebXROptions struct {
-	_ structs.HostLayout
+	_           structs.HostLayout
+	NextInChain ChainedStruct
 	// Sets the `xrCompatible` option in the JS API.
 	XrCompatible Bool
 }
 
 type SamplerBindingLayout struct {
-	_ structs.HostLayout
+	_     structs.HostLayout
+	Chain *ChainedStruct
 	// If set to @ref WGPUSamplerBindingType_Undefined,
 	// [defaults](@ref SentinelValues) to @ref WGPUSamplerBindingType_Filtering.
 	Type SamplerBindingType
@@ -512,6 +560,7 @@ type SamplerBindingLayout struct {
 
 type SamplerDescriptor struct {
 	_     structs.HostLayout
+	Chain *ChainedStruct
 	Label StringView
 	// If set to @ref WGPUAddressMode_Undefined,
 	// [defaults](@ref SentinelValues) to @ref WGPUAddressMode_ClampToEdge.
@@ -545,22 +594,26 @@ type SamplerDescriptor struct {
 
 type ShaderModuleDescriptor struct {
 	_     structs.HostLayout
+	Chain *ChainedStruct
 	Label StringView
 }
 
 type ShaderSourceSPIRV struct {
-	_        structs.HostLayout
-	CodeSize uint32
-	Code     *uint32
+	_           structs.HostLayout
+	NextInChain ChainedStruct
+	CodeSize    uint32
+	Code        *uint32
 }
 
 type ShaderSourceWGSL struct {
-	_    structs.HostLayout
-	Code StringView
+	_           structs.HostLayout
+	NextInChain ChainedStruct
+	Code        StringView
 }
 
 type StencilFaceState struct {
 	_ structs.HostLayout
+
 	// If set to @ref WGPUCompareFunction_Undefined,
 	// [defaults](@ref SentinelValues) to @ref WGPUCompareFunction_Always.
 	Compare CompareFunction
@@ -576,7 +629,8 @@ type StencilFaceState struct {
 }
 
 type StorageTextureBindingLayout struct {
-	_ structs.HostLayout
+	_     structs.HostLayout
+	Chain *ChainedStruct
 	// If set to @ref WGPUStorageTextureAccess_Undefined,
 	// [defaults](@ref SentinelValues) to @ref WGPUStorageTextureAccess_WriteOnly.
 	Access StorageTextureAccess
@@ -588,6 +642,7 @@ type StorageTextureBindingLayout struct {
 
 type SupportedFeatures struct {
 	_ structs.HostLayout
+
 	// Array count for Features
 	FeaturesCount uint
 	Features      *FeatureName
@@ -595,6 +650,7 @@ type SupportedFeatures struct {
 
 type SupportedInstanceFeatures struct {
 	_ structs.HostLayout
+
 	// Array count for Features
 	FeaturesCount uint
 	Features      *InstanceFeatureName
@@ -602,6 +658,7 @@ type SupportedInstanceFeatures struct {
 
 type SupportedWGSLLanguageFeatures struct {
 	_ structs.HostLayout
+
 	// Array count for Features
 	FeaturesCount uint
 	Features      *WGSLLanguageFeatureName
@@ -609,7 +666,8 @@ type SupportedWGSLLanguageFeatures struct {
 
 // Filled by @ref wgpuSurfaceGetCapabilities with what's supported for @ref wgpuSurfaceConfigure for a pair of @ref WGPUSurface and @ref WGPUAdapter.
 type SurfaceCapabilities struct {
-	_ structs.HostLayout
+	_     structs.HostLayout
+	Chain *ChainedStruct
 	// The bit set of supported @ref WGPUTextureUsage bits.
 	// Guaranteed to contain @ref WGPUTextureUsage_RenderAttachment.
 	Usages TextureUsage
@@ -632,6 +690,7 @@ type SurfaceCapabilities struct {
 // Extension of @ref WGPUSurfaceConfiguration for color spaces and HDR.
 type SurfaceColorManagement struct {
 	_               structs.HostLayout
+	NextInChain     ChainedStruct
 	ColorSpace      PredefinedColorSpace
 	ToneMappingMode ToneMappingMode
 }
@@ -639,7 +698,8 @@ type SurfaceColorManagement struct {
 // Options to @ref wgpuSurfaceConfigure for defining how a @ref WGPUSurface will be rendered to and presented to the user.
 // See @ref Surface-Configuration for more details.
 type SurfaceConfiguration struct {
-	_ structs.HostLayout
+	_     structs.HostLayout
+	Chain *ChainedStruct
 	// The @ref WGPUDevice to use to render to surface's textures.
 	Device Device
 	// The @ref WGPUTextureFormat of the surface's textures.
@@ -671,58 +731,65 @@ type SurfaceConfiguration struct {
 // It isn't sufficient by itself and must have one of the `WGPUSurfaceSource*` in its chain.
 // See @ref Surface-Creation for more details.
 type SurfaceDescriptor struct {
-	_ structs.HostLayout
+	_     structs.HostLayout
+	Chain *ChainedStruct
 	// Label used to refer to the object.
 	Label StringView
 }
 
 // Chained in @ref WGPUSurfaceDescriptor to make an @ref WGPUSurface wrapping an Android [`ANativeWindow`](https://developer.android.com/ndk/reference/group/a-native-window).
 type SurfaceSourceAndroidNativeWindow struct {
-	_ structs.HostLayout
+	_           structs.HostLayout
+	NextInChain ChainedStruct
 	// The pointer to the [`ANativeWindow`](https://developer.android.com/ndk/reference/group/a-native-window) that will be wrapped by the @ref WGPUSurface.
-	Window *unsafe.Pointer
+	Window unsafe.Pointer
 }
 
 // Chained in @ref WGPUSurfaceDescriptor to make an @ref WGPUSurface wrapping a [`CAMetalLayer`](https://developer.apple.com/documentation/quartzcore/cametallayer?language=objc).
 type SurfaceSourceMetalLayer struct {
-	_ structs.HostLayout
+	_           structs.HostLayout
+	NextInChain ChainedStruct
 	// The pointer to the [`CAMetalLayer`](https://developer.apple.com/documentation/quartzcore/cametallayer?language=objc) that will be wrapped by the @ref WGPUSurface.
-	Layer *unsafe.Pointer
+	Layer unsafe.Pointer
 }
 
 // Chained in @ref WGPUSurfaceDescriptor to make an @ref WGPUSurface wrapping a [Wayland](https://wayland.freedesktop.org/) [`wl_surface`](https://wayland.freedesktop.org/docs/html/apa.html#protocol-spec-wl_surface).
 type SurfaceSourceWaylandSurface struct {
-	_ structs.HostLayout
+	_           structs.HostLayout
+	NextInChain ChainedStruct
 	// A [`wl_display`](https://wayland.freedesktop.org/docs/html/apa.html#protocol-spec-wl_display) for this Wayland instance.
-	Display *unsafe.Pointer
+	Display unsafe.Pointer
 	// A [`wl_surface`](https://wayland.freedesktop.org/docs/html/apa.html#protocol-spec-wl_surface) that will be wrapped by the @ref WGPUSurface
-	Surface *unsafe.Pointer
+	Surface unsafe.Pointer
 }
 
 // Chained in @ref WGPUSurfaceDescriptor to make an @ref WGPUSurface wrapping a Windows [`HWND`](https://learn.microsoft.com/en-us/windows/apps/develop/ui-input/retrieve-hwnd).
 type SurfaceSourceWindowsHWND struct {
-	_ structs.HostLayout
+	_           structs.HostLayout
+	NextInChain ChainedStruct
 	// The [`HINSTANCE`](https://learn.microsoft.com/en-us/windows/win32/learnwin32/winmain--the-application-entry-point) for this application.
 	// Most commonly `GetModuleHandle(nullptr)`.
-	Hinstance *unsafe.Pointer
+	Hinstance unsafe.Pointer
 	// The [`HWND`](https://learn.microsoft.com/en-us/windows/apps/develop/ui-input/retrieve-hwnd) that will be wrapped by the @ref WGPUSurface.
-	Hwnd *unsafe.Pointer
+	Hwnd unsafe.Pointer
 }
 
 // Chained in @ref WGPUSurfaceDescriptor to make an @ref WGPUSurface wrapping an [XCB](https://xcb.freedesktop.org/) `xcb_window_t`.
 type SurfaceSourceXCBWindow struct {
-	_ structs.HostLayout
+	_           structs.HostLayout
+	NextInChain ChainedStruct
 	// The `xcb_connection_t` for the connection to the X server.
-	Connection *unsafe.Pointer
+	Connection unsafe.Pointer
 	// The `xcb_window_t` for the window that will be wrapped by the @ref WGPUSurface.
 	Window uint32
 }
 
 // Chained in @ref WGPUSurfaceDescriptor to make an @ref WGPUSurface wrapping an [Xlib](https://www.x.org/releases/current/doc/libX11/libX11/libX11.html) `Window`.
 type SurfaceSourceXlibWindow struct {
-	_ structs.HostLayout
+	_           structs.HostLayout
+	NextInChain ChainedStruct
 	// A pointer to the [`Display`](https://www.x.org/releases/current/doc/libX11/libX11/libX11.html#Opening_the_Display) connected to the X server.
-	Display *unsafe.Pointer
+	Display unsafe.Pointer
 	// The [`Window`](https://www.x.org/releases/current/doc/libX11/libX11/libX11.html#Creating_Windows) that will be wrapped by the @ref WGPUSurface.
 	Window uint64
 }
@@ -730,7 +797,8 @@ type SurfaceSourceXlibWindow struct {
 // Queried each frame from a @ref WGPUSurface to get a @ref WGPUTexture to render to along with some metadata.
 // See @ref Surface-Presenting for more details.
 type SurfaceTexture struct {
-	_ structs.HostLayout
+	_     structs.HostLayout
+	Chain *ChainedStruct
 	// The @ref WGPUTexture representing the frame that will be shown on the surface.
 	// It is @ref ReturnedWithOwnership from @ref wgpuSurfaceGetCurrentTexture.
 	Texture Texture
@@ -739,20 +807,23 @@ type SurfaceTexture struct {
 }
 
 type TexelCopyBufferInfo struct {
-	_      structs.HostLayout
+	_ structs.HostLayout
+
 	Layout TexelCopyBufferLayout
 	Buffer Buffer
 }
 
 type TexelCopyBufferLayout struct {
-	_            structs.HostLayout
+	_ structs.HostLayout
+
 	Offset       uint64
 	BytesPerRow  uint32
 	RowsPerImage uint32
 }
 
 type TexelCopyTextureInfo struct {
-	_        structs.HostLayout
+	_ structs.HostLayout
+
 	Texture  Texture
 	MipLevel uint32
 	Origin   Origin3D
@@ -762,7 +833,8 @@ type TexelCopyTextureInfo struct {
 }
 
 type TextureBindingLayout struct {
-	_ structs.HostLayout
+	_     structs.HostLayout
+	Chain *ChainedStruct
 	// If set to @ref WGPUTextureSampleType_Undefined,
 	// [defaults](@ref SentinelValues) to @ref WGPUTextureSampleType_Float.
 	SampleType TextureSampleType
@@ -777,6 +849,7 @@ type TextureBindingLayout struct {
 // on devices that have the @ref WGPUFeatureName_CoreFeaturesAndLimits feature).
 type TextureBindingViewDimension struct {
 	_                           structs.HostLayout
+	NextInChain                 ChainedStruct
 	TextureBindingViewDimension TextureViewDimension
 }
 
@@ -786,6 +859,7 @@ type TextureBindingViewDimension struct {
 // each character mapping to the texture view's red/green/blue/alpha channels.
 type TextureComponentSwizzle struct {
 	_ structs.HostLayout
+
 	// The value that replaces the red channel in the shader.
 	//
 	// If set to @ref WGPUComponentSwizzle_Undefined,
@@ -809,12 +883,14 @@ type TextureComponentSwizzle struct {
 }
 
 type TextureComponentSwizzleDescriptor struct {
-	_       structs.HostLayout
-	Swizzle TextureComponentSwizzle
+	_           structs.HostLayout
+	NextInChain ChainedStruct
+	Swizzle     TextureComponentSwizzle
 }
 
 type TextureDescriptor struct {
 	_     structs.HostLayout
+	Chain *ChainedStruct
 	Label StringView
 	Usage TextureUsage
 	// If set to @ref WGPUTextureDimension_Undefined,
@@ -831,6 +907,7 @@ type TextureDescriptor struct {
 
 type TextureViewDescriptor struct {
 	_               structs.HostLayout
+	Chain           *ChainedStruct
 	Label           StringView
 	Format          TextureFormat
 	Dimension       TextureViewDimension
@@ -846,6 +923,7 @@ type TextureViewDescriptor struct {
 
 type VertexAttribute struct {
 	_              structs.HostLayout
+	Chain          *ChainedStruct
 	Format         VertexFormat
 	Offset         uint64
 	ShaderLocation uint32
@@ -865,6 +943,7 @@ type VertexAttribute struct {
 // `stepMode` [defaults](@ref SentinelValues) to @ref WGPUVertexStepMode_Vertex.
 type VertexBufferLayout struct {
 	_           structs.HostLayout
+	Chain       *ChainedStruct
 	StepMode    VertexStepMode
 	ArrayStride uint64
 	// Array count for Attributes
@@ -874,6 +953,7 @@ type VertexBufferLayout struct {
 
 type VertexState struct {
 	_          structs.HostLayout
+	Chain      *ChainedStruct
 	Module     ShaderModule
 	EntryPoint StringView
 	// Array count for Constants

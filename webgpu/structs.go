@@ -8,6 +8,7 @@ package webgpu
 import "github.com/Tnze/go-webgpu/webgpu/sys"
 
 type AdapterInfo struct {
+	Chain           *sys.ChainedStruct
 	Vendor          string
 	Architecture    string
 	Device          string
@@ -20,18 +21,32 @@ type AdapterInfo struct {
 	SubgroupMaxSize uint32
 }
 
+func (a *AdapterInfo) Extend(e Extension) *AdapterInfo {
+	chain := e.Chain()
+	a.Chain, chain.Next = chain, a.Chain
+	return a
+}
+
 type BindGroupDescriptor struct {
+	Chain   *sys.ChainedStruct
 	Label   string
-	Layout  BindGroupLayout
+	Layout  *BindGroupLayout
 	Entries []BindGroupEntry
 }
 
+func (b *BindGroupDescriptor) Extend(e Extension) *BindGroupDescriptor {
+	chain := e.Chain()
+	b.Chain, chain.Next = chain, b.Chain
+	return b
+}
+
 type BindGroupEntry struct {
+	Chain *sys.ChainedStruct
 	// Binding index in the bind group.
 	Binding uint32
 	// Set this if the binding is a buffer object.
 	// Otherwise must be null.
-	Buffer Buffer
+	Buffer *Buffer
 	// If the binding is a buffer, this is the byte offset of the binding range.
 	// Otherwise ignored.
 	Offset uint64
@@ -41,15 +56,28 @@ type BindGroupEntry struct {
 	Size uint64
 	// Set this if the binding is a sampler object.
 	// Otherwise must be null.
-	Sampler Sampler
+	Sampler *Sampler
 	// Set this if the binding is a texture view object.
 	// Otherwise must be null.
-	TextureView TextureView
+	TextureView *TextureView
+}
+
+func (b *BindGroupEntry) Extend(e Extension) *BindGroupEntry {
+	chain := e.Chain()
+	b.Chain, chain.Next = chain, b.Chain
+	return b
 }
 
 type BindGroupLayoutDescriptor struct {
+	Chain   *sys.ChainedStruct
 	Label   string
 	Entries []BindGroupLayoutEntry
+}
+
+func (b *BindGroupLayoutDescriptor) Extend(e Extension) *BindGroupLayoutDescriptor {
+	chain := e.Chain()
+	b.Chain, chain.Next = chain, b.Chain
+	return b
 }
 
 type BindGroupLayoutEntry = sys.BindGroupLayoutEntry
@@ -61,6 +89,7 @@ type BlendState = sys.BlendState
 type BufferBindingLayout = sys.BufferBindingLayout
 
 type BufferDescriptor struct {
+	Chain *sys.ChainedStruct
 	Label string
 	Usage BufferUsage
 	Size  uint64
@@ -68,6 +97,12 @@ type BufferDescriptor struct {
 	//
 	// @note Mapping at creation does **not** require the usage @ref WGPUBufferUsage_MapWrite.
 	MappedAtCreation Bool
+}
+
+func (b *BufferDescriptor) Extend(e Extension) *BufferDescriptor {
+	chain := e.Chain()
+	b.Chain, chain.Next = chain, b.Chain
+	return b
 }
 
 // An RGBA color. Represents a `f32`, `i32`, or `u32` color using @ref DoubleAsSupertype.
@@ -78,11 +113,25 @@ type Color = sys.Color
 type ColorTargetState = sys.ColorTargetState
 
 type CommandBufferDescriptor struct {
+	Chain *sys.ChainedStruct
 	Label string
 }
 
+func (c *CommandBufferDescriptor) Extend(e Extension) *CommandBufferDescriptor {
+	chain := e.Chain()
+	c.Chain, chain.Next = chain, c.Chain
+	return c
+}
+
 type CommandEncoderDescriptor struct {
+	Chain *sys.ChainedStruct
 	Label string
+}
+
+func (c *CommandEncoderDescriptor) Extend(e Extension) *CommandEncoderDescriptor {
+	chain := e.Chain()
+	c.Chain, chain.Next = chain, c.Chain
+	return c
 }
 
 // Note: While Compatibility Mode is optional to implement, this extension struct
@@ -95,6 +144,7 @@ type CompilationInfo struct {
 }
 
 type CompilationMessage struct {
+
 	// A @ref LocalizableHumanReadableMessageString.
 	Message string
 	// Severity level of the message.
@@ -110,33 +160,62 @@ type CompilationMessage struct {
 }
 
 type ComputePassDescriptor struct {
+	Chain           *sys.ChainedStruct
 	Label           string
 	TimestampWrites *PassTimestampWrites
 }
 
+func (c *ComputePassDescriptor) Extend(e Extension) *ComputePassDescriptor {
+	chain := e.Chain()
+	c.Chain, chain.Next = chain, c.Chain
+	return c
+}
+
 type ComputePipelineDescriptor struct {
+	Chain   *sys.ChainedStruct
 	Label   string
-	Layout  PipelineLayout
+	Layout  *PipelineLayout
 	Compute ComputeState
 }
 
+func (c *ComputePipelineDescriptor) Extend(e Extension) *ComputePipelineDescriptor {
+	chain := e.Chain()
+	c.Chain, chain.Next = chain, c.Chain
+	return c
+}
+
 type ComputeState struct {
-	Module     ShaderModule
+	Chain      *sys.ChainedStruct
+	Module     *ShaderModule
 	EntryPoint string
 	Constants  []ConstantEntry
 }
 
+func (c *ComputeState) Extend(e Extension) *ComputeState {
+	chain := e.Chain()
+	c.Chain, chain.Next = chain, c.Chain
+	return c
+}
+
 type ConstantEntry struct {
-	Key string
+	Chain *sys.ChainedStruct
+	Key   string
 	// Represents a WGSL numeric or boolean value using @ref DoubleAsSupertype.
 	//
 	// If non-finite, produces a @ref NonFiniteFloatValueError.
 	Value float64
 }
 
+func (c *ConstantEntry) Extend(e Extension) *ConstantEntry {
+	chain := e.Chain()
+	c.Chain, chain.Next = chain, c.Chain
+	return c
+}
+
 type DepthStencilState = sys.DepthStencilState
 
 type DeviceDescriptor struct {
+	Chain                  *sys.ChainedStruct
 	Label                  string
 	RequiredFeatures       []FeatureName
 	RequiredLimits         *Limits
@@ -149,21 +228,38 @@ type DeviceDescriptor struct {
 	UncapturedErrorCallbackInfo sys.UncapturedErrorCallbackInfo
 }
 
+func (d *DeviceDescriptor) Extend(e Extension) *DeviceDescriptor {
+	chain := e.Chain()
+	d.Chain, chain.Next = chain, d.Chain
+	return d
+}
+
 type Extent3D = sys.Extent3D
 
 // Chained in an @ref WGPUBindGroupEntry to set it to an @ref WGPUExternalTexture. This must have a corresponding @ref WGPUExternalTextureBindingLayout in the @ref WGPUBindGroupLayout.
 type ExternalTextureBindingEntry struct {
-	ExternalTexture ExternalTexture
+	ExternalTexture *ExternalTexture
+}
+
+func (e *ExternalTextureBindingEntry) Chain() *sys.ChainedStruct {
+	return &new(e.unwrap()).NextInChain
 }
 
 // Chained in @ref WGPUBindGroupLayoutEntry to specify that the corresponding entries in an @ref WGPUBindGroup will contain an @ref WGPUExternalTexture.
 type ExternalTextureBindingLayout = sys.ExternalTextureBindingLayout
 
 type FragmentState struct {
-	Module     ShaderModule
+	Chain      *sys.ChainedStruct
+	Module     *ShaderModule
 	EntryPoint string
 	Constants  []ConstantEntry
 	Targets    []ColorTargetState
+}
+
+func (f *FragmentState) Extend(e Extension) *FragmentState {
+	chain := e.Chain()
+	f.Chain, chain.Next = chain, f.Chain
+	return f
 }
 
 // Opaque handle to an asynchronous operation. See @ref Asynchronous-Operations for more information.
@@ -173,8 +269,15 @@ type Future = sys.Future
 type FutureWaitInfo = sys.FutureWaitInfo
 
 type InstanceDescriptor struct {
+	Chain            *sys.ChainedStruct
 	RequiredFeatures []InstanceFeatureName
 	RequiredLimits   *InstanceLimits
+}
+
+func (i *InstanceDescriptor) Extend(e Extension) *InstanceDescriptor {
+	chain := e.Chain()
+	i.Chain, chain.Next = chain, i.Chain
+	return i
 }
 
 type InstanceLimits = sys.InstanceLimits
@@ -186,35 +289,71 @@ type MultisampleState = sys.MultisampleState
 type Origin3D = sys.Origin3D
 
 type PassTimestampWrites struct {
+	Chain *sys.ChainedStruct
 	// Query set to write timestamps to.
-	QuerySet                  QuerySet
+	QuerySet                  *QuerySet
 	BeginningOfPassWriteIndex uint32
 	EndOfPassWriteIndex       uint32
 }
 
+func (p *PassTimestampWrites) Extend(e Extension) *PassTimestampWrites {
+	chain := e.Chain()
+	p.Chain, chain.Next = chain, p.Chain
+	return p
+}
+
 type PipelineLayoutDescriptor struct {
+	Chain            *sys.ChainedStruct
 	Label            string
 	BindGroupLayouts []BindGroupLayout
 	ImmediateSize    uint32
 }
 
+func (p *PipelineLayoutDescriptor) Extend(e Extension) *PipelineLayoutDescriptor {
+	chain := e.Chain()
+	p.Chain, chain.Next = chain, p.Chain
+	return p
+}
+
 type PrimitiveState = sys.PrimitiveState
 
 type QuerySetDescriptor struct {
+	Chain *sys.ChainedStruct
 	Label string
 	Type  QueryType
 	Count uint32
 }
 
+func (q *QuerySetDescriptor) Extend(e Extension) *QuerySetDescriptor {
+	chain := e.Chain()
+	q.Chain, chain.Next = chain, q.Chain
+	return q
+}
+
 type QueueDescriptor struct {
+	Chain *sys.ChainedStruct
 	Label string
+}
+
+func (q *QueueDescriptor) Extend(e Extension) *QueueDescriptor {
+	chain := e.Chain()
+	q.Chain, chain.Next = chain, q.Chain
+	return q
 }
 
 type RenderBundleDescriptor struct {
+	Chain *sys.ChainedStruct
 	Label string
 }
 
+func (r *RenderBundleDescriptor) Extend(e Extension) *RenderBundleDescriptor {
+	chain := e.Chain()
+	r.Chain, chain.Next = chain, r.Chain
+	return r
+}
+
 type RenderBundleEncoderDescriptor struct {
+	Chain              *sys.ChainedStruct
 	Label              string
 	ColorFormats       []TextureFormat
 	DepthStencilFormat TextureFormat
@@ -223,19 +362,33 @@ type RenderBundleEncoderDescriptor struct {
 	StencilReadOnly    Bool
 }
 
+func (r *RenderBundleEncoderDescriptor) Extend(e Extension) *RenderBundleEncoderDescriptor {
+	chain := e.Chain()
+	r.Chain, chain.Next = chain, r.Chain
+	return r
+}
+
 type RenderPassColorAttachment struct {
+	Chain *sys.ChainedStruct
 	// If `NULL`, indicates a hole in the parent
 	// @ref WGPURenderPassDescriptor::colorAttachments array.
-	View          TextureView
+	View          *TextureView
 	DepthSlice    uint32
-	ResolveTarget TextureView
+	ResolveTarget *TextureView
 	LoadOp        LoadOp
 	StoreOp       StoreOp
 	ClearValue    Color
 }
 
+func (r *RenderPassColorAttachment) Extend(e Extension) *RenderPassColorAttachment {
+	chain := e.Chain()
+	r.Chain, chain.Next = chain, r.Chain
+	return r
+}
+
 type RenderPassDepthStencilAttachment struct {
-	View         TextureView
+	Chain        *sys.ChainedStruct
+	View         *TextureView
 	DepthLoadOp  LoadOp
 	DepthStoreOp StoreOp
 	// This is a @ref NullableFloatingPointType.
@@ -252,19 +405,33 @@ type RenderPassDepthStencilAttachment struct {
 	StencilReadOnly   Bool
 }
 
+func (r *RenderPassDepthStencilAttachment) Extend(e Extension) *RenderPassDepthStencilAttachment {
+	chain := e.Chain()
+	r.Chain, chain.Next = chain, r.Chain
+	return r
+}
+
 type RenderPassDescriptor struct {
+	Chain                  *sys.ChainedStruct
 	Label                  string
 	ColorAttachments       []RenderPassColorAttachment
 	DepthStencilAttachment *RenderPassDepthStencilAttachment
-	OcclusionQuerySet      QuerySet
+	OcclusionQuerySet      *QuerySet
 	TimestampWrites        *PassTimestampWrites
+}
+
+func (r *RenderPassDescriptor) Extend(e Extension) *RenderPassDescriptor {
+	chain := e.Chain()
+	r.Chain, chain.Next = chain, r.Chain
+	return r
 }
 
 type RenderPassMaxDrawCount = sys.RenderPassMaxDrawCount
 
 type RenderPipelineDescriptor struct {
+	Chain        *sys.ChainedStruct
 	Label        string
-	Layout       PipelineLayout
+	Layout       *PipelineLayout
 	Vertex       VertexState
 	Primitive    PrimitiveState
 	DepthStencil *DepthStencilState
@@ -272,7 +439,14 @@ type RenderPipelineDescriptor struct {
 	Fragment     *FragmentState
 }
 
+func (r *RenderPipelineDescriptor) Extend(e Extension) *RenderPipelineDescriptor {
+	chain := e.Chain()
+	r.Chain, chain.Next = chain, r.Chain
+	return r
+}
+
 type RequestAdapterOptions struct {
+	Chain *sys.ChainedStruct
 	// "Feature level" for the adapter request. If an adapter is returned, it must support the features and limits in the requested feature level.
 	//
 	// If set to @ref WGPUFeatureLevel_Undefined,
@@ -289,7 +463,13 @@ type RequestAdapterOptions struct {
 	BackendType BackendType
 	// If set, requires the adapter to be able to output to a particular surface.
 	// If this is not possible, the request returns null.
-	CompatibleSurface Surface
+	CompatibleSurface *Surface
+}
+
+func (r *RequestAdapterOptions) Extend(e Extension) *RequestAdapterOptions {
+	chain := e.Chain()
+	r.Chain, chain.Next = chain, r.Chain
+	return r
 }
 
 // Extension providing requestAdapter options for implementations with WebXR interop (i.e. Wasm).
@@ -298,6 +478,7 @@ type RequestAdapterWebXROptions = sys.RequestAdapterWebXROptions
 type SamplerBindingLayout = sys.SamplerBindingLayout
 
 type SamplerDescriptor struct {
+	Chain *sys.ChainedStruct
 	Label string
 	// If set to @ref WGPUAddressMode_Undefined,
 	// [defaults](@ref SentinelValues) to @ref WGPUAddressMode_ClampToEdge.
@@ -329,14 +510,31 @@ type SamplerDescriptor struct {
 	MaxAnisotropy uint16
 }
 
+func (s *SamplerDescriptor) Extend(e Extension) *SamplerDescriptor {
+	chain := e.Chain()
+	s.Chain, chain.Next = chain, s.Chain
+	return s
+}
+
 type ShaderModuleDescriptor struct {
+	Chain *sys.ChainedStruct
 	Label string
+}
+
+func (s *ShaderModuleDescriptor) Extend(e Extension) *ShaderModuleDescriptor {
+	chain := e.Chain()
+	s.Chain, chain.Next = chain, s.Chain
+	return s
 }
 
 type ShaderSourceSPIRV = sys.ShaderSourceSPIRV
 
 type ShaderSourceWGSL struct {
 	Code string
+}
+
+func (s *ShaderSourceWGSL) Chain() *sys.ChainedStruct {
+	return &new(s.unwrap()).NextInChain
 }
 
 type StencilFaceState = sys.StencilFaceState
@@ -357,6 +555,7 @@ type SupportedWGSLLanguageFeatures struct {
 
 // Filled by @ref wgpuSurfaceGetCapabilities with what's supported for @ref wgpuSurfaceConfigure for a pair of @ref WGPUSurface and @ref WGPUAdapter.
 type SurfaceCapabilities struct {
+	Chain *sys.ChainedStruct
 	// The bit set of supported @ref WGPUTextureUsage bits.
 	// Guaranteed to contain @ref WGPUTextureUsage_RenderAttachment.
 	Usages TextureUsage
@@ -370,14 +569,21 @@ type SurfaceCapabilities struct {
 	AlphaModes []CompositeAlphaMode
 }
 
+func (s *SurfaceCapabilities) Extend(e Extension) *SurfaceCapabilities {
+	chain := e.Chain()
+	s.Chain, chain.Next = chain, s.Chain
+	return s
+}
+
 // Extension of @ref WGPUSurfaceConfiguration for color spaces and HDR.
 type SurfaceColorManagement = sys.SurfaceColorManagement
 
 // Options to @ref wgpuSurfaceConfigure for defining how a @ref WGPUSurface will be rendered to and presented to the user.
 // See @ref Surface-Configuration for more details.
 type SurfaceConfiguration struct {
+	Chain *sys.ChainedStruct
 	// The @ref WGPUDevice to use to render to surface's textures.
-	Device Device
+	Device *Device
 	// The @ref WGPUTextureFormat of the surface's textures.
 	Format TextureFormat
 	// The @ref WGPUTextureUsage of the surface's textures.
@@ -401,12 +607,25 @@ type SurfaceConfiguration struct {
 	PresentMode PresentMode
 }
 
+func (s *SurfaceConfiguration) Extend(e Extension) *SurfaceConfiguration {
+	chain := e.Chain()
+	s.Chain, chain.Next = chain, s.Chain
+	return s
+}
+
 // The root descriptor for the creation of an @ref WGPUSurface with @ref wgpuInstanceCreateSurface.
 // It isn't sufficient by itself and must have one of the `WGPUSurfaceSource*` in its chain.
 // See @ref Surface-Creation for more details.
 type SurfaceDescriptor struct {
+	Chain *sys.ChainedStruct
 	// Label used to refer to the object.
 	Label string
+}
+
+func (s *SurfaceDescriptor) Extend(e Extension) *SurfaceDescriptor {
+	chain := e.Chain()
+	s.Chain, chain.Next = chain, s.Chain
+	return s
 }
 
 // Chained in @ref WGPUSurfaceDescriptor to make an @ref WGPUSurface wrapping an Android [`ANativeWindow`](https://developer.android.com/ndk/reference/group/a-native-window).
@@ -430,22 +649,29 @@ type SurfaceSourceXlibWindow = sys.SurfaceSourceXlibWindow
 // Queried each frame from a @ref WGPUSurface to get a @ref WGPUTexture to render to along with some metadata.
 // See @ref Surface-Presenting for more details.
 type SurfaceTexture struct {
+	Chain *sys.ChainedStruct
 	// The @ref WGPUTexture representing the frame that will be shown on the surface.
 	// It is @ref ReturnedWithOwnership from @ref wgpuSurfaceGetCurrentTexture.
-	Texture Texture
+	Texture *Texture
 	// Whether the call to @ref wgpuSurfaceGetCurrentTexture succeeded and a hint as to why it might not have.
 	Status SurfaceGetCurrentTextureStatus
 }
 
+func (s *SurfaceTexture) Extend(e Extension) *SurfaceTexture {
+	chain := e.Chain()
+	s.Chain, chain.Next = chain, s.Chain
+	return s
+}
+
 type TexelCopyBufferInfo struct {
 	Layout TexelCopyBufferLayout
-	Buffer Buffer
+	Buffer *Buffer
 }
 
 type TexelCopyBufferLayout = sys.TexelCopyBufferLayout
 
 type TexelCopyTextureInfo struct {
-	Texture  Texture
+	Texture  *Texture
 	MipLevel uint32
 	Origin   Origin3D
 	// If set to @ref WGPUTextureAspect_Undefined,
@@ -469,6 +695,7 @@ type TextureComponentSwizzle = sys.TextureComponentSwizzle
 type TextureComponentSwizzleDescriptor = sys.TextureComponentSwizzleDescriptor
 
 type TextureDescriptor struct {
+	Chain *sys.ChainedStruct
 	Label string
 	Usage TextureUsage
 	// If set to @ref WGPUTextureDimension_Undefined,
@@ -481,7 +708,14 @@ type TextureDescriptor struct {
 	ViewFormats   []TextureFormat
 }
 
+func (t *TextureDescriptor) Extend(e Extension) *TextureDescriptor {
+	chain := e.Chain()
+	t.Chain, chain.Next = chain, t.Chain
+	return t
+}
+
 type TextureViewDescriptor struct {
+	Chain           *sys.ChainedStruct
 	Label           string
 	Format          TextureFormat
 	Dimension       TextureViewDimension
@@ -493,6 +727,12 @@ type TextureViewDescriptor struct {
 	// [defaults](@ref SentinelValues) to @ref WGPUTextureAspect_All.
 	Aspect TextureAspect
 	Usage  TextureUsage
+}
+
+func (t *TextureViewDescriptor) Extend(e Extension) *TextureViewDescriptor {
+	chain := e.Chain()
+	t.Chain, chain.Next = chain, t.Chain
+	return t
 }
 
 type VertexAttribute = sys.VertexAttribute
@@ -510,14 +750,32 @@ type VertexAttribute = sys.VertexAttribute
 // If `stepMode` is @ref WGPUVertexStepMode_Undefined but `attributes` is *not* empty,
 // `stepMode` [defaults](@ref SentinelValues) to @ref WGPUVertexStepMode_Vertex.
 type VertexBufferLayout struct {
+	Chain       *sys.ChainedStruct
 	StepMode    VertexStepMode
 	ArrayStride uint64
 	Attributes  []VertexAttribute
 }
 
+func (v *VertexBufferLayout) Extend(e Extension) *VertexBufferLayout {
+	chain := e.Chain()
+	v.Chain, chain.Next = chain, v.Chain
+	return v
+}
+
 type VertexState struct {
-	Module     ShaderModule
+	Chain      *sys.ChainedStruct
+	Module     *ShaderModule
 	EntryPoint string
 	Constants  []ConstantEntry
 	Buffers    []VertexBufferLayout
+}
+
+func (v *VertexState) Extend(e Extension) *VertexState {
+	chain := e.Chain()
+	v.Chain, chain.Next = chain, v.Chain
+	return v
+}
+
+type Extension interface {
+	Chain() *sys.ChainedStruct
 }

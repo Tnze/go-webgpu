@@ -10,6 +10,8 @@ import (
 {{ goDoc .Doc "" -}}
 type {{ $structName }} struct {
 	_ structs.HostLayout
+	{{ if eq .Type "extensible" }}Chain *ChainedStruct
+	{{- else if eq .Type "extension" -}}NextInChain ChainedStruct{{- end }}
 {{- range .Members }}{{ $fieldName := pascalCase .Name -}}
 	{{ if arrayElem .Type }}
 	// Array count for {{ $fieldName }}
@@ -18,7 +20,7 @@ type {{ $structName }} struct {
 	{{ $fieldName }} *{{ arrayElem .Type | goType }}
 	{{- else }}
 	{{ goDoc .Doc "\t" -}}
-	{{ $fieldName }} {{ if .Pointer }}*{{ end }}{{ goType .Type }}
+	{{ $fieldName }} {{ if and .Pointer (ne (goType .Type) "unsafe.Pointer") }}*{{ end }}{{ goType .Type }}
 	{{- end }}
 {{- end }}
 }

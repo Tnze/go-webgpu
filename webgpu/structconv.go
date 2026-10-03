@@ -11,6 +11,7 @@ import (
 )
 
 func (a *AdapterInfo) unwrap() (out sys.AdapterInfo) {
+	out.Chain = a.Chain
 	out.Vendor = sys.StringView{
 		Length: uint(len(a.Vendor)),
 		Data:   unsafe.StringData(a.Vendor),
@@ -41,6 +42,7 @@ func (a *AdapterInfo) wrap(in *sys.AdapterInfo) {
 }
 
 func (b *BindGroupDescriptor) unwrap() (out sys.BindGroupDescriptor) {
+	out.Chain = b.Chain
 	out.Label = sys.StringView{
 		Length: uint(len(b.Label)),
 		Data:   unsafe.StringData(b.Label),
@@ -60,6 +62,7 @@ func (b *BindGroupDescriptor) wrap(in *sys.BindGroupDescriptor) {
 }
 
 func (b *BindGroupEntry) unwrap() (out sys.BindGroupEntry) {
+	out.Chain = b.Chain
 	out.Binding = b.Binding // uint32
 	out.Buffer = b.Buffer.inner
 	out.Offset = b.Offset // uint64
@@ -74,6 +77,7 @@ func (b *BindGroupEntry) wrap(in *sys.BindGroupEntry) {
 }
 
 func (b *BindGroupLayoutDescriptor) unwrap() (out sys.BindGroupLayoutDescriptor) {
+	out.Chain = b.Chain
 	out.Label = sys.StringView{
 		Length: uint(len(b.Label)),
 		Data:   unsafe.StringData(b.Label),
@@ -89,6 +93,7 @@ func (b *BindGroupLayoutDescriptor) wrap(in *sys.BindGroupLayoutDescriptor) {
 }
 
 func (b *BufferDescriptor) unwrap() (out sys.BufferDescriptor) {
+	out.Chain = b.Chain
 	out.Label = sys.StringView{
 		Length: uint(len(b.Label)),
 		Data:   unsafe.StringData(b.Label),
@@ -104,6 +109,7 @@ func (b *BufferDescriptor) wrap(in *sys.BufferDescriptor) {
 }
 
 func (c *CommandBufferDescriptor) unwrap() (out sys.CommandBufferDescriptor) {
+	out.Chain = c.Chain
 	out.Label = sys.StringView{
 		Length: uint(len(c.Label)),
 		Data:   unsafe.StringData(c.Label),
@@ -116,6 +122,7 @@ func (c *CommandBufferDescriptor) wrap(in *sys.CommandBufferDescriptor) {
 }
 
 func (c *CommandEncoderDescriptor) unwrap() (out sys.CommandEncoderDescriptor) {
+	out.Chain = c.Chain
 	out.Label = sys.StringView{
 		Length: uint(len(c.Label)),
 		Data:   unsafe.StringData(c.Label),
@@ -128,6 +135,7 @@ func (c *CommandEncoderDescriptor) wrap(in *sys.CommandEncoderDescriptor) {
 }
 
 func (c *CompilationInfo) unwrap() (out sys.CompilationInfo) {
+
 	out.MessagesCount = uint(len(c.Messages))
 	messages := make([]sys.CompilationMessage, len(c.Messages))
 	for i := range messages {
@@ -142,6 +150,7 @@ func (c *CompilationInfo) wrap(in *sys.CompilationInfo) {
 }
 
 func (c *CompilationMessage) unwrap() (out sys.CompilationMessage) {
+
 	out.Message = sys.StringView{
 		Length: uint(len(c.Message)),
 		Data:   unsafe.StringData(c.Message),
@@ -159,6 +168,7 @@ func (c *CompilationMessage) wrap(in *sys.CompilationMessage) {
 }
 
 func (c *ComputePassDescriptor) unwrap() (out sys.ComputePassDescriptor) {
+	out.Chain = c.Chain
 	out.Label = sys.StringView{
 		Length: uint(len(c.Label)),
 		Data:   unsafe.StringData(c.Label),
@@ -174,6 +184,7 @@ func (c *ComputePassDescriptor) wrap(in *sys.ComputePassDescriptor) {
 }
 
 func (c *ComputePipelineDescriptor) unwrap() (out sys.ComputePipelineDescriptor) {
+	out.Chain = c.Chain
 	out.Label = sys.StringView{
 		Length: uint(len(c.Label)),
 		Data:   unsafe.StringData(c.Label),
@@ -188,6 +199,7 @@ func (c *ComputePipelineDescriptor) wrap(in *sys.ComputePipelineDescriptor) {
 }
 
 func (c *ComputeState) unwrap() (out sys.ComputeState) {
+	out.Chain = c.Chain
 	out.Module = c.Module.inner
 	out.EntryPoint = sys.StringView{
 		Length: uint(len(c.EntryPoint)),
@@ -207,6 +219,7 @@ func (c *ComputeState) wrap(in *sys.ComputeState) {
 }
 
 func (c *ConstantEntry) unwrap() (out sys.ConstantEntry) {
+	out.Chain = c.Chain
 	out.Key = sys.StringView{
 		Length: uint(len(c.Key)),
 		Data:   unsafe.StringData(c.Key),
@@ -220,6 +233,7 @@ func (c *ConstantEntry) wrap(in *sys.ConstantEntry) {
 }
 
 func (d *DeviceDescriptor) unwrap() (out sys.DeviceDescriptor) {
+	out.Chain = d.Chain
 	out.Label = sys.StringView{
 		Length: uint(len(d.Label)),
 		Data:   unsafe.StringData(d.Label),
@@ -240,6 +254,7 @@ func (d *DeviceDescriptor) wrap(in *sys.DeviceDescriptor) {
 }
 
 func (e *ExternalTextureBindingEntry) unwrap() (out sys.ExternalTextureBindingEntry) {
+
 	out.ExternalTexture = e.ExternalTexture.inner
 	return
 }
@@ -249,6 +264,7 @@ func (e *ExternalTextureBindingEntry) wrap(in *sys.ExternalTextureBindingEntry) 
 }
 
 func (f *FragmentState) unwrap() (out sys.FragmentState) {
+	out.Chain = f.Chain
 	out.Module = f.Module.inner
 	out.EntryPoint = sys.StringView{
 		Length: uint(len(f.EntryPoint)),
@@ -271,6 +287,7 @@ func (f *FragmentState) wrap(in *sys.FragmentState) {
 }
 
 func (i *InstanceDescriptor) unwrap() (out sys.InstanceDescriptor) {
+	out.Chain = i.Chain
 
 	out.RequiredFeatures = &i.RequiredFeatures[0]
 	if i.RequiredLimits != nil {
@@ -284,6 +301,7 @@ func (i *InstanceDescriptor) wrap(in *sys.InstanceDescriptor) {
 }
 
 func (p *PassTimestampWrites) unwrap() (out sys.PassTimestampWrites) {
+	out.Chain = p.Chain
 	out.QuerySet = p.QuerySet.inner
 	out.BeginningOfPassWriteIndex = p.BeginningOfPassWriteIndex // uint32
 	out.EndOfPassWriteIndex = p.EndOfPassWriteIndex             // uint32
@@ -295,6 +313,7 @@ func (p *PassTimestampWrites) wrap(in *sys.PassTimestampWrites) {
 }
 
 func (p *PipelineLayoutDescriptor) unwrap() (out sys.PipelineLayoutDescriptor) {
+	out.Chain = p.Chain
 	out.Label = sys.StringView{
 		Length: uint(len(p.Label)),
 		Data:   unsafe.StringData(p.Label),
@@ -313,6 +332,7 @@ func (p *PipelineLayoutDescriptor) wrap(in *sys.PipelineLayoutDescriptor) {
 }
 
 func (q *QuerySetDescriptor) unwrap() (out sys.QuerySetDescriptor) {
+	out.Chain = q.Chain
 	out.Label = sys.StringView{
 		Length: uint(len(q.Label)),
 		Data:   unsafe.StringData(q.Label),
@@ -327,6 +347,7 @@ func (q *QuerySetDescriptor) wrap(in *sys.QuerySetDescriptor) {
 }
 
 func (q *QueueDescriptor) unwrap() (out sys.QueueDescriptor) {
+	out.Chain = q.Chain
 	out.Label = sys.StringView{
 		Length: uint(len(q.Label)),
 		Data:   unsafe.StringData(q.Label),
@@ -339,6 +360,7 @@ func (q *QueueDescriptor) wrap(in *sys.QueueDescriptor) {
 }
 
 func (r *RenderBundleDescriptor) unwrap() (out sys.RenderBundleDescriptor) {
+	out.Chain = r.Chain
 	out.Label = sys.StringView{
 		Length: uint(len(r.Label)),
 		Data:   unsafe.StringData(r.Label),
@@ -351,6 +373,7 @@ func (r *RenderBundleDescriptor) wrap(in *sys.RenderBundleDescriptor) {
 }
 
 func (r *RenderBundleEncoderDescriptor) unwrap() (out sys.RenderBundleEncoderDescriptor) {
+	out.Chain = r.Chain
 	out.Label = sys.StringView{
 		Length: uint(len(r.Label)),
 		Data:   unsafe.StringData(r.Label),
@@ -369,6 +392,7 @@ func (r *RenderBundleEncoderDescriptor) wrap(in *sys.RenderBundleEncoderDescript
 }
 
 func (r *RenderPassColorAttachment) unwrap() (out sys.RenderPassColorAttachment) {
+	out.Chain = r.Chain
 	out.View = r.View.inner
 	out.DepthSlice = r.DepthSlice // uint32
 	out.ResolveTarget = r.ResolveTarget.inner
@@ -383,6 +407,7 @@ func (r *RenderPassColorAttachment) wrap(in *sys.RenderPassColorAttachment) {
 }
 
 func (r *RenderPassDepthStencilAttachment) unwrap() (out sys.RenderPassDepthStencilAttachment) {
+	out.Chain = r.Chain
 	out.View = r.View.inner
 	out.DepthLoadOp = r.DepthLoadOp             // enum.load_op
 	out.DepthStoreOp = r.DepthStoreOp           // enum.store_op
@@ -400,6 +425,7 @@ func (r *RenderPassDepthStencilAttachment) wrap(in *sys.RenderPassDepthStencilAt
 }
 
 func (r *RenderPassDescriptor) unwrap() (out sys.RenderPassDescriptor) {
+	out.Chain = r.Chain
 	out.Label = sys.StringView{
 		Length: uint(len(r.Label)),
 		Data:   unsafe.StringData(r.Label),
@@ -425,6 +451,7 @@ func (r *RenderPassDescriptor) wrap(in *sys.RenderPassDescriptor) {
 }
 
 func (r *RenderPipelineDescriptor) unwrap() (out sys.RenderPipelineDescriptor) {
+	out.Chain = r.Chain
 	out.Label = sys.StringView{
 		Length: uint(len(r.Label)),
 		Data:   unsafe.StringData(r.Label),
@@ -447,6 +474,7 @@ func (r *RenderPipelineDescriptor) wrap(in *sys.RenderPipelineDescriptor) {
 }
 
 func (r *RequestAdapterOptions) unwrap() (out sys.RequestAdapterOptions) {
+	out.Chain = r.Chain
 	out.FeatureLevel = r.FeatureLevel                 // enum.feature_level
 	out.PowerPreference = r.PowerPreference           // enum.power_preference
 	out.ForceFallbackAdapter = r.ForceFallbackAdapter // bool
@@ -460,6 +488,7 @@ func (r *RequestAdapterOptions) wrap(in *sys.RequestAdapterOptions) {
 }
 
 func (s *SamplerDescriptor) unwrap() (out sys.SamplerDescriptor) {
+	out.Chain = s.Chain
 	out.Label = sys.StringView{
 		Length: uint(len(s.Label)),
 		Data:   unsafe.StringData(s.Label),
@@ -482,6 +511,7 @@ func (s *SamplerDescriptor) wrap(in *sys.SamplerDescriptor) {
 }
 
 func (s *ShaderModuleDescriptor) unwrap() (out sys.ShaderModuleDescriptor) {
+	out.Chain = s.Chain
 	out.Label = sys.StringView{
 		Length: uint(len(s.Label)),
 		Data:   unsafe.StringData(s.Label),
@@ -494,6 +524,7 @@ func (s *ShaderModuleDescriptor) wrap(in *sys.ShaderModuleDescriptor) {
 }
 
 func (s *ShaderSourceWGSL) unwrap() (out sys.ShaderSourceWGSL) {
+
 	out.Code = sys.StringView{
 		Length: uint(len(s.Code)),
 		Data:   unsafe.StringData(s.Code),
@@ -536,6 +567,7 @@ func (s *SupportedWGSLLanguageFeatures) wrap(in *sys.SupportedWGSLLanguageFeatur
 }
 
 func (s *SurfaceCapabilities) unwrap() (out sys.SurfaceCapabilities) {
+	out.Chain = s.Chain
 	out.Usages = s.Usages // bitflag.texture_usage
 
 	out.Formats = &s.Formats[0]
@@ -551,6 +583,7 @@ func (s *SurfaceCapabilities) wrap(in *sys.SurfaceCapabilities) {
 }
 
 func (s *SurfaceConfiguration) unwrap() (out sys.SurfaceConfiguration) {
+	out.Chain = s.Chain
 	out.Device = s.Device.inner
 	out.Format = s.Format // enum.texture_format
 	out.Usage = s.Usage   // bitflag.texture_usage
@@ -568,6 +601,7 @@ func (s *SurfaceConfiguration) wrap(in *sys.SurfaceConfiguration) {
 }
 
 func (s *SurfaceDescriptor) unwrap() (out sys.SurfaceDescriptor) {
+	out.Chain = s.Chain
 	out.Label = sys.StringView{
 		Length: uint(len(s.Label)),
 		Data:   unsafe.StringData(s.Label),
@@ -580,6 +614,7 @@ func (s *SurfaceDescriptor) wrap(in *sys.SurfaceDescriptor) {
 }
 
 func (s *SurfaceTexture) unwrap() (out sys.SurfaceTexture) {
+	out.Chain = s.Chain
 	out.Texture = s.Texture.inner
 	out.Status = s.Status // enum.surface_get_current_texture_status
 	return
@@ -590,6 +625,7 @@ func (s *SurfaceTexture) wrap(in *sys.SurfaceTexture) {
 }
 
 func (t *TexelCopyBufferInfo) unwrap() (out sys.TexelCopyBufferInfo) {
+
 	out.Layout = t.Layout
 	out.Buffer = t.Buffer.inner
 	return
@@ -600,6 +636,7 @@ func (t *TexelCopyBufferInfo) wrap(in *sys.TexelCopyBufferInfo) {
 }
 
 func (t *TexelCopyTextureInfo) unwrap() (out sys.TexelCopyTextureInfo) {
+
 	out.Texture = t.Texture.inner
 	out.MipLevel = t.MipLevel // uint32
 	out.Origin = t.Origin
@@ -612,6 +649,7 @@ func (t *TexelCopyTextureInfo) wrap(in *sys.TexelCopyTextureInfo) {
 }
 
 func (t *TextureDescriptor) unwrap() (out sys.TextureDescriptor) {
+	out.Chain = t.Chain
 	out.Label = sys.StringView{
 		Length: uint(len(t.Label)),
 		Data:   unsafe.StringData(t.Label),
@@ -632,6 +670,7 @@ func (t *TextureDescriptor) wrap(in *sys.TextureDescriptor) {
 }
 
 func (t *TextureViewDescriptor) unwrap() (out sys.TextureViewDescriptor) {
+	out.Chain = t.Chain
 	out.Label = sys.StringView{
 		Length: uint(len(t.Label)),
 		Data:   unsafe.StringData(t.Label),
@@ -652,6 +691,7 @@ func (t *TextureViewDescriptor) wrap(in *sys.TextureViewDescriptor) {
 }
 
 func (v *VertexBufferLayout) unwrap() (out sys.VertexBufferLayout) {
+	out.Chain = v.Chain
 	out.StepMode = v.StepMode       // enum.vertex_step_mode
 	out.ArrayStride = v.ArrayStride // uint64
 	out.AttributesCount = uint(len(v.Attributes))
@@ -665,6 +705,7 @@ func (v *VertexBufferLayout) wrap(in *sys.VertexBufferLayout) {
 }
 
 func (v *VertexState) unwrap() (out sys.VertexState) {
+	out.Chain = v.Chain
 	out.Module = v.Module.inner
 	out.EntryPoint = sys.StringView{
 		Length: uint(len(v.EntryPoint)),
