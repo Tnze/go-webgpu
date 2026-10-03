@@ -1,0 +1,13 @@
+// Code generated; DO NOT EDIT.
+{{ goDoc .Copyright "" }}
+package {{ .PackageName }}
+
+import {{ $importPath := .ImportPath }}{{ printf "%q" (printf "%s/sys" $importPath) }}
+{{ range .Constants }}
+{{ goDoc .Doc "" -}}
+{{ if eq .Value "nan" -}}
+var {{ pascalCase .Name }} = sys.{{ pascalCase .Name }}
+{{- else -}}
+const {{ pascalCase .Name }} = sys.{{ pascalCase .Name }}
+{{- end }}
+{{ end }}

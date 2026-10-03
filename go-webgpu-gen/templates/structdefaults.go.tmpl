@@ -1,0 +1,19 @@
+// Code generated; DO NOT EDIT.
+{{ goDoc .Copyright "" }}
+package {{ .PackageName }}
+
+import {{ $importPath := .ImportPath }}{{ printf "%q" (printf "%s/sys" $importPath) }}
+{{ range .Structs }}{{ $structName := pascalCase .Name}}
+{{ if $.IsPureData . }}
+func Default{{ $structName }}() {{ $structName }} {
+	return sys.Default{{ $structName }}()
+}
+{{ else }}
+func Default{{ $structName }}() {{ $structName }} {
+	return {{ $structName }}{
+	{{ range .Members }}{{ $val := structDefaultValue . }}
+	{{- if $val }}	{{ pascalCase .Name }}: {{ $val }},
+	{{ end }}{{ end }}}
+}
+{{ end }}
+{{ end }}

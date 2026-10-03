@@ -6,7 +6,7 @@ import "math"
 {{ range .Constants }}
 {{ goDoc .Doc "" -}}
 {{ if eq .Value "nan" -}}
-var {{ .Name | pascalCase }} = float32({{ .Value | toGoLiteral }})
+var {{ pascalCase .Name }} = float32({{ toGoLiteral .Value }})
 {{- else -}}
 const {{ .Name | pascalCase }} = {{ .Value | toGoLiteral }}
 {{- end }}
