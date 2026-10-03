@@ -35,7 +35,9 @@ func ({{ $r }} *{{ $structName }}) Extend(e Extension) *{{ $structName }} {
 }
 {{ else if eq .Type "extension" -}}
 func ({{ $r }} *{{ $structName }}) Chain() *sys.ChainedStruct {
-	return &new({{ $r }}.unwrap()).NextInChain
+	chain := {{ $r }}.unwrap()
+	chain.NextInChain.SType = SType{{ $structName }}
+	return &chain.NextInChain
 }
 {{ end }}
 {{ end }}{{ end }}

@@ -171,6 +171,7 @@ type CompatibilityModeLimits struct {
 }
 
 func (c *CompatibilityModeLimits) Chain() *ChainedStruct {
+	c.NextInChain.SType = STypeCompatibilityModeLimits
 	return &c.NextInChain
 }
 
@@ -288,6 +289,7 @@ type ExternalTextureBindingEntry struct {
 }
 
 func (e *ExternalTextureBindingEntry) Chain() *ChainedStruct {
+	e.NextInChain.SType = STypeExternalTextureBindingEntry
 	return &e.NextInChain
 }
 
@@ -298,6 +300,7 @@ type ExternalTextureBindingLayout struct {
 }
 
 func (e *ExternalTextureBindingLayout) Chain() *ChainedStruct {
+	e.NextInChain.SType = STypeExternalTextureBindingLayout
 	return &e.NextInChain
 }
 
@@ -521,6 +524,7 @@ type RenderPassMaxDrawCount struct {
 }
 
 func (r *RenderPassMaxDrawCount) Chain() *ChainedStruct {
+	r.NextInChain.SType = STypeRenderPassMaxDrawCount
 	return &r.NextInChain
 }
 
@@ -567,6 +571,7 @@ type RequestAdapterWebXROptions struct {
 }
 
 func (r *RequestAdapterWebXROptions) Chain() *ChainedStruct {
+	r.NextInChain.SType = STypeRequestAdapterWebXROptions
 	return &r.NextInChain
 }
 
@@ -626,6 +631,7 @@ type ShaderSourceSPIRV struct {
 }
 
 func (s *ShaderSourceSPIRV) Chain() *ChainedStruct {
+	s.NextInChain.SType = STypeShaderSourceSPIRV
 	return &s.NextInChain
 }
 
@@ -636,6 +642,7 @@ type ShaderSourceWGSL struct {
 }
 
 func (s *ShaderSourceWGSL) Chain() *ChainedStruct {
+	s.NextInChain.SType = STypeShaderSourceWGSL
 	return &s.NextInChain
 }
 
@@ -724,6 +731,7 @@ type SurfaceColorManagement struct {
 }
 
 func (s *SurfaceColorManagement) Chain() *ChainedStruct {
+	s.NextInChain.SType = STypeSurfaceColorManagement
 	return &s.NextInChain
 }
 
@@ -778,6 +786,7 @@ type SurfaceSourceAndroidNativeWindow struct {
 }
 
 func (s *SurfaceSourceAndroidNativeWindow) Chain() *ChainedStruct {
+	s.NextInChain.SType = STypeSurfaceSourceAndroidNativeWindow
 	return &s.NextInChain
 }
 
@@ -790,6 +799,7 @@ type SurfaceSourceMetalLayer struct {
 }
 
 func (s *SurfaceSourceMetalLayer) Chain() *ChainedStruct {
+	s.NextInChain.SType = STypeSurfaceSourceMetalLayer
 	return &s.NextInChain
 }
 
@@ -804,6 +814,7 @@ type SurfaceSourceWaylandSurface struct {
 }
 
 func (s *SurfaceSourceWaylandSurface) Chain() *ChainedStruct {
+	s.NextInChain.SType = STypeSurfaceSourceWaylandSurface
 	return &s.NextInChain
 }
 
@@ -819,6 +830,7 @@ type SurfaceSourceWindowsHWND struct {
 }
 
 func (s *SurfaceSourceWindowsHWND) Chain() *ChainedStruct {
+	s.NextInChain.SType = STypeSurfaceSourceWindowsHWND
 	return &s.NextInChain
 }
 
@@ -833,6 +845,7 @@ type SurfaceSourceXCBWindow struct {
 }
 
 func (s *SurfaceSourceXCBWindow) Chain() *ChainedStruct {
+	s.NextInChain.SType = STypeSurfaceSourceXCBWindow
 	return &s.NextInChain
 }
 
@@ -847,6 +860,7 @@ type SurfaceSourceXlibWindow struct {
 }
 
 func (s *SurfaceSourceXlibWindow) Chain() *ChainedStruct {
+	s.NextInChain.SType = STypeSurfaceSourceXlibWindow
 	return &s.NextInChain
 }
 
@@ -910,6 +924,7 @@ type TextureBindingViewDimension struct {
 }
 
 func (t *TextureBindingViewDimension) Chain() *ChainedStruct {
+	t.NextInChain.SType = STypeTextureBindingViewDimension
 	return &t.NextInChain
 }
 
@@ -949,6 +964,7 @@ type TextureComponentSwizzleDescriptor struct {
 }
 
 func (t *TextureComponentSwizzleDescriptor) Chain() *ChainedStruct {
+	t.NextInChain.SType = STypeTextureComponentSwizzleDescriptor
 	return &t.NextInChain
 }
 

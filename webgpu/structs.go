@@ -242,7 +242,9 @@ type ExternalTextureBindingEntry struct {
 }
 
 func (e *ExternalTextureBindingEntry) Chain() *sys.ChainedStruct {
-	return &new(e.unwrap()).NextInChain
+	chain := e.unwrap()
+	chain.NextInChain.SType = STypeExternalTextureBindingEntry
+	return &chain.NextInChain
 }
 
 // Chained in @ref WGPUBindGroupLayoutEntry to specify that the corresponding entries in an @ref WGPUBindGroup will contain an @ref WGPUExternalTexture.
@@ -534,7 +536,9 @@ type ShaderSourceWGSL struct {
 }
 
 func (s *ShaderSourceWGSL) Chain() *sys.ChainedStruct {
-	return &new(s.unwrap()).NextInChain
+	chain := s.unwrap()
+	chain.NextInChain.SType = STypeShaderSourceWGSL
+	return &chain.NextInChain
 }
 
 type StencilFaceState = sys.StencilFaceState
