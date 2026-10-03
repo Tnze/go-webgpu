@@ -1,0 +1,39 @@
+// Code generated; DO NOT EDIT.
+{{ goDoc .Copyright "" }}
+package {{ .PackageName }}
+
+import {{ $importPath := .ImportPath }}{{ printf "%q" (printf "%s/sys" $importPath) }}
+{{ range .Functions }}
+{{ goDoc .Doc "" -}}
+func {{ pascalCase .Name }}({{ range $index, $arg := .Args -}}
+{{ if ne $index 0 }}, {{ end -}}
+{{ camelCase .Name }} {{ if .Pointer }}*{{ end }}{{ goType .Type -}}
+{{ end }}) {{ if .Returns }}{{ if hasPrefix .Returns.Type "object." }}*{{ end }}{{ goType .Returns.Type }} {{ end -}} {
+	{{- range $arg := .Args }}{{ $argName := camelCase .Name }}
+	{{- /* Struct preprocess */ -}}
+	{{ if hasPrefix .Type "struct." -}}
+	{{ if and .Pointer ($.GetDef .Type | $.IsPureData | not) }}
+	var _{{ $argName }} *sys.{{ goType .Type}}
+	if {{ $argName }} != nil {
+		_{{ $argName }} = new({{ $argName }}.unwrap())
+	}
+	{{- end }}
+	{{- end }}
+	{{- end }}
+	{{ if .Returns }}ret := {{ end -}}
+	sys.{{ pascalCase .Name }}({{ range $index, $arg := .Args }}
+	{{- if ne $index 0 }}, {{ end -}}
+	{{ if hasPrefix .Type "struct." }}
+		{{- if $.GetDef .Type | $.IsPureData | not }}_{{ end }}{{ camelCase .Name -}}
+	{{ else }}
+		{{- camelCase .Name -}}
+	{{ end -}}
+	{{ end }})
+	{{- if .Returns }}
+	return {{ if hasPrefix .Returns.Type "object." -}}
+		new({{ goType .Returns.Type }}{ inner: ret }).owned()
+	{{- else -}}
+		ret
+	{{- end }}{{ end }}
+}
+{{ end }}

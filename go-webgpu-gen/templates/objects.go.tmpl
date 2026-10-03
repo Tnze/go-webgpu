@@ -79,11 +79,7 @@ func ({{ $r }} *{{ pascalCase $object.Name }}) {{ pascalCase .Name }}(
 		{{- else if hasPrefix .Type "object." -}}
 			{{ $argName }}.inner,
 		{{- else if hasPrefix .Type "struct." -}}
-			{{ if $.GetDef .Type | $.IsPureData -}}
-			{{ $argName }},
-			{{- else -}}
-			_{{ $argName }},
-			{{- end }}
+			{{ if $.GetDef .Type | $.IsPureData | not }}_{{ end }}{{ $argName }},
 		{{- else if eq .Type "string_with_default_empty" -}}
 		sys.StringView {
 			Length: uint(len({{ $argName }})),
