@@ -170,6 +170,10 @@ type CompatibilityModeLimits struct {
 	MaxStorageTexturesInFragmentStage uint32
 }
 
+func (c *CompatibilityModeLimits) Chain() *ChainedStruct {
+	return &c.NextInChain
+}
+
 type CompilationInfo struct {
 	_ structs.HostLayout
 
@@ -283,10 +287,18 @@ type ExternalTextureBindingEntry struct {
 	ExternalTexture ExternalTexture
 }
 
+func (e *ExternalTextureBindingEntry) Chain() *ChainedStruct {
+	return &e.NextInChain
+}
+
 // Chained in @ref WGPUBindGroupLayoutEntry to specify that the corresponding entries in an @ref WGPUBindGroup will contain an @ref WGPUExternalTexture.
 type ExternalTextureBindingLayout struct {
 	_           structs.HostLayout
 	NextInChain ChainedStruct
+}
+
+func (e *ExternalTextureBindingLayout) Chain() *ChainedStruct {
+	return &e.NextInChain
 }
 
 type FragmentState struct {
@@ -508,6 +520,10 @@ type RenderPassMaxDrawCount struct {
 	MaxDrawCount uint64
 }
 
+func (r *RenderPassMaxDrawCount) Chain() *ChainedStruct {
+	return &r.NextInChain
+}
+
 type RenderPipelineDescriptor struct {
 	_            structs.HostLayout
 	Chain        *ChainedStruct
@@ -548,6 +564,10 @@ type RequestAdapterWebXROptions struct {
 	NextInChain ChainedStruct
 	// Sets the `xrCompatible` option in the JS API.
 	XrCompatible Bool
+}
+
+func (r *RequestAdapterWebXROptions) Chain() *ChainedStruct {
+	return &r.NextInChain
 }
 
 type SamplerBindingLayout struct {
@@ -605,10 +625,18 @@ type ShaderSourceSPIRV struct {
 	Code        *uint32
 }
 
+func (s *ShaderSourceSPIRV) Chain() *ChainedStruct {
+	return &s.NextInChain
+}
+
 type ShaderSourceWGSL struct {
 	_           structs.HostLayout
 	NextInChain ChainedStruct
 	Code        StringView
+}
+
+func (s *ShaderSourceWGSL) Chain() *ChainedStruct {
+	return &s.NextInChain
 }
 
 type StencilFaceState struct {
@@ -695,6 +723,10 @@ type SurfaceColorManagement struct {
 	ToneMappingMode ToneMappingMode
 }
 
+func (s *SurfaceColorManagement) Chain() *ChainedStruct {
+	return &s.NextInChain
+}
+
 // Options to @ref wgpuSurfaceConfigure for defining how a @ref WGPUSurface will be rendered to and presented to the user.
 // See @ref Surface-Configuration for more details.
 type SurfaceConfiguration struct {
@@ -745,12 +777,20 @@ type SurfaceSourceAndroidNativeWindow struct {
 	Window unsafe.Pointer
 }
 
+func (s *SurfaceSourceAndroidNativeWindow) Chain() *ChainedStruct {
+	return &s.NextInChain
+}
+
 // Chained in @ref WGPUSurfaceDescriptor to make an @ref WGPUSurface wrapping a [`CAMetalLayer`](https://developer.apple.com/documentation/quartzcore/cametallayer?language=objc).
 type SurfaceSourceMetalLayer struct {
 	_           structs.HostLayout
 	NextInChain ChainedStruct
 	// The pointer to the [`CAMetalLayer`](https://developer.apple.com/documentation/quartzcore/cametallayer?language=objc) that will be wrapped by the @ref WGPUSurface.
 	Layer unsafe.Pointer
+}
+
+func (s *SurfaceSourceMetalLayer) Chain() *ChainedStruct {
+	return &s.NextInChain
 }
 
 // Chained in @ref WGPUSurfaceDescriptor to make an @ref WGPUSurface wrapping a [Wayland](https://wayland.freedesktop.org/) [`wl_surface`](https://wayland.freedesktop.org/docs/html/apa.html#protocol-spec-wl_surface).
@@ -761,6 +801,10 @@ type SurfaceSourceWaylandSurface struct {
 	Display unsafe.Pointer
 	// A [`wl_surface`](https://wayland.freedesktop.org/docs/html/apa.html#protocol-spec-wl_surface) that will be wrapped by the @ref WGPUSurface
 	Surface unsafe.Pointer
+}
+
+func (s *SurfaceSourceWaylandSurface) Chain() *ChainedStruct {
+	return &s.NextInChain
 }
 
 // Chained in @ref WGPUSurfaceDescriptor to make an @ref WGPUSurface wrapping a Windows [`HWND`](https://learn.microsoft.com/en-us/windows/apps/develop/ui-input/retrieve-hwnd).
@@ -774,6 +818,10 @@ type SurfaceSourceWindowsHWND struct {
 	Hwnd unsafe.Pointer
 }
 
+func (s *SurfaceSourceWindowsHWND) Chain() *ChainedStruct {
+	return &s.NextInChain
+}
+
 // Chained in @ref WGPUSurfaceDescriptor to make an @ref WGPUSurface wrapping an [XCB](https://xcb.freedesktop.org/) `xcb_window_t`.
 type SurfaceSourceXCBWindow struct {
 	_           structs.HostLayout
@@ -784,6 +832,10 @@ type SurfaceSourceXCBWindow struct {
 	Window uint32
 }
 
+func (s *SurfaceSourceXCBWindow) Chain() *ChainedStruct {
+	return &s.NextInChain
+}
+
 // Chained in @ref WGPUSurfaceDescriptor to make an @ref WGPUSurface wrapping an [Xlib](https://www.x.org/releases/current/doc/libX11/libX11/libX11.html) `Window`.
 type SurfaceSourceXlibWindow struct {
 	_           structs.HostLayout
@@ -792,6 +844,10 @@ type SurfaceSourceXlibWindow struct {
 	Display unsafe.Pointer
 	// The [`Window`](https://www.x.org/releases/current/doc/libX11/libX11/libX11.html#Creating_Windows) that will be wrapped by the @ref WGPUSurface.
 	Window uint64
+}
+
+func (s *SurfaceSourceXlibWindow) Chain() *ChainedStruct {
+	return &s.NextInChain
 }
 
 // Queried each frame from a @ref WGPUSurface to get a @ref WGPUTexture to render to along with some metadata.
@@ -853,6 +909,10 @@ type TextureBindingViewDimension struct {
 	TextureBindingViewDimension TextureViewDimension
 }
 
+func (t *TextureBindingViewDimension) Chain() *ChainedStruct {
+	return &t.NextInChain
+}
+
 // When accessed by a shader, the red/green/blue/alpha channels are replaced
 // by the value corresponding to the component specified in r, g, b, and a,
 // respectively unlike the JS API which uses a string of length four, with
@@ -886,6 +946,10 @@ type TextureComponentSwizzleDescriptor struct {
 	_           structs.HostLayout
 	NextInChain ChainedStruct
 	Swizzle     TextureComponentSwizzle
+}
+
+func (t *TextureComponentSwizzleDescriptor) Chain() *ChainedStruct {
+	return &t.NextInChain
 }
 
 type TextureDescriptor struct {

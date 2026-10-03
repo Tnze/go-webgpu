@@ -17,7 +17,8 @@ type Adapter struct {
 	cleanup runtime.Cleanup
 }
 
-func (a *Adapter) GetLimits(limits *Limits) Status {
+func (a *Adapter) GetLimits(
+	limits *Limits) Status {
 	ret := sys.AdapterGetLimits(
 		a.inner,
 		limits,
@@ -25,7 +26,8 @@ func (a *Adapter) GetLimits(limits *Limits) Status {
 	return ret
 }
 
-func (a *Adapter) HasFeature(feature FeatureName) Bool {
+func (a *Adapter) HasFeature(
+	feature FeatureName) Bool {
 	ret := sys.AdapterHasFeature(
 		a.inner,
 		feature,
@@ -33,7 +35,8 @@ func (a *Adapter) HasFeature(feature FeatureName) Bool {
 	return ret
 }
 
-func (a *Adapter) GetFeatures(features *SupportedFeatures) {
+func (a *Adapter) GetFeatures(
+	features *SupportedFeatures) {
 	var _features *sys.SupportedFeatures
 	if features != nil {
 		_features = new(features.unwrap())
@@ -49,7 +52,8 @@ func (a *Adapter) GetFeatures(features *SupportedFeatures) {
 	}
 }
 
-func (a *Adapter) GetInfo(info *AdapterInfo) Status {
+func (a *Adapter) GetInfo(
+	info *AdapterInfo) Status {
 	var _info *sys.AdapterInfo
 	if info != nil {
 		_info = new(info.unwrap())
@@ -66,7 +70,8 @@ func (a *Adapter) GetInfo(info *AdapterInfo) Status {
 	return ret
 }
 
-func (a *Adapter) RequestDevice(descriptor *DeviceDescriptor) (RequestDeviceStatus, *Device, string) {
+func (a *Adapter) RequestDevice(
+	descriptor *DeviceDescriptor) (RequestDeviceStatus, *Device, string) {
 	var _descriptor *sys.DeviceDescriptor
 	if descriptor != nil {
 		_descriptor = new(descriptor.unwrap())
@@ -100,7 +105,8 @@ type BindGroup struct {
 	cleanup runtime.Cleanup
 }
 
-func (b *BindGroup) SetLabel(label string) {
+func (b *BindGroup) SetLabel(
+	label string) {
 	sys.BindGroupSetLabel(
 		b.inner,
 		sys.StringView{
@@ -125,7 +131,8 @@ type BindGroupLayout struct {
 	cleanup runtime.Cleanup
 }
 
-func (b *BindGroupLayout) SetLabel(label string) {
+func (b *BindGroupLayout) SetLabel(
+	label string) {
 	sys.BindGroupLayoutSetLabel(
 		b.inner,
 		sys.StringView{
@@ -150,7 +157,10 @@ type Buffer struct {
 	cleanup runtime.Cleanup
 }
 
-func (b *Buffer) MapAsync(mode MapMode, offset uintptr, size uintptr) (MapAsyncStatus, string) {
+func (b *Buffer) MapAsync(
+	mode MapMode,
+	offset uintptr,
+	size uintptr) (MapAsyncStatus, string) {
 	callback := bufferMapCallback{
 		C: make(chan bufferMapCallbackResult, 1),
 	}
@@ -166,7 +176,9 @@ func (b *Buffer) MapAsync(mode MapMode, offset uintptr, size uintptr) (MapAsyncS
 	return ret.status, ret.message
 }
 
-func (b *Buffer) GetMappedRange(offset uintptr, size uintptr) unsafe.Pointer {
+func (b *Buffer) GetMappedRange(
+	offset uintptr,
+	size uintptr) unsafe.Pointer {
 	ret := sys.BufferGetMappedRange(
 		b.inner,
 		offset,
@@ -175,7 +187,9 @@ func (b *Buffer) GetMappedRange(offset uintptr, size uintptr) unsafe.Pointer {
 	return ret
 }
 
-func (b *Buffer) GetConstMappedRange(offset uintptr, size uintptr) unsafe.Pointer {
+func (b *Buffer) GetConstMappedRange(
+	offset uintptr,
+	size uintptr) unsafe.Pointer {
 	ret := sys.BufferGetConstMappedRange(
 		b.inner,
 		offset,
@@ -184,7 +198,10 @@ func (b *Buffer) GetConstMappedRange(offset uintptr, size uintptr) unsafe.Pointe
 	return ret
 }
 
-func (b *Buffer) ReadMappedRange(offset uintptr, data unsafe.Pointer, size uintptr) Status {
+func (b *Buffer) ReadMappedRange(
+	offset uintptr,
+	data unsafe.Pointer,
+	size uintptr) Status {
 	ret := sys.BufferReadMappedRange(
 		b.inner,
 		offset,
@@ -194,7 +211,10 @@ func (b *Buffer) ReadMappedRange(offset uintptr, data unsafe.Pointer, size uintp
 	return ret
 }
 
-func (b *Buffer) WriteMappedRange(offset uintptr, data unsafe.Pointer, size uintptr) Status {
+func (b *Buffer) WriteMappedRange(
+	offset uintptr,
+	data unsafe.Pointer,
+	size uintptr) Status {
 	ret := sys.BufferWriteMappedRange(
 		b.inner,
 		offset,
@@ -204,7 +224,8 @@ func (b *Buffer) WriteMappedRange(offset uintptr, data unsafe.Pointer, size uint
 	return ret
 }
 
-func (b *Buffer) SetLabel(label string) {
+func (b *Buffer) SetLabel(
+	label string) {
 	sys.BufferSetLabel(
 		b.inner,
 		sys.StringView{
@@ -262,7 +283,8 @@ type CommandBuffer struct {
 	cleanup runtime.Cleanup
 }
 
-func (c *CommandBuffer) SetLabel(label string) {
+func (c *CommandBuffer) SetLabel(
+	label string) {
 	sys.CommandBufferSetLabel(
 		c.inner,
 		sys.StringView{
@@ -287,7 +309,8 @@ type CommandEncoder struct {
 	cleanup runtime.Cleanup
 }
 
-func (c *CommandEncoder) Finish(descriptor *CommandBufferDescriptor) *CommandBuffer {
+func (c *CommandEncoder) Finish(
+	descriptor *CommandBufferDescriptor) *CommandBuffer {
 	var _descriptor *sys.CommandBufferDescriptor
 	if descriptor != nil {
 		_descriptor = new(descriptor.unwrap())
@@ -300,7 +323,8 @@ func (c *CommandEncoder) Finish(descriptor *CommandBufferDescriptor) *CommandBuf
 	return new(CommandBuffer{inner: ret}).owned()
 }
 
-func (c *CommandEncoder) BeginComputePass(descriptor *ComputePassDescriptor) *ComputePassEncoder {
+func (c *CommandEncoder) BeginComputePass(
+	descriptor *ComputePassDescriptor) *ComputePassEncoder {
 	var _descriptor *sys.ComputePassDescriptor
 	if descriptor != nil {
 		_descriptor = new(descriptor.unwrap())
@@ -313,7 +337,8 @@ func (c *CommandEncoder) BeginComputePass(descriptor *ComputePassDescriptor) *Co
 	return new(ComputePassEncoder{inner: ret}).owned()
 }
 
-func (c *CommandEncoder) BeginRenderPass(descriptor *RenderPassDescriptor) *RenderPassEncoder {
+func (c *CommandEncoder) BeginRenderPass(
+	descriptor *RenderPassDescriptor) *RenderPassEncoder {
 	var _descriptor *sys.RenderPassDescriptor
 	if descriptor != nil {
 		_descriptor = new(descriptor.unwrap())
@@ -326,7 +351,12 @@ func (c *CommandEncoder) BeginRenderPass(descriptor *RenderPassDescriptor) *Rend
 	return new(RenderPassEncoder{inner: ret}).owned()
 }
 
-func (c *CommandEncoder) CopyBufferToBuffer(source *Buffer, sourceOffset uint64, destination *Buffer, destinationOffset uint64, size uint64) {
+func (c *CommandEncoder) CopyBufferToBuffer(
+	source *Buffer,
+	sourceOffset uint64,
+	destination *Buffer,
+	destinationOffset uint64,
+	size uint64) {
 	sys.CommandEncoderCopyBufferToBuffer(
 		c.inner,
 		source.inner,
@@ -337,7 +367,10 @@ func (c *CommandEncoder) CopyBufferToBuffer(source *Buffer, sourceOffset uint64,
 	)
 }
 
-func (c *CommandEncoder) CopyBufferToTexture(source *TexelCopyBufferInfo, destination *TexelCopyTextureInfo, copySize *Extent3D) {
+func (c *CommandEncoder) CopyBufferToTexture(
+	source *TexelCopyBufferInfo,
+	destination *TexelCopyTextureInfo,
+	copySize *Extent3D) {
 	var _source *sys.TexelCopyBufferInfo
 	if source != nil {
 		_source = new(source.unwrap())
@@ -356,7 +389,10 @@ func (c *CommandEncoder) CopyBufferToTexture(source *TexelCopyBufferInfo, destin
 	)
 }
 
-func (c *CommandEncoder) CopyTextureToBuffer(source *TexelCopyTextureInfo, destination *TexelCopyBufferInfo, copySize *Extent3D) {
+func (c *CommandEncoder) CopyTextureToBuffer(
+	source *TexelCopyTextureInfo,
+	destination *TexelCopyBufferInfo,
+	copySize *Extent3D) {
 	var _source *sys.TexelCopyTextureInfo
 	if source != nil {
 		_source = new(source.unwrap())
@@ -375,7 +411,10 @@ func (c *CommandEncoder) CopyTextureToBuffer(source *TexelCopyTextureInfo, desti
 	)
 }
 
-func (c *CommandEncoder) CopyTextureToTexture(source *TexelCopyTextureInfo, destination *TexelCopyTextureInfo, copySize *Extent3D) {
+func (c *CommandEncoder) CopyTextureToTexture(
+	source *TexelCopyTextureInfo,
+	destination *TexelCopyTextureInfo,
+	copySize *Extent3D) {
 	var _source *sys.TexelCopyTextureInfo
 	if source != nil {
 		_source = new(source.unwrap())
@@ -394,7 +433,10 @@ func (c *CommandEncoder) CopyTextureToTexture(source *TexelCopyTextureInfo, dest
 	)
 }
 
-func (c *CommandEncoder) ClearBuffer(buffer *Buffer, offset uint64, size uint64) {
+func (c *CommandEncoder) ClearBuffer(
+	buffer *Buffer,
+	offset uint64,
+	size uint64) {
 	sys.CommandEncoderClearBuffer(
 		c.inner,
 		buffer.inner,
@@ -403,7 +445,8 @@ func (c *CommandEncoder) ClearBuffer(buffer *Buffer, offset uint64, size uint64)
 	)
 }
 
-func (c *CommandEncoder) InsertDebugMarker(markerLabel string) {
+func (c *CommandEncoder) InsertDebugMarker(
+	markerLabel string) {
 	sys.CommandEncoderInsertDebugMarker(
 		c.inner,
 		sys.StringView{
@@ -419,7 +462,8 @@ func (c *CommandEncoder) PopDebugGroup() {
 	)
 }
 
-func (c *CommandEncoder) PushDebugGroup(groupLabel string) {
+func (c *CommandEncoder) PushDebugGroup(
+	groupLabel string) {
 	sys.CommandEncoderPushDebugGroup(
 		c.inner,
 		sys.StringView{
@@ -429,7 +473,12 @@ func (c *CommandEncoder) PushDebugGroup(groupLabel string) {
 	)
 }
 
-func (c *CommandEncoder) ResolveQuerySet(querySet *QuerySet, firstQuery uint32, queryCount uint32, destination *Buffer, destinationOffset uint64) {
+func (c *CommandEncoder) ResolveQuerySet(
+	querySet *QuerySet,
+	firstQuery uint32,
+	queryCount uint32,
+	destination *Buffer,
+	destinationOffset uint64) {
 	sys.CommandEncoderResolveQuerySet(
 		c.inner,
 		querySet.inner,
@@ -440,7 +489,9 @@ func (c *CommandEncoder) ResolveQuerySet(querySet *QuerySet, firstQuery uint32, 
 	)
 }
 
-func (c *CommandEncoder) WriteTimestamp(querySet *QuerySet, queryIndex uint32) {
+func (c *CommandEncoder) WriteTimestamp(
+	querySet *QuerySet,
+	queryIndex uint32) {
 	sys.CommandEncoderWriteTimestamp(
 		c.inner,
 		querySet.inner,
@@ -448,7 +499,8 @@ func (c *CommandEncoder) WriteTimestamp(querySet *QuerySet, queryIndex uint32) {
 	)
 }
 
-func (c *CommandEncoder) SetLabel(label string) {
+func (c *CommandEncoder) SetLabel(
+	label string) {
 	sys.CommandEncoderSetLabel(
 		c.inner,
 		sys.StringView{
@@ -473,7 +525,8 @@ type ComputePassEncoder struct {
 	cleanup runtime.Cleanup
 }
 
-func (c *ComputePassEncoder) InsertDebugMarker(markerLabel string) {
+func (c *ComputePassEncoder) InsertDebugMarker(
+	markerLabel string) {
 	sys.ComputePassEncoderInsertDebugMarker(
 		c.inner,
 		sys.StringView{
@@ -489,7 +542,8 @@ func (c *ComputePassEncoder) PopDebugGroup() {
 	)
 }
 
-func (c *ComputePassEncoder) PushDebugGroup(groupLabel string) {
+func (c *ComputePassEncoder) PushDebugGroup(
+	groupLabel string) {
 	sys.ComputePassEncoderPushDebugGroup(
 		c.inner,
 		sys.StringView{
@@ -499,14 +553,18 @@ func (c *ComputePassEncoder) PushDebugGroup(groupLabel string) {
 	)
 }
 
-func (c *ComputePassEncoder) SetPipeline(pipeline *ComputePipeline) {
+func (c *ComputePassEncoder) SetPipeline(
+	pipeline *ComputePipeline) {
 	sys.ComputePassEncoderSetPipeline(
 		c.inner,
 		pipeline.inner,
 	)
 }
 
-func (c *ComputePassEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, dynamicOffsets []uint32) {
+func (c *ComputePassEncoder) SetBindGroup(
+	groupIndex uint32,
+	group *BindGroup,
+	dynamicOffsets []uint32) {
 	sys.ComputePassEncoderSetBindGroup(
 		c.inner,
 		groupIndex,
@@ -515,7 +573,10 @@ func (c *ComputePassEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, d
 	)
 }
 
-func (c *ComputePassEncoder) SetImmediates(offset uint32, data unsafe.Pointer, size uintptr) {
+func (c *ComputePassEncoder) SetImmediates(
+	offset uint32,
+	data unsafe.Pointer,
+	size uintptr) {
 	sys.ComputePassEncoderSetImmediates(
 		c.inner,
 		offset,
@@ -524,7 +585,10 @@ func (c *ComputePassEncoder) SetImmediates(offset uint32, data unsafe.Pointer, s
 	)
 }
 
-func (c *ComputePassEncoder) DispatchWorkgroups(workgroupCountX uint32, workgroupCountY uint32, workgroupCountZ uint32) {
+func (c *ComputePassEncoder) DispatchWorkgroups(
+	workgroupCountX uint32,
+	workgroupCountY uint32,
+	workgroupCountZ uint32) {
 	sys.ComputePassEncoderDispatchWorkgroups(
 		c.inner,
 		workgroupCountX,
@@ -533,7 +597,9 @@ func (c *ComputePassEncoder) DispatchWorkgroups(workgroupCountX uint32, workgrou
 	)
 }
 
-func (c *ComputePassEncoder) DispatchWorkgroupsIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
+func (c *ComputePassEncoder) DispatchWorkgroupsIndirect(
+	indirectBuffer *Buffer,
+	indirectOffset uint64) {
 	sys.ComputePassEncoderDispatchWorkgroupsIndirect(
 		c.inner,
 		indirectBuffer.inner,
@@ -547,7 +613,8 @@ func (c *ComputePassEncoder) End() {
 	)
 }
 
-func (c *ComputePassEncoder) SetLabel(label string) {
+func (c *ComputePassEncoder) SetLabel(
+	label string) {
 	sys.ComputePassEncoderSetLabel(
 		c.inner,
 		sys.StringView{
@@ -572,7 +639,8 @@ type ComputePipeline struct {
 	cleanup runtime.Cleanup
 }
 
-func (c *ComputePipeline) GetBindGroupLayout(groupIndex uint32) *BindGroupLayout {
+func (c *ComputePipeline) GetBindGroupLayout(
+	groupIndex uint32) *BindGroupLayout {
 	ret := sys.ComputePipelineGetBindGroupLayout(
 		c.inner,
 		groupIndex,
@@ -580,7 +648,8 @@ func (c *ComputePipeline) GetBindGroupLayout(groupIndex uint32) *BindGroupLayout
 	return new(BindGroupLayout{inner: ret}).owned()
 }
 
-func (c *ComputePipeline) SetLabel(label string) {
+func (c *ComputePipeline) SetLabel(
+	label string) {
 	sys.ComputePipelineSetLabel(
 		c.inner,
 		sys.StringView{
@@ -610,7 +679,8 @@ type Device struct {
 	cleanup runtime.Cleanup
 }
 
-func (d *Device) CreateBindGroup(descriptor *BindGroupDescriptor) *BindGroup {
+func (d *Device) CreateBindGroup(
+	descriptor *BindGroupDescriptor) *BindGroup {
 	var _descriptor *sys.BindGroupDescriptor
 	if descriptor != nil {
 		_descriptor = new(descriptor.unwrap())
@@ -623,7 +693,8 @@ func (d *Device) CreateBindGroup(descriptor *BindGroupDescriptor) *BindGroup {
 	return new(BindGroup{inner: ret}).owned()
 }
 
-func (d *Device) CreateBindGroupLayout(descriptor *BindGroupLayoutDescriptor) *BindGroupLayout {
+func (d *Device) CreateBindGroupLayout(
+	descriptor *BindGroupLayoutDescriptor) *BindGroupLayout {
 	var _descriptor *sys.BindGroupLayoutDescriptor
 	if descriptor != nil {
 		_descriptor = new(descriptor.unwrap())
@@ -636,7 +707,8 @@ func (d *Device) CreateBindGroupLayout(descriptor *BindGroupLayoutDescriptor) *B
 	return new(BindGroupLayout{inner: ret}).owned()
 }
 
-func (d *Device) CreateBuffer(descriptor *BufferDescriptor) *Buffer {
+func (d *Device) CreateBuffer(
+	descriptor *BufferDescriptor) *Buffer {
 	var _descriptor *sys.BufferDescriptor
 	if descriptor != nil {
 		_descriptor = new(descriptor.unwrap())
@@ -649,7 +721,8 @@ func (d *Device) CreateBuffer(descriptor *BufferDescriptor) *Buffer {
 	return new(Buffer{inner: ret}).owned()
 }
 
-func (d *Device) CreateCommandEncoder(descriptor *CommandEncoderDescriptor) *CommandEncoder {
+func (d *Device) CreateCommandEncoder(
+	descriptor *CommandEncoderDescriptor) *CommandEncoder {
 	var _descriptor *sys.CommandEncoderDescriptor
 	if descriptor != nil {
 		_descriptor = new(descriptor.unwrap())
@@ -662,7 +735,8 @@ func (d *Device) CreateCommandEncoder(descriptor *CommandEncoderDescriptor) *Com
 	return new(CommandEncoder{inner: ret}).owned()
 }
 
-func (d *Device) CreateComputePipeline(descriptor *ComputePipelineDescriptor) *ComputePipeline {
+func (d *Device) CreateComputePipeline(
+	descriptor *ComputePipelineDescriptor) *ComputePipeline {
 	var _descriptor *sys.ComputePipelineDescriptor
 	if descriptor != nil {
 		_descriptor = new(descriptor.unwrap())
@@ -675,7 +749,8 @@ func (d *Device) CreateComputePipeline(descriptor *ComputePipelineDescriptor) *C
 	return new(ComputePipeline{inner: ret}).owned()
 }
 
-func (d *Device) CreateComputePipelineAsync(descriptor *ComputePipelineDescriptor) (CreatePipelineAsyncStatus, *ComputePipeline, string) {
+func (d *Device) CreateComputePipelineAsync(
+	descriptor *ComputePipelineDescriptor) (CreatePipelineAsyncStatus, *ComputePipeline, string) {
 	var _descriptor *sys.ComputePipelineDescriptor
 	if descriptor != nil {
 		_descriptor = new(descriptor.unwrap())
@@ -694,7 +769,8 @@ func (d *Device) CreateComputePipelineAsync(descriptor *ComputePipelineDescripto
 	return ret.status, ret.pipeline, ret.message
 }
 
-func (d *Device) CreatePipelineLayout(descriptor *PipelineLayoutDescriptor) *PipelineLayout {
+func (d *Device) CreatePipelineLayout(
+	descriptor *PipelineLayoutDescriptor) *PipelineLayout {
 	var _descriptor *sys.PipelineLayoutDescriptor
 	if descriptor != nil {
 		_descriptor = new(descriptor.unwrap())
@@ -707,7 +783,8 @@ func (d *Device) CreatePipelineLayout(descriptor *PipelineLayoutDescriptor) *Pip
 	return new(PipelineLayout{inner: ret}).owned()
 }
 
-func (d *Device) CreateQuerySet(descriptor *QuerySetDescriptor) *QuerySet {
+func (d *Device) CreateQuerySet(
+	descriptor *QuerySetDescriptor) *QuerySet {
 	var _descriptor *sys.QuerySetDescriptor
 	if descriptor != nil {
 		_descriptor = new(descriptor.unwrap())
@@ -720,7 +797,8 @@ func (d *Device) CreateQuerySet(descriptor *QuerySetDescriptor) *QuerySet {
 	return new(QuerySet{inner: ret}).owned()
 }
 
-func (d *Device) CreateRenderPipelineAsync(descriptor *RenderPipelineDescriptor) (CreatePipelineAsyncStatus, *RenderPipeline, string) {
+func (d *Device) CreateRenderPipelineAsync(
+	descriptor *RenderPipelineDescriptor) (CreatePipelineAsyncStatus, *RenderPipeline, string) {
 	var _descriptor *sys.RenderPipelineDescriptor
 	if descriptor != nil {
 		_descriptor = new(descriptor.unwrap())
@@ -739,7 +817,8 @@ func (d *Device) CreateRenderPipelineAsync(descriptor *RenderPipelineDescriptor)
 	return ret.status, ret.pipeline, ret.message
 }
 
-func (d *Device) CreateRenderBundleEncoder(descriptor *RenderBundleEncoderDescriptor) *RenderBundleEncoder {
+func (d *Device) CreateRenderBundleEncoder(
+	descriptor *RenderBundleEncoderDescriptor) *RenderBundleEncoder {
 	var _descriptor *sys.RenderBundleEncoderDescriptor
 	if descriptor != nil {
 		_descriptor = new(descriptor.unwrap())
@@ -752,7 +831,8 @@ func (d *Device) CreateRenderBundleEncoder(descriptor *RenderBundleEncoderDescri
 	return new(RenderBundleEncoder{inner: ret}).owned()
 }
 
-func (d *Device) CreateRenderPipeline(descriptor *RenderPipelineDescriptor) *RenderPipeline {
+func (d *Device) CreateRenderPipeline(
+	descriptor *RenderPipelineDescriptor) *RenderPipeline {
 	var _descriptor *sys.RenderPipelineDescriptor
 	if descriptor != nil {
 		_descriptor = new(descriptor.unwrap())
@@ -765,7 +845,8 @@ func (d *Device) CreateRenderPipeline(descriptor *RenderPipelineDescriptor) *Ren
 	return new(RenderPipeline{inner: ret}).owned()
 }
 
-func (d *Device) CreateSampler(descriptor *SamplerDescriptor) *Sampler {
+func (d *Device) CreateSampler(
+	descriptor *SamplerDescriptor) *Sampler {
 	var _descriptor *sys.SamplerDescriptor
 	if descriptor != nil {
 		_descriptor = new(descriptor.unwrap())
@@ -778,7 +859,8 @@ func (d *Device) CreateSampler(descriptor *SamplerDescriptor) *Sampler {
 	return new(Sampler{inner: ret}).owned()
 }
 
-func (d *Device) CreateShaderModule(descriptor *ShaderModuleDescriptor) *ShaderModule {
+func (d *Device) CreateShaderModule(
+	descriptor *ShaderModuleDescriptor) *ShaderModule {
 	var _descriptor *sys.ShaderModuleDescriptor
 	if descriptor != nil {
 		_descriptor = new(descriptor.unwrap())
@@ -791,7 +873,8 @@ func (d *Device) CreateShaderModule(descriptor *ShaderModuleDescriptor) *ShaderM
 	return new(ShaderModule{inner: ret}).owned()
 }
 
-func (d *Device) CreateTexture(descriptor *TextureDescriptor) *Texture {
+func (d *Device) CreateTexture(
+	descriptor *TextureDescriptor) *Texture {
 	var _descriptor *sys.TextureDescriptor
 	if descriptor != nil {
 		_descriptor = new(descriptor.unwrap())
@@ -819,7 +902,8 @@ func (d *Device) GetLostFuture() Future {
 	}
 }
 
-func (d *Device) GetLimits(limits *Limits) Status {
+func (d *Device) GetLimits(
+	limits *Limits) Status {
 	ret := sys.DeviceGetLimits(
 		d.inner,
 		limits,
@@ -827,7 +911,8 @@ func (d *Device) GetLimits(limits *Limits) Status {
 	return ret
 }
 
-func (d *Device) HasFeature(feature FeatureName) Bool {
+func (d *Device) HasFeature(
+	feature FeatureName) Bool {
 	ret := sys.DeviceHasFeature(
 		d.inner,
 		feature,
@@ -835,7 +920,8 @@ func (d *Device) HasFeature(feature FeatureName) Bool {
 	return ret
 }
 
-func (d *Device) GetFeatures(features *SupportedFeatures) {
+func (d *Device) GetFeatures(
+	features *SupportedFeatures) {
 	var _features *sys.SupportedFeatures
 	if features != nil {
 		_features = new(features.unwrap())
@@ -851,7 +937,8 @@ func (d *Device) GetFeatures(features *SupportedFeatures) {
 	}
 }
 
-func (d *Device) GetAdapterInfo(adapterInfo *AdapterInfo) Status {
+func (d *Device) GetAdapterInfo(
+	adapterInfo *AdapterInfo) Status {
 	var _adapterInfo *sys.AdapterInfo
 	if adapterInfo != nil {
 		_adapterInfo = new(adapterInfo.unwrap())
@@ -875,7 +962,8 @@ func (d *Device) GetQueue() *Queue {
 	return new(Queue{inner: ret}).owned()
 }
 
-func (d *Device) PushErrorScope(filter ErrorFilter) {
+func (d *Device) PushErrorScope(
+	filter ErrorFilter) {
 	sys.DevicePushErrorScope(
 		d.inner,
 		filter,
@@ -895,7 +983,8 @@ func (d *Device) PopErrorScope() (PopErrorScopeStatus, ErrorType, string) {
 	return ret.status, ret.errorType, ret.message
 }
 
-func (d *Device) SetLabel(label string) {
+func (d *Device) SetLabel(
+	label string) {
 	sys.DeviceSetLabel(
 		d.inner,
 		sys.StringView{
@@ -922,7 +1011,8 @@ type ExternalTexture struct {
 	cleanup runtime.Cleanup
 }
 
-func (e *ExternalTexture) SetLabel(label string) {
+func (e *ExternalTexture) SetLabel(
+	label string) {
 	sys.ExternalTextureSetLabel(
 		e.inner,
 		sys.StringView{
@@ -947,7 +1037,8 @@ type Instance struct {
 	cleanup runtime.Cleanup
 }
 
-func (i *Instance) CreateSurface(descriptor *SurfaceDescriptor) *Surface {
+func (i *Instance) CreateSurface(
+	descriptor *SurfaceDescriptor) *Surface {
 	var _descriptor *sys.SurfaceDescriptor
 	if descriptor != nil {
 		_descriptor = new(descriptor.unwrap())
@@ -960,7 +1051,8 @@ func (i *Instance) CreateSurface(descriptor *SurfaceDescriptor) *Surface {
 	return new(Surface{inner: ret}).owned()
 }
 
-func (i *Instance) GetWGSLLanguageFeatures(features *SupportedWGSLLanguageFeatures) {
+func (i *Instance) GetWGSLLanguageFeatures(
+	features *SupportedWGSLLanguageFeatures) {
 	var _features *sys.SupportedWGSLLanguageFeatures
 	if features != nil {
 		_features = new(features.unwrap())
@@ -976,7 +1068,8 @@ func (i *Instance) GetWGSLLanguageFeatures(features *SupportedWGSLLanguageFeatur
 	}
 }
 
-func (i *Instance) HasWGSLLanguageFeature(feature WGSLLanguageFeatureName) Bool {
+func (i *Instance) HasWGSLLanguageFeature(
+	feature WGSLLanguageFeatureName) Bool {
 	ret := sys.InstanceHasWGSLLanguageFeature(
 		i.inner,
 		feature,
@@ -990,7 +1083,8 @@ func (i *Instance) ProcessEvents() {
 	)
 }
 
-func (i *Instance) RequestAdapter(options *RequestAdapterOptions) (RequestAdapterStatus, *Adapter, string) {
+func (i *Instance) RequestAdapter(
+	options *RequestAdapterOptions) (RequestAdapterStatus, *Adapter, string) {
 	var _options *sys.RequestAdapterOptions
 	if options != nil {
 		_options = new(options.unwrap())
@@ -1009,7 +1103,10 @@ func (i *Instance) RequestAdapter(options *RequestAdapterOptions) (RequestAdapte
 	return ret.status, ret.adapter, ret.message
 }
 
-func (i *Instance) WaitAny(futureCount uintptr, futures *FutureWaitInfo, timeoutNS uint64) WaitStatus {
+func (i *Instance) WaitAny(
+	futureCount uintptr,
+	futures *FutureWaitInfo,
+	timeoutNS uint64) WaitStatus {
 	ret := sys.InstanceWaitAny(
 		i.inner,
 		futureCount,
@@ -1034,7 +1131,8 @@ type PipelineLayout struct {
 	cleanup runtime.Cleanup
 }
 
-func (p *PipelineLayout) SetLabel(label string) {
+func (p *PipelineLayout) SetLabel(
+	label string) {
 	sys.PipelineLayoutSetLabel(
 		p.inner,
 		sys.StringView{
@@ -1059,7 +1157,8 @@ type QuerySet struct {
 	cleanup runtime.Cleanup
 }
 
-func (q *QuerySet) SetLabel(label string) {
+func (q *QuerySet) SetLabel(
+	label string) {
 	sys.QuerySetSetLabel(
 		q.inner,
 		sys.StringView{
@@ -1104,7 +1203,8 @@ type Queue struct {
 	cleanup runtime.Cleanup
 }
 
-func (q *Queue) Submit(commands []CommandBuffer) {
+func (q *Queue) Submit(
+	commands []*CommandBuffer) {
 	_commands := make([]sys.CommandBuffer, len(commands))
 	for i := range commands {
 		_commands[i] = commands[i].inner
@@ -1128,7 +1228,11 @@ func (q *Queue) OnSubmittedWorkDone() (QueueWorkDoneStatus, string) {
 	return ret.status, ret.message
 }
 
-func (q *Queue) WriteBuffer(buffer *Buffer, bufferOffset uint64, data unsafe.Pointer, size uintptr) {
+func (q *Queue) WriteBuffer(
+	buffer *Buffer,
+	bufferOffset uint64,
+	data unsafe.Pointer,
+	size uintptr) {
 	sys.QueueWriteBuffer(
 		q.inner,
 		buffer.inner,
@@ -1138,7 +1242,12 @@ func (q *Queue) WriteBuffer(buffer *Buffer, bufferOffset uint64, data unsafe.Poi
 	)
 }
 
-func (q *Queue) WriteTexture(destination *TexelCopyTextureInfo, data unsafe.Pointer, dataSize uintptr, dataLayout *TexelCopyBufferLayout, writeSize *Extent3D) {
+func (q *Queue) WriteTexture(
+	destination *TexelCopyTextureInfo,
+	data unsafe.Pointer,
+	dataSize uintptr,
+	dataLayout *TexelCopyBufferLayout,
+	writeSize *Extent3D) {
 	var _destination *sys.TexelCopyTextureInfo
 	if destination != nil {
 		_destination = new(destination.unwrap())
@@ -1154,7 +1263,8 @@ func (q *Queue) WriteTexture(destination *TexelCopyTextureInfo, data unsafe.Poin
 	)
 }
 
-func (q *Queue) SetLabel(label string) {
+func (q *Queue) SetLabel(
+	label string) {
 	sys.QueueSetLabel(
 		q.inner,
 		sys.StringView{
@@ -1179,7 +1289,8 @@ type RenderBundle struct {
 	cleanup runtime.Cleanup
 }
 
-func (r *RenderBundle) SetLabel(label string) {
+func (r *RenderBundle) SetLabel(
+	label string) {
 	sys.RenderBundleSetLabel(
 		r.inner,
 		sys.StringView{
@@ -1204,14 +1315,18 @@ type RenderBundleEncoder struct {
 	cleanup runtime.Cleanup
 }
 
-func (r *RenderBundleEncoder) SetPipeline(pipeline *RenderPipeline) {
+func (r *RenderBundleEncoder) SetPipeline(
+	pipeline *RenderPipeline) {
 	sys.RenderBundleEncoderSetPipeline(
 		r.inner,
 		pipeline.inner,
 	)
 }
 
-func (r *RenderBundleEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, dynamicOffsets []uint32) {
+func (r *RenderBundleEncoder) SetBindGroup(
+	groupIndex uint32,
+	group *BindGroup,
+	dynamicOffsets []uint32) {
 	sys.RenderBundleEncoderSetBindGroup(
 		r.inner,
 		groupIndex,
@@ -1220,7 +1335,10 @@ func (r *RenderBundleEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, 
 	)
 }
 
-func (r *RenderBundleEncoder) SetImmediates(offset uint32, data unsafe.Pointer, size uintptr) {
+func (r *RenderBundleEncoder) SetImmediates(
+	offset uint32,
+	data unsafe.Pointer,
+	size uintptr) {
 	sys.RenderBundleEncoderSetImmediates(
 		r.inner,
 		offset,
@@ -1229,7 +1347,11 @@ func (r *RenderBundleEncoder) SetImmediates(offset uint32, data unsafe.Pointer, 
 	)
 }
 
-func (r *RenderBundleEncoder) Draw(vertexCount uint32, instanceCount uint32, firstVertex uint32, firstInstance uint32) {
+func (r *RenderBundleEncoder) Draw(
+	vertexCount uint32,
+	instanceCount uint32,
+	firstVertex uint32,
+	firstInstance uint32) {
 	sys.RenderBundleEncoderDraw(
 		r.inner,
 		vertexCount,
@@ -1239,7 +1361,12 @@ func (r *RenderBundleEncoder) Draw(vertexCount uint32, instanceCount uint32, fir
 	)
 }
 
-func (r *RenderBundleEncoder) DrawIndexed(indexCount uint32, instanceCount uint32, firstIndex uint32, baseVertex int32, firstInstance uint32) {
+func (r *RenderBundleEncoder) DrawIndexed(
+	indexCount uint32,
+	instanceCount uint32,
+	firstIndex uint32,
+	baseVertex int32,
+	firstInstance uint32) {
 	sys.RenderBundleEncoderDrawIndexed(
 		r.inner,
 		indexCount,
@@ -1250,7 +1377,9 @@ func (r *RenderBundleEncoder) DrawIndexed(indexCount uint32, instanceCount uint3
 	)
 }
 
-func (r *RenderBundleEncoder) DrawIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
+func (r *RenderBundleEncoder) DrawIndirect(
+	indirectBuffer *Buffer,
+	indirectOffset uint64) {
 	sys.RenderBundleEncoderDrawIndirect(
 		r.inner,
 		indirectBuffer.inner,
@@ -1258,7 +1387,9 @@ func (r *RenderBundleEncoder) DrawIndirect(indirectBuffer *Buffer, indirectOffse
 	)
 }
 
-func (r *RenderBundleEncoder) DrawIndexedIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
+func (r *RenderBundleEncoder) DrawIndexedIndirect(
+	indirectBuffer *Buffer,
+	indirectOffset uint64) {
 	sys.RenderBundleEncoderDrawIndexedIndirect(
 		r.inner,
 		indirectBuffer.inner,
@@ -1266,7 +1397,8 @@ func (r *RenderBundleEncoder) DrawIndexedIndirect(indirectBuffer *Buffer, indire
 	)
 }
 
-func (r *RenderBundleEncoder) InsertDebugMarker(markerLabel string) {
+func (r *RenderBundleEncoder) InsertDebugMarker(
+	markerLabel string) {
 	sys.RenderBundleEncoderInsertDebugMarker(
 		r.inner,
 		sys.StringView{
@@ -1282,7 +1414,8 @@ func (r *RenderBundleEncoder) PopDebugGroup() {
 	)
 }
 
-func (r *RenderBundleEncoder) PushDebugGroup(groupLabel string) {
+func (r *RenderBundleEncoder) PushDebugGroup(
+	groupLabel string) {
 	sys.RenderBundleEncoderPushDebugGroup(
 		r.inner,
 		sys.StringView{
@@ -1292,7 +1425,11 @@ func (r *RenderBundleEncoder) PushDebugGroup(groupLabel string) {
 	)
 }
 
-func (r *RenderBundleEncoder) SetVertexBuffer(slot uint32, buffer *Buffer, offset uint64, size uint64) {
+func (r *RenderBundleEncoder) SetVertexBuffer(
+	slot uint32,
+	buffer *Buffer,
+	offset uint64,
+	size uint64) {
 	sys.RenderBundleEncoderSetVertexBuffer(
 		r.inner,
 		slot,
@@ -1302,7 +1439,11 @@ func (r *RenderBundleEncoder) SetVertexBuffer(slot uint32, buffer *Buffer, offse
 	)
 }
 
-func (r *RenderBundleEncoder) SetIndexBuffer(buffer *Buffer, format IndexFormat, offset uint64, size uint64) {
+func (r *RenderBundleEncoder) SetIndexBuffer(
+	buffer *Buffer,
+	format IndexFormat,
+	offset uint64,
+	size uint64) {
 	sys.RenderBundleEncoderSetIndexBuffer(
 		r.inner,
 		buffer.inner,
@@ -1312,7 +1453,8 @@ func (r *RenderBundleEncoder) SetIndexBuffer(buffer *Buffer, format IndexFormat,
 	)
 }
 
-func (r *RenderBundleEncoder) Finish(descriptor *RenderBundleDescriptor) *RenderBundle {
+func (r *RenderBundleEncoder) Finish(
+	descriptor *RenderBundleDescriptor) *RenderBundle {
 	var _descriptor *sys.RenderBundleDescriptor
 	if descriptor != nil {
 		_descriptor = new(descriptor.unwrap())
@@ -1325,7 +1467,8 @@ func (r *RenderBundleEncoder) Finish(descriptor *RenderBundleDescriptor) *Render
 	return new(RenderBundle{inner: ret}).owned()
 }
 
-func (r *RenderBundleEncoder) SetLabel(label string) {
+func (r *RenderBundleEncoder) SetLabel(
+	label string) {
 	sys.RenderBundleEncoderSetLabel(
 		r.inner,
 		sys.StringView{
@@ -1350,14 +1493,18 @@ type RenderPassEncoder struct {
 	cleanup runtime.Cleanup
 }
 
-func (r *RenderPassEncoder) SetPipeline(pipeline *RenderPipeline) {
+func (r *RenderPassEncoder) SetPipeline(
+	pipeline *RenderPipeline) {
 	sys.RenderPassEncoderSetPipeline(
 		r.inner,
 		pipeline.inner,
 	)
 }
 
-func (r *RenderPassEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, dynamicOffsets []uint32) {
+func (r *RenderPassEncoder) SetBindGroup(
+	groupIndex uint32,
+	group *BindGroup,
+	dynamicOffsets []uint32) {
 	sys.RenderPassEncoderSetBindGroup(
 		r.inner,
 		groupIndex,
@@ -1366,7 +1513,10 @@ func (r *RenderPassEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, dy
 	)
 }
 
-func (r *RenderPassEncoder) SetImmediates(offset uint32, data unsafe.Pointer, size uintptr) {
+func (r *RenderPassEncoder) SetImmediates(
+	offset uint32,
+	data unsafe.Pointer,
+	size uintptr) {
 	sys.RenderPassEncoderSetImmediates(
 		r.inner,
 		offset,
@@ -1375,7 +1525,11 @@ func (r *RenderPassEncoder) SetImmediates(offset uint32, data unsafe.Pointer, si
 	)
 }
 
-func (r *RenderPassEncoder) Draw(vertexCount uint32, instanceCount uint32, firstVertex uint32, firstInstance uint32) {
+func (r *RenderPassEncoder) Draw(
+	vertexCount uint32,
+	instanceCount uint32,
+	firstVertex uint32,
+	firstInstance uint32) {
 	sys.RenderPassEncoderDraw(
 		r.inner,
 		vertexCount,
@@ -1385,7 +1539,12 @@ func (r *RenderPassEncoder) Draw(vertexCount uint32, instanceCount uint32, first
 	)
 }
 
-func (r *RenderPassEncoder) DrawIndexed(indexCount uint32, instanceCount uint32, firstIndex uint32, baseVertex int32, firstInstance uint32) {
+func (r *RenderPassEncoder) DrawIndexed(
+	indexCount uint32,
+	instanceCount uint32,
+	firstIndex uint32,
+	baseVertex int32,
+	firstInstance uint32) {
 	sys.RenderPassEncoderDrawIndexed(
 		r.inner,
 		indexCount,
@@ -1396,7 +1555,9 @@ func (r *RenderPassEncoder) DrawIndexed(indexCount uint32, instanceCount uint32,
 	)
 }
 
-func (r *RenderPassEncoder) DrawIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
+func (r *RenderPassEncoder) DrawIndirect(
+	indirectBuffer *Buffer,
+	indirectOffset uint64) {
 	sys.RenderPassEncoderDrawIndirect(
 		r.inner,
 		indirectBuffer.inner,
@@ -1404,7 +1565,9 @@ func (r *RenderPassEncoder) DrawIndirect(indirectBuffer *Buffer, indirectOffset 
 	)
 }
 
-func (r *RenderPassEncoder) DrawIndexedIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
+func (r *RenderPassEncoder) DrawIndexedIndirect(
+	indirectBuffer *Buffer,
+	indirectOffset uint64) {
 	sys.RenderPassEncoderDrawIndexedIndirect(
 		r.inner,
 		indirectBuffer.inner,
@@ -1412,7 +1575,8 @@ func (r *RenderPassEncoder) DrawIndexedIndirect(indirectBuffer *Buffer, indirect
 	)
 }
 
-func (r *RenderPassEncoder) ExecuteBundles(bundles []RenderBundle) {
+func (r *RenderPassEncoder) ExecuteBundles(
+	bundles []*RenderBundle) {
 	_bundles := make([]sys.RenderBundle, len(bundles))
 	for i := range bundles {
 		_bundles[i] = bundles[i].inner
@@ -1423,7 +1587,8 @@ func (r *RenderPassEncoder) ExecuteBundles(bundles []RenderBundle) {
 	)
 }
 
-func (r *RenderPassEncoder) InsertDebugMarker(markerLabel string) {
+func (r *RenderPassEncoder) InsertDebugMarker(
+	markerLabel string) {
 	sys.RenderPassEncoderInsertDebugMarker(
 		r.inner,
 		sys.StringView{
@@ -1439,7 +1604,8 @@ func (r *RenderPassEncoder) PopDebugGroup() {
 	)
 }
 
-func (r *RenderPassEncoder) PushDebugGroup(groupLabel string) {
+func (r *RenderPassEncoder) PushDebugGroup(
+	groupLabel string) {
 	sys.RenderPassEncoderPushDebugGroup(
 		r.inner,
 		sys.StringView{
@@ -1449,21 +1615,29 @@ func (r *RenderPassEncoder) PushDebugGroup(groupLabel string) {
 	)
 }
 
-func (r *RenderPassEncoder) SetStencilReference(reference uint32) {
+func (r *RenderPassEncoder) SetStencilReference(
+	reference uint32) {
 	sys.RenderPassEncoderSetStencilReference(
 		r.inner,
 		reference,
 	)
 }
 
-func (r *RenderPassEncoder) SetBlendConstant(color *Color) {
+func (r *RenderPassEncoder) SetBlendConstant(
+	color *Color) {
 	sys.RenderPassEncoderSetBlendConstant(
 		r.inner,
 		color,
 	)
 }
 
-func (r *RenderPassEncoder) SetViewport(x float32, y float32, width float32, height float32, minDepth float32, maxDepth float32) {
+func (r *RenderPassEncoder) SetViewport(
+	x float32,
+	y float32,
+	width float32,
+	height float32,
+	minDepth float32,
+	maxDepth float32) {
 	sys.RenderPassEncoderSetViewport(
 		r.inner,
 		x,
@@ -1475,7 +1649,11 @@ func (r *RenderPassEncoder) SetViewport(x float32, y float32, width float32, hei
 	)
 }
 
-func (r *RenderPassEncoder) SetScissorRect(x uint32, y uint32, width uint32, height uint32) {
+func (r *RenderPassEncoder) SetScissorRect(
+	x uint32,
+	y uint32,
+	width uint32,
+	height uint32) {
 	sys.RenderPassEncoderSetScissorRect(
 		r.inner,
 		x,
@@ -1485,7 +1663,11 @@ func (r *RenderPassEncoder) SetScissorRect(x uint32, y uint32, width uint32, hei
 	)
 }
 
-func (r *RenderPassEncoder) SetVertexBuffer(slot uint32, buffer *Buffer, offset uint64, size uint64) {
+func (r *RenderPassEncoder) SetVertexBuffer(
+	slot uint32,
+	buffer *Buffer,
+	offset uint64,
+	size uint64) {
 	sys.RenderPassEncoderSetVertexBuffer(
 		r.inner,
 		slot,
@@ -1495,7 +1677,11 @@ func (r *RenderPassEncoder) SetVertexBuffer(slot uint32, buffer *Buffer, offset 
 	)
 }
 
-func (r *RenderPassEncoder) SetIndexBuffer(buffer *Buffer, format IndexFormat, offset uint64, size uint64) {
+func (r *RenderPassEncoder) SetIndexBuffer(
+	buffer *Buffer,
+	format IndexFormat,
+	offset uint64,
+	size uint64) {
 	sys.RenderPassEncoderSetIndexBuffer(
 		r.inner,
 		buffer.inner,
@@ -1505,7 +1691,8 @@ func (r *RenderPassEncoder) SetIndexBuffer(buffer *Buffer, format IndexFormat, o
 	)
 }
 
-func (r *RenderPassEncoder) BeginOcclusionQuery(queryIndex uint32) {
+func (r *RenderPassEncoder) BeginOcclusionQuery(
+	queryIndex uint32) {
 	sys.RenderPassEncoderBeginOcclusionQuery(
 		r.inner,
 		queryIndex,
@@ -1524,7 +1711,8 @@ func (r *RenderPassEncoder) End() {
 	)
 }
 
-func (r *RenderPassEncoder) SetLabel(label string) {
+func (r *RenderPassEncoder) SetLabel(
+	label string) {
 	sys.RenderPassEncoderSetLabel(
 		r.inner,
 		sys.StringView{
@@ -1549,7 +1737,8 @@ type RenderPipeline struct {
 	cleanup runtime.Cleanup
 }
 
-func (r *RenderPipeline) GetBindGroupLayout(groupIndex uint32) *BindGroupLayout {
+func (r *RenderPipeline) GetBindGroupLayout(
+	groupIndex uint32) *BindGroupLayout {
 	ret := sys.RenderPipelineGetBindGroupLayout(
 		r.inner,
 		groupIndex,
@@ -1557,7 +1746,8 @@ func (r *RenderPipeline) GetBindGroupLayout(groupIndex uint32) *BindGroupLayout 
 	return new(BindGroupLayout{inner: ret}).owned()
 }
 
-func (r *RenderPipeline) SetLabel(label string) {
+func (r *RenderPipeline) SetLabel(
+	label string) {
 	sys.RenderPipelineSetLabel(
 		r.inner,
 		sys.StringView{
@@ -1582,7 +1772,8 @@ type Sampler struct {
 	cleanup runtime.Cleanup
 }
 
-func (s *Sampler) SetLabel(label string) {
+func (s *Sampler) SetLabel(
+	label string) {
 	sys.SamplerSetLabel(
 		s.inner,
 		sys.StringView{
@@ -1620,7 +1811,8 @@ func (s *ShaderModule) GetCompilationInfo() (CompilationInfoRequestStatus, *Comp
 	return ret.status, ret.compilationInfo
 }
 
-func (s *ShaderModule) SetLabel(label string) {
+func (s *ShaderModule) SetLabel(
+	label string) {
 	sys.ShaderModuleSetLabel(
 		s.inner,
 		sys.StringView{
@@ -1647,7 +1839,8 @@ type Surface struct {
 	cleanup runtime.Cleanup
 }
 
-func (s *Surface) Configure(config *SurfaceConfiguration) {
+func (s *Surface) Configure(
+	config *SurfaceConfiguration) {
 	var _config *sys.SurfaceConfiguration
 	if config != nil {
 		_config = new(config.unwrap())
@@ -1659,7 +1852,9 @@ func (s *Surface) Configure(config *SurfaceConfiguration) {
 	)
 }
 
-func (s *Surface) GetCapabilities(adapter *Adapter, capabilities *SurfaceCapabilities) Status {
+func (s *Surface) GetCapabilities(
+	adapter *Adapter,
+	capabilities *SurfaceCapabilities) Status {
 	var _capabilities *sys.SurfaceCapabilities
 	if capabilities != nil {
 		_capabilities = new(capabilities.unwrap())
@@ -1677,7 +1872,8 @@ func (s *Surface) GetCapabilities(adapter *Adapter, capabilities *SurfaceCapabil
 	return ret
 }
 
-func (s *Surface) GetCurrentTexture(surfaceTexture *SurfaceTexture) {
+func (s *Surface) GetCurrentTexture(
+	surfaceTexture *SurfaceTexture) {
 	var _surfaceTexture *sys.SurfaceTexture
 	if surfaceTexture != nil {
 		_surfaceTexture = new(surfaceTexture.unwrap())
@@ -1706,7 +1902,8 @@ func (s *Surface) Unconfigure() {
 	)
 }
 
-func (s *Surface) SetLabel(label string) {
+func (s *Surface) SetLabel(
+	label string) {
 	sys.SurfaceSetLabel(
 		s.inner,
 		sys.StringView{
@@ -1731,7 +1928,8 @@ type Texture struct {
 	cleanup runtime.Cleanup
 }
 
-func (t *Texture) CreateView(descriptor *TextureViewDescriptor) *TextureView {
+func (t *Texture) CreateView(
+	descriptor *TextureViewDescriptor) *TextureView {
 	var _descriptor *sys.TextureViewDescriptor
 	if descriptor != nil {
 		_descriptor = new(descriptor.unwrap())
@@ -1744,7 +1942,8 @@ func (t *Texture) CreateView(descriptor *TextureViewDescriptor) *TextureView {
 	return new(TextureView{inner: ret}).owned()
 }
 
-func (t *Texture) SetLabel(label string) {
+func (t *Texture) SetLabel(
+	label string) {
 	sys.TextureSetLabel(
 		t.inner,
 		sys.StringView{
@@ -1838,7 +2037,8 @@ type TextureView struct {
 	cleanup runtime.Cleanup
 }
 
-func (t *TextureView) SetLabel(label string) {
+func (t *TextureView) SetLabel(
+	label string) {
 	sys.TextureViewSetLabel(
 		t.inner,
 		sys.StringView{

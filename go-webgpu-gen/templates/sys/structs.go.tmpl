@@ -24,4 +24,9 @@ type {{ $structName }} struct {
 	{{- end }}
 {{- end }}
 }
-{{ end }}
+{{ if eq .Type "extension" -}}
+{{ $r := slice (camelCase .Name) 0 1 -}}
+func ({{ $r }} *{{ $structName }}) Chain() *ChainedStruct {
+	return &{{ $r }}.NextInChain
+}
+{{ end }}{{ end }}

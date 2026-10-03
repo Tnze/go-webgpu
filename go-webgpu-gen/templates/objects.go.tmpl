@@ -19,8 +19,8 @@ type {{ $objectName }} struct {
 func ({{ $r }} *{{ pascalCase $object.Name }}) {{ pascalCase .Name }}(
 	{{- range $index, $arg := .Args -}}
 		{{ if ne $index 0 }}, {{ end }}
-		{{- if arrayElem .Type -}}
-			{{ camelCase .Name }} []{{ arrayElem .Type | goType }}
+		{{ $arrayElem := arrayElem .Type }}{{- if $arrayElem -}}
+			{{ camelCase .Name }} []{{ if hasPrefix $arrayElem "object."}}*{{ end }}{{ goType $arrayElem }}
 		{{- else -}}
 			{{ camelCase .Name }} {{ if and (or .Pointer (hasPrefix .Type "object.")) (.Type | goType | ne "unsafe.Pointer") }}*{{ end }}
 			{{- $argType := goType .Type }}
