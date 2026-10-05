@@ -121,7 +121,9 @@ func ({{ $r }} *{{ pascalCase $object.Name }}) {{ pascalCase .Name }}(
 }
 {{ end }}
 func ({{ $r }} *{{ $objectName }}) owned() *{{ $objectName }} {
-	{{ $r }}.cleanup = runtime.AddCleanup({{ $r }}, sys.{{ $objectName }}Release, {{ $r}}.inner)
+	if {{ $r }}.inner != nil {
+		{{ $r }}.cleanup = runtime.AddCleanup({{ $r }}, sys.{{ $objectName }}Release, {{ $r}}.inner)
+	}
 	return {{ $r }}
 }
 

@@ -86,7 +86,9 @@ func (a *Adapter) RequestDevice(descriptor *DeviceDescriptor) (RequestDeviceStat
 }
 
 func (a *Adapter) owned() *Adapter {
-	a.cleanup = runtime.AddCleanup(a, sys.AdapterRelease, a.inner)
+	if a.inner != nil {
+		a.cleanup = runtime.AddCleanup(a, sys.AdapterRelease, a.inner)
+	}
 	return a
 }
 
@@ -111,7 +113,9 @@ func (b *BindGroup) SetLabel(label string) {
 }
 
 func (b *BindGroup) owned() *BindGroup {
-	b.cleanup = runtime.AddCleanup(b, sys.BindGroupRelease, b.inner)
+	if b.inner != nil {
+		b.cleanup = runtime.AddCleanup(b, sys.BindGroupRelease, b.inner)
+	}
 	return b
 }
 
@@ -136,7 +140,9 @@ func (b *BindGroupLayout) SetLabel(label string) {
 }
 
 func (b *BindGroupLayout) owned() *BindGroupLayout {
-	b.cleanup = runtime.AddCleanup(b, sys.BindGroupLayoutRelease, b.inner)
+	if b.inner != nil {
+		b.cleanup = runtime.AddCleanup(b, sys.BindGroupLayoutRelease, b.inner)
+	}
 	return b
 }
 
@@ -248,7 +254,9 @@ func (b *Buffer) Destroy() {
 }
 
 func (b *Buffer) owned() *Buffer {
-	b.cleanup = runtime.AddCleanup(b, sys.BufferRelease, b.inner)
+	if b.inner != nil {
+		b.cleanup = runtime.AddCleanup(b, sys.BufferRelease, b.inner)
+	}
 	return b
 }
 
@@ -273,7 +281,9 @@ func (c *CommandBuffer) SetLabel(label string) {
 }
 
 func (c *CommandBuffer) owned() *CommandBuffer {
-	c.cleanup = runtime.AddCleanup(c, sys.CommandBufferRelease, c.inner)
+	if c.inner != nil {
+		c.cleanup = runtime.AddCleanup(c, sys.CommandBufferRelease, c.inner)
+	}
 	return c
 }
 
@@ -459,7 +469,9 @@ func (c *CommandEncoder) SetLabel(label string) {
 }
 
 func (c *CommandEncoder) owned() *CommandEncoder {
-	c.cleanup = runtime.AddCleanup(c, sys.CommandEncoderRelease, c.inner)
+	if c.inner != nil {
+		c.cleanup = runtime.AddCleanup(c, sys.CommandEncoderRelease, c.inner)
+	}
 	return c
 }
 
@@ -558,7 +570,9 @@ func (c *ComputePassEncoder) SetLabel(label string) {
 }
 
 func (c *ComputePassEncoder) owned() *ComputePassEncoder {
-	c.cleanup = runtime.AddCleanup(c, sys.ComputePassEncoderRelease, c.inner)
+	if c.inner != nil {
+		c.cleanup = runtime.AddCleanup(c, sys.ComputePassEncoderRelease, c.inner)
+	}
 	return c
 }
 
@@ -591,7 +605,9 @@ func (c *ComputePipeline) SetLabel(label string) {
 }
 
 func (c *ComputePipeline) owned() *ComputePipeline {
-	c.cleanup = runtime.AddCleanup(c, sys.ComputePipelineRelease, c.inner)
+	if c.inner != nil {
+		c.cleanup = runtime.AddCleanup(c, sys.ComputePipelineRelease, c.inner)
+	}
 	return c
 }
 
@@ -906,7 +922,9 @@ func (d *Device) SetLabel(label string) {
 }
 
 func (d *Device) owned() *Device {
-	d.cleanup = runtime.AddCleanup(d, sys.DeviceRelease, d.inner)
+	if d.inner != nil {
+		d.cleanup = runtime.AddCleanup(d, sys.DeviceRelease, d.inner)
+	}
 	return d
 }
 
@@ -933,7 +951,9 @@ func (e *ExternalTexture) SetLabel(label string) {
 }
 
 func (e *ExternalTexture) owned() *ExternalTexture {
-	e.cleanup = runtime.AddCleanup(e, sys.ExternalTextureRelease, e.inner)
+	if e.inner != nil {
+		e.cleanup = runtime.AddCleanup(e, sys.ExternalTextureRelease, e.inner)
+	}
 	return e
 }
 
@@ -1020,7 +1040,9 @@ func (i *Instance) WaitAny(futureCount uintptr, futures *FutureWaitInfo, timeout
 }
 
 func (i *Instance) owned() *Instance {
-	i.cleanup = runtime.AddCleanup(i, sys.InstanceRelease, i.inner)
+	if i.inner != nil {
+		i.cleanup = runtime.AddCleanup(i, sys.InstanceRelease, i.inner)
+	}
 	return i
 }
 
@@ -1045,7 +1067,9 @@ func (p *PipelineLayout) SetLabel(label string) {
 }
 
 func (p *PipelineLayout) owned() *PipelineLayout {
-	p.cleanup = runtime.AddCleanup(p, sys.PipelineLayoutRelease, p.inner)
+	if p.inner != nil {
+		p.cleanup = runtime.AddCleanup(p, sys.PipelineLayoutRelease, p.inner)
+	}
 	return p
 }
 
@@ -1090,7 +1114,9 @@ func (q *QuerySet) Destroy() {
 }
 
 func (q *QuerySet) owned() *QuerySet {
-	q.cleanup = runtime.AddCleanup(q, sys.QuerySetRelease, q.inner)
+	if q.inner != nil {
+		q.cleanup = runtime.AddCleanup(q, sys.QuerySetRelease, q.inner)
+	}
 	return q
 }
 
@@ -1165,7 +1191,9 @@ func (q *Queue) SetLabel(label string) {
 }
 
 func (q *Queue) owned() *Queue {
-	q.cleanup = runtime.AddCleanup(q, sys.QueueRelease, q.inner)
+	if q.inner != nil {
+		q.cleanup = runtime.AddCleanup(q, sys.QueueRelease, q.inner)
+	}
 	return q
 }
 
@@ -1190,7 +1218,9 @@ func (r *RenderBundle) SetLabel(label string) {
 }
 
 func (r *RenderBundle) owned() *RenderBundle {
-	r.cleanup = runtime.AddCleanup(r, sys.RenderBundleRelease, r.inner)
+	if r.inner != nil {
+		r.cleanup = runtime.AddCleanup(r, sys.RenderBundleRelease, r.inner)
+	}
 	return r
 }
 
@@ -1336,7 +1366,9 @@ func (r *RenderBundleEncoder) SetLabel(label string) {
 }
 
 func (r *RenderBundleEncoder) owned() *RenderBundleEncoder {
-	r.cleanup = runtime.AddCleanup(r, sys.RenderBundleEncoderRelease, r.inner)
+	if r.inner != nil {
+		r.cleanup = runtime.AddCleanup(r, sys.RenderBundleEncoderRelease, r.inner)
+	}
 	return r
 }
 
@@ -1535,7 +1567,9 @@ func (r *RenderPassEncoder) SetLabel(label string) {
 }
 
 func (r *RenderPassEncoder) owned() *RenderPassEncoder {
-	r.cleanup = runtime.AddCleanup(r, sys.RenderPassEncoderRelease, r.inner)
+	if r.inner != nil {
+		r.cleanup = runtime.AddCleanup(r, sys.RenderPassEncoderRelease, r.inner)
+	}
 	return r
 }
 
@@ -1568,7 +1602,9 @@ func (r *RenderPipeline) SetLabel(label string) {
 }
 
 func (r *RenderPipeline) owned() *RenderPipeline {
-	r.cleanup = runtime.AddCleanup(r, sys.RenderPipelineRelease, r.inner)
+	if r.inner != nil {
+		r.cleanup = runtime.AddCleanup(r, sys.RenderPipelineRelease, r.inner)
+	}
 	return r
 }
 
@@ -1593,7 +1629,9 @@ func (s *Sampler) SetLabel(label string) {
 }
 
 func (s *Sampler) owned() *Sampler {
-	s.cleanup = runtime.AddCleanup(s, sys.SamplerRelease, s.inner)
+	if s.inner != nil {
+		s.cleanup = runtime.AddCleanup(s, sys.SamplerRelease, s.inner)
+	}
 	return s
 }
 
@@ -1631,7 +1669,9 @@ func (s *ShaderModule) SetLabel(label string) {
 }
 
 func (s *ShaderModule) owned() *ShaderModule {
-	s.cleanup = runtime.AddCleanup(s, sys.ShaderModuleRelease, s.inner)
+	if s.inner != nil {
+		s.cleanup = runtime.AddCleanup(s, sys.ShaderModuleRelease, s.inner)
+	}
 	return s
 }
 
@@ -1717,7 +1757,9 @@ func (s *Surface) SetLabel(label string) {
 }
 
 func (s *Surface) owned() *Surface {
-	s.cleanup = runtime.AddCleanup(s, sys.SurfaceRelease, s.inner)
+	if s.inner != nil {
+		s.cleanup = runtime.AddCleanup(s, sys.SurfaceRelease, s.inner)
+	}
 	return s
 }
 
@@ -1824,7 +1866,9 @@ func (t *Texture) Destroy() {
 }
 
 func (t *Texture) owned() *Texture {
-	t.cleanup = runtime.AddCleanup(t, sys.TextureRelease, t.inner)
+	if t.inner != nil {
+		t.cleanup = runtime.AddCleanup(t, sys.TextureRelease, t.inner)
+	}
 	return t
 }
 
@@ -1849,7 +1893,9 @@ func (t *TextureView) SetLabel(label string) {
 }
 
 func (t *TextureView) owned() *TextureView {
-	t.cleanup = runtime.AddCleanup(t, sys.TextureViewRelease, t.inner)
+	if t.inner != nil {
+		t.cleanup = runtime.AddCleanup(t, sys.TextureViewRelease, t.inner)
+	}
 	return t
 }
 

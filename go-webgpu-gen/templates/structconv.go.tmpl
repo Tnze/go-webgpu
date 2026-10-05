@@ -3,7 +3,9 @@
 package {{ .PackageName }}
 
 import (
+	"strings"
 	"unsafe"
+
 	{{ $importPath := .ImportPath }}{{ printf "%q" (printf "%s/sys" $importPath) }}
 )
 {{ range .Structs }}{{ $structName := pascalCase .Name}}
@@ -31,7 +33,9 @@ func ({{ $r }} *{{ $structName }}) unwrap() (out sys.{{ $structName }}) {
 	{{- end }}
 	{{- /* object */}}
 	{{- else if hasPrefix .Type "object." -}}
-	out.{{ $fieldName }} = {{ $r }}.{{ $fieldName }}.inner
+	if {{ $r }}.{{ $fieldName }} != nil {
+		out.{{ $fieldName }} = {{ $r }}.{{ $fieldName }}.inner
+	}
 	{{- else -}}
 	{{ $arrayElem := arrayElem .Type -}}
 	{{ if $arrayElem -}}
@@ -56,7 +60,7 @@ func ({{ $r }} *{{ $structName }}) unwrap() (out sys.{{ $structName }}) {
 			{{ $targetArray }}[i] = {{ $r }}.{{ $fieldName }}[i].inner
 		}
 		{{ end -}}
-		out.{{ $fieldName }} = &{{ $targetArray }}[0]
+		out.{{ $fieldName }} = unsafe.SliceData({{ $targetArray }})
 	}
 	{{- else -}}
 	{{- /* other */ -}}
@@ -68,6 +72,59 @@ func ({{ $r }} *{{ $structName }}) unwrap() (out sys.{{ $structName }}) {
 }
 
 func ({{ $r }} *{{ $structName }}) wrap(in *sys.{{ $structName }}) {
-	panic("TODO")
+	{{- if eq .Type "extensible" }}
+	{{ $r }}.Chain = in.Chain{{ end }}
+	{{- range .Members }}{{ $fieldName := pascalCase .Name }}
+	{{- /* array */ -}}
+	{{ $targetArray := printf "in.%s" $fieldName -}}
+	{{ $arrayElem := arrayElem .Type }}{{ if $arrayElem -}}
+	{{ if hasPrefix $arrayElem "struct." }}
+	{{- if $.GetDef $arrayElem | $.IsPureData | not -}}
+	{{ $targetArray = camelCase .Name }}
+	_{{ $targetArray }} := unsafe.Slice(in.{{ $fieldName }}, in.{{ $fieldName }}Count)
+	{{ $targetArray }} := make([]{{ goType $arrayElem }}, in.{{ $fieldName }}Count)
+	for i := uint(0); i < in.{{ $fieldName }}Count; i++ {
+		{{ $targetArray }}[i].wrap(&_{{ $targetArray }}[i])
+	}
+	{{ $r }}.{{ $fieldName }} = {{ $targetArray }}
+	{{ else }}
+	{{ $r }}.{{ $fieldName }} = unsafe.Slice(in.{{ $fieldName }}, in.{{ $fieldName }}Count)
+	{{- end }}
+	{{- else if hasPrefix $arrayElem "object." -}}
+	{{ $targetArray = camelCase .Name }}
+	_{{ $targetArray }} := unsafe.Slice(in.{{ $fieldName }}, in.{{ $fieldName }}Count)
+	{{ $targetArray }} := make([]*{{ goType $arrayElem }}, in.{{ $fieldName }}Count)
+	for i := uint(0); i < in.{{ $fieldName }}Count; i++ {
+		{{ $targetArray }}[i] = new({{ goType $arrayElem }}{ inner: _{{ $targetArray }}[i] }).owned()
+	}
+	{{ $r }}.{{ $fieldName }} = {{ $targetArray }}
+	{{- end }}
+	{{- else if eq (goType .Type) "StringView" }}
+	{{- /* string */}}
+	{{ $r }}.{{ $fieldName }} = strings.Clone(unsafe.String(
+		in.{{ $fieldName }}.Data,
+		in.{{ $fieldName }}.Length,
+	))
+	{{- else if hasPrefix .Type "struct." }}{{ $isPure := $.GetDef .Type | $.IsPureData }}
+	{{- if .Pointer }}
+	if in.{{ $fieldName }} != nil {
+		{{- if $isPure }}
+		{{ $r }}.{{ $fieldName }} = in.{{ $fieldName }}
+		{{- else }}
+		{{ $r }}.{{ $fieldName }} = new({{ goType .Type }})
+		{{ $r }}.{{ $fieldName }}.wrap(in.{{ $fieldName }})
+		{{- end }}
+	}
+	{{- else if $isPure }}
+	{{ $r }}.{{ $fieldName }} = in.{{ $fieldName }}
+	{{- else }}
+	{{ $r }}.{{ $fieldName }}.wrap(&in.{{ $fieldName }})
+	{{- end }}
+	{{- else if hasPrefix .Type "object." }}
+	{{ $r }}.{{ $fieldName }} = new({{ goType .Type }}{ inner: in.{{ $fieldName }} }).owned()
+	{{- else }}
+	{{ $r }}.{{ $fieldName }} = in.{{ $fieldName }}
+	{{- end -}}
+	{{ end }}
 }
 {{ end }}

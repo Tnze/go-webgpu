@@ -6,8 +6,10 @@
 package webgpu
 
 import (
-	"github.com/Tnze/go-webgpu/webgpu/sys"
+	"strings"
 	"unsafe"
+
+	"github.com/Tnze/go-webgpu/webgpu/sys"
 )
 
 func (a *AdapterInfo) unwrap() (out sys.AdapterInfo) {
@@ -38,7 +40,29 @@ func (a *AdapterInfo) unwrap() (out sys.AdapterInfo) {
 }
 
 func (a *AdapterInfo) wrap(in *sys.AdapterInfo) {
-	panic("TODO")
+	a.Chain = in.Chain
+	a.Vendor = strings.Clone(unsafe.String(
+		in.Vendor.Data,
+		in.Vendor.Length,
+	))
+	a.Architecture = strings.Clone(unsafe.String(
+		in.Architecture.Data,
+		in.Architecture.Length,
+	))
+	a.Device = strings.Clone(unsafe.String(
+		in.Device.Data,
+		in.Device.Length,
+	))
+	a.Description = strings.Clone(unsafe.String(
+		in.Description.Data,
+		in.Description.Length,
+	))
+	a.BackendType = in.BackendType
+	a.AdapterType = in.AdapterType
+	a.VendorID = in.VendorID
+	a.DeviceID = in.DeviceID
+	a.SubgroupMinSize = in.SubgroupMinSize
+	a.SubgroupMaxSize = in.SubgroupMaxSize
 }
 
 func (b *BindGroupDescriptor) unwrap() (out sys.BindGroupDescriptor) {
@@ -47,35 +71,61 @@ func (b *BindGroupDescriptor) unwrap() (out sys.BindGroupDescriptor) {
 		Length: uint(len(b.Label)),
 		Data:   unsafe.StringData(b.Label),
 	}
-	out.Layout = b.Layout.inner
+	if b.Layout != nil {
+		out.Layout = b.Layout.inner
+	}
 	if b.Entries != nil {
 		out.EntriesCount = uint(len(b.Entries))
 		entries := make([]sys.BindGroupEntry, len(b.Entries))
 		for i := range entries {
 			entries[i] = b.Entries[i].unwrap()
 		}
-		out.Entries = &entries[0]
+		out.Entries = unsafe.SliceData(entries)
 	}
 	return
 }
 
 func (b *BindGroupDescriptor) wrap(in *sys.BindGroupDescriptor) {
-	panic("TODO")
+	b.Chain = in.Chain
+	b.Label = strings.Clone(unsafe.String(
+		in.Label.Data,
+		in.Label.Length,
+	))
+	b.Layout = new(BindGroupLayout{inner: in.Layout}).owned()
+	_entries := unsafe.Slice(in.Entries, in.EntriesCount)
+	entries := make([]BindGroupEntry, in.EntriesCount)
+	for i := uint(0); i < in.EntriesCount; i++ {
+		entries[i].wrap(&_entries[i])
+	}
+	b.Entries = entries
+
 }
 
 func (b *BindGroupEntry) unwrap() (out sys.BindGroupEntry) {
 	out.Chain = b.Chain
 	out.Binding = b.Binding
-	out.Buffer = b.Buffer.inner
+	if b.Buffer != nil {
+		out.Buffer = b.Buffer.inner
+	}
 	out.Offset = b.Offset
 	out.Size = b.Size
-	out.Sampler = b.Sampler.inner
-	out.TextureView = b.TextureView.inner
+	if b.Sampler != nil {
+		out.Sampler = b.Sampler.inner
+	}
+	if b.TextureView != nil {
+		out.TextureView = b.TextureView.inner
+	}
 	return
 }
 
 func (b *BindGroupEntry) wrap(in *sys.BindGroupEntry) {
-	panic("TODO")
+	b.Chain = in.Chain
+	b.Binding = in.Binding
+	b.Buffer = new(Buffer{inner: in.Buffer}).owned()
+	b.Offset = in.Offset
+	b.Size = in.Size
+	b.Sampler = new(Sampler{inner: in.Sampler}).owned()
+	b.TextureView = new(TextureView{inner: in.TextureView}).owned()
 }
 
 func (b *BindGroupLayoutDescriptor) unwrap() (out sys.BindGroupLayoutDescriptor) {
@@ -86,13 +136,18 @@ func (b *BindGroupLayoutDescriptor) unwrap() (out sys.BindGroupLayoutDescriptor)
 	}
 	if b.Entries != nil {
 		out.EntriesCount = uint(len(b.Entries))
-		out.Entries = &b.Entries[0]
+		out.Entries = unsafe.SliceData(b.Entries)
 	}
 	return
 }
 
 func (b *BindGroupLayoutDescriptor) wrap(in *sys.BindGroupLayoutDescriptor) {
-	panic("TODO")
+	b.Chain = in.Chain
+	b.Label = strings.Clone(unsafe.String(
+		in.Label.Data,
+		in.Label.Length,
+	))
+	b.Entries = unsafe.Slice(in.Entries, in.EntriesCount)
 }
 
 func (b *BufferDescriptor) unwrap() (out sys.BufferDescriptor) {
@@ -108,7 +163,14 @@ func (b *BufferDescriptor) unwrap() (out sys.BufferDescriptor) {
 }
 
 func (b *BufferDescriptor) wrap(in *sys.BufferDescriptor) {
-	panic("TODO")
+	b.Chain = in.Chain
+	b.Label = strings.Clone(unsafe.String(
+		in.Label.Data,
+		in.Label.Length,
+	))
+	b.Usage = in.Usage
+	b.Size = in.Size
+	b.MappedAtCreation = in.MappedAtCreation
 }
 
 func (c *CommandBufferDescriptor) unwrap() (out sys.CommandBufferDescriptor) {
@@ -121,7 +183,11 @@ func (c *CommandBufferDescriptor) unwrap() (out sys.CommandBufferDescriptor) {
 }
 
 func (c *CommandBufferDescriptor) wrap(in *sys.CommandBufferDescriptor) {
-	panic("TODO")
+	c.Chain = in.Chain
+	c.Label = strings.Clone(unsafe.String(
+		in.Label.Data,
+		in.Label.Length,
+	))
 }
 
 func (c *CommandEncoderDescriptor) unwrap() (out sys.CommandEncoderDescriptor) {
@@ -134,7 +200,11 @@ func (c *CommandEncoderDescriptor) unwrap() (out sys.CommandEncoderDescriptor) {
 }
 
 func (c *CommandEncoderDescriptor) wrap(in *sys.CommandEncoderDescriptor) {
-	panic("TODO")
+	c.Chain = in.Chain
+	c.Label = strings.Clone(unsafe.String(
+		in.Label.Data,
+		in.Label.Length,
+	))
 }
 
 func (c *CompilationInfo) unwrap() (out sys.CompilationInfo) {
@@ -144,13 +214,19 @@ func (c *CompilationInfo) unwrap() (out sys.CompilationInfo) {
 		for i := range messages {
 			messages[i] = c.Messages[i].unwrap()
 		}
-		out.Messages = &messages[0]
+		out.Messages = unsafe.SliceData(messages)
 	}
 	return
 }
 
 func (c *CompilationInfo) wrap(in *sys.CompilationInfo) {
-	panic("TODO")
+	_messages := unsafe.Slice(in.Messages, in.MessagesCount)
+	messages := make([]CompilationMessage, in.MessagesCount)
+	for i := uint(0); i < in.MessagesCount; i++ {
+		messages[i].wrap(&_messages[i])
+	}
+	c.Messages = messages
+
 }
 
 func (c *CompilationMessage) unwrap() (out sys.CompilationMessage) {
@@ -167,7 +243,15 @@ func (c *CompilationMessage) unwrap() (out sys.CompilationMessage) {
 }
 
 func (c *CompilationMessage) wrap(in *sys.CompilationMessage) {
-	panic("TODO")
+	c.Message = strings.Clone(unsafe.String(
+		in.Message.Data,
+		in.Message.Length,
+	))
+	c.Type = in.Type
+	c.LineNum = in.LineNum
+	c.LinePos = in.LinePos
+	c.Offset = in.Offset
+	c.Length = in.Length
 }
 
 func (c *ComputePassDescriptor) unwrap() (out sys.ComputePassDescriptor) {
@@ -183,7 +267,15 @@ func (c *ComputePassDescriptor) unwrap() (out sys.ComputePassDescriptor) {
 }
 
 func (c *ComputePassDescriptor) wrap(in *sys.ComputePassDescriptor) {
-	panic("TODO")
+	c.Chain = in.Chain
+	c.Label = strings.Clone(unsafe.String(
+		in.Label.Data,
+		in.Label.Length,
+	))
+	if in.TimestampWrites != nil {
+		c.TimestampWrites = new(PassTimestampWrites)
+		c.TimestampWrites.wrap(in.TimestampWrites)
+	}
 }
 
 func (c *ComputePipelineDescriptor) unwrap() (out sys.ComputePipelineDescriptor) {
@@ -192,18 +284,28 @@ func (c *ComputePipelineDescriptor) unwrap() (out sys.ComputePipelineDescriptor)
 		Length: uint(len(c.Label)),
 		Data:   unsafe.StringData(c.Label),
 	}
-	out.Layout = c.Layout.inner
+	if c.Layout != nil {
+		out.Layout = c.Layout.inner
+	}
 	out.Compute = c.Compute.unwrap()
 	return
 }
 
 func (c *ComputePipelineDescriptor) wrap(in *sys.ComputePipelineDescriptor) {
-	panic("TODO")
+	c.Chain = in.Chain
+	c.Label = strings.Clone(unsafe.String(
+		in.Label.Data,
+		in.Label.Length,
+	))
+	c.Layout = new(PipelineLayout{inner: in.Layout}).owned()
+	c.Compute.wrap(&in.Compute)
 }
 
 func (c *ComputeState) unwrap() (out sys.ComputeState) {
 	out.Chain = c.Chain
-	out.Module = c.Module.inner
+	if c.Module != nil {
+		out.Module = c.Module.inner
+	}
 	out.EntryPoint = sys.StringView{
 		Length: uint(len(c.EntryPoint)),
 		Data:   unsafe.StringData(c.EntryPoint),
@@ -214,13 +316,25 @@ func (c *ComputeState) unwrap() (out sys.ComputeState) {
 		for i := range constants {
 			constants[i] = c.Constants[i].unwrap()
 		}
-		out.Constants = &constants[0]
+		out.Constants = unsafe.SliceData(constants)
 	}
 	return
 }
 
 func (c *ComputeState) wrap(in *sys.ComputeState) {
-	panic("TODO")
+	c.Chain = in.Chain
+	c.Module = new(ShaderModule{inner: in.Module}).owned()
+	c.EntryPoint = strings.Clone(unsafe.String(
+		in.EntryPoint.Data,
+		in.EntryPoint.Length,
+	))
+	_constants := unsafe.Slice(in.Constants, in.ConstantsCount)
+	constants := make([]ConstantEntry, in.ConstantsCount)
+	for i := uint(0); i < in.ConstantsCount; i++ {
+		constants[i].wrap(&_constants[i])
+	}
+	c.Constants = constants
+
 }
 
 func (c *ConstantEntry) unwrap() (out sys.ConstantEntry) {
@@ -234,7 +348,12 @@ func (c *ConstantEntry) unwrap() (out sys.ConstantEntry) {
 }
 
 func (c *ConstantEntry) wrap(in *sys.ConstantEntry) {
-	panic("TODO")
+	c.Chain = in.Chain
+	c.Key = strings.Clone(unsafe.String(
+		in.Key.Data,
+		in.Key.Length,
+	))
+	c.Value = in.Value
 }
 
 func (d *DeviceDescriptor) unwrap() (out sys.DeviceDescriptor) {
@@ -245,7 +364,7 @@ func (d *DeviceDescriptor) unwrap() (out sys.DeviceDescriptor) {
 	}
 	if d.RequiredFeatures != nil {
 		out.RequiredFeaturesCount = uint(len(d.RequiredFeatures))
-		out.RequiredFeatures = &d.RequiredFeatures[0]
+		out.RequiredFeatures = unsafe.SliceData(d.RequiredFeatures)
 	}
 	if d.RequiredLimits != nil {
 		out.RequiredLimits = d.RequiredLimits
@@ -257,21 +376,35 @@ func (d *DeviceDescriptor) unwrap() (out sys.DeviceDescriptor) {
 }
 
 func (d *DeviceDescriptor) wrap(in *sys.DeviceDescriptor) {
-	panic("TODO")
+	d.Chain = in.Chain
+	d.Label = strings.Clone(unsafe.String(
+		in.Label.Data,
+		in.Label.Length,
+	))
+	if in.RequiredLimits != nil {
+		d.RequiredLimits = in.RequiredLimits
+	}
+	d.DefaultQueue.wrap(&in.DefaultQueue)
+	d.DeviceLostCallbackInfo = in.DeviceLostCallbackInfo
+	d.UncapturedErrorCallbackInfo = in.UncapturedErrorCallbackInfo
 }
 
 func (e *ExternalTextureBindingEntry) unwrap() (out sys.ExternalTextureBindingEntry) {
-	out.ExternalTexture = e.ExternalTexture.inner
+	if e.ExternalTexture != nil {
+		out.ExternalTexture = e.ExternalTexture.inner
+	}
 	return
 }
 
 func (e *ExternalTextureBindingEntry) wrap(in *sys.ExternalTextureBindingEntry) {
-	panic("TODO")
+	e.ExternalTexture = new(ExternalTexture{inner: in.ExternalTexture}).owned()
 }
 
 func (f *FragmentState) unwrap() (out sys.FragmentState) {
 	out.Chain = f.Chain
-	out.Module = f.Module.inner
+	if f.Module != nil {
+		out.Module = f.Module.inner
+	}
 	out.EntryPoint = sys.StringView{
 		Length: uint(len(f.EntryPoint)),
 		Data:   unsafe.StringData(f.EntryPoint),
@@ -282,24 +415,37 @@ func (f *FragmentState) unwrap() (out sys.FragmentState) {
 		for i := range constants {
 			constants[i] = f.Constants[i].unwrap()
 		}
-		out.Constants = &constants[0]
+		out.Constants = unsafe.SliceData(constants)
 	}
 	if f.Targets != nil {
 		out.TargetsCount = uint(len(f.Targets))
-		out.Targets = &f.Targets[0]
+		out.Targets = unsafe.SliceData(f.Targets)
 	}
 	return
 }
 
 func (f *FragmentState) wrap(in *sys.FragmentState) {
-	panic("TODO")
+	f.Chain = in.Chain
+	f.Module = new(ShaderModule{inner: in.Module}).owned()
+	f.EntryPoint = strings.Clone(unsafe.String(
+		in.EntryPoint.Data,
+		in.EntryPoint.Length,
+	))
+	_constants := unsafe.Slice(in.Constants, in.ConstantsCount)
+	constants := make([]ConstantEntry, in.ConstantsCount)
+	for i := uint(0); i < in.ConstantsCount; i++ {
+		constants[i].wrap(&_constants[i])
+	}
+	f.Constants = constants
+
+	f.Targets = unsafe.Slice(in.Targets, in.TargetsCount)
 }
 
 func (i *InstanceDescriptor) unwrap() (out sys.InstanceDescriptor) {
 	out.Chain = i.Chain
 	if i.RequiredFeatures != nil {
 		out.RequiredFeaturesCount = uint(len(i.RequiredFeatures))
-		out.RequiredFeatures = &i.RequiredFeatures[0]
+		out.RequiredFeatures = unsafe.SliceData(i.RequiredFeatures)
 	}
 	if i.RequiredLimits != nil {
 		out.RequiredLimits = i.RequiredLimits
@@ -308,19 +454,27 @@ func (i *InstanceDescriptor) unwrap() (out sys.InstanceDescriptor) {
 }
 
 func (i *InstanceDescriptor) wrap(in *sys.InstanceDescriptor) {
-	panic("TODO")
+	i.Chain = in.Chain
+	if in.RequiredLimits != nil {
+		i.RequiredLimits = in.RequiredLimits
+	}
 }
 
 func (p *PassTimestampWrites) unwrap() (out sys.PassTimestampWrites) {
 	out.Chain = p.Chain
-	out.QuerySet = p.QuerySet.inner
+	if p.QuerySet != nil {
+		out.QuerySet = p.QuerySet.inner
+	}
 	out.BeginningOfPassWriteIndex = p.BeginningOfPassWriteIndex
 	out.EndOfPassWriteIndex = p.EndOfPassWriteIndex
 	return
 }
 
 func (p *PassTimestampWrites) wrap(in *sys.PassTimestampWrites) {
-	panic("TODO")
+	p.Chain = in.Chain
+	p.QuerySet = new(QuerySet{inner: in.QuerySet}).owned()
+	p.BeginningOfPassWriteIndex = in.BeginningOfPassWriteIndex
+	p.EndOfPassWriteIndex = in.EndOfPassWriteIndex
 }
 
 func (p *PipelineLayoutDescriptor) unwrap() (out sys.PipelineLayoutDescriptor) {
@@ -335,14 +489,25 @@ func (p *PipelineLayoutDescriptor) unwrap() (out sys.PipelineLayoutDescriptor) {
 		for i := range bindGroupLayouts {
 			bindGroupLayouts[i] = p.BindGroupLayouts[i].inner
 		}
-		out.BindGroupLayouts = &bindGroupLayouts[0]
+		out.BindGroupLayouts = unsafe.SliceData(bindGroupLayouts)
 	}
 	out.ImmediateSize = p.ImmediateSize
 	return
 }
 
 func (p *PipelineLayoutDescriptor) wrap(in *sys.PipelineLayoutDescriptor) {
-	panic("TODO")
+	p.Chain = in.Chain
+	p.Label = strings.Clone(unsafe.String(
+		in.Label.Data,
+		in.Label.Length,
+	))
+	_bindGroupLayouts := unsafe.Slice(in.BindGroupLayouts, in.BindGroupLayoutsCount)
+	bindGroupLayouts := make([]*BindGroupLayout, in.BindGroupLayoutsCount)
+	for i := uint(0); i < in.BindGroupLayoutsCount; i++ {
+		bindGroupLayouts[i] = new(BindGroupLayout{inner: _bindGroupLayouts[i]}).owned()
+	}
+	p.BindGroupLayouts = bindGroupLayouts
+	p.ImmediateSize = in.ImmediateSize
 }
 
 func (q *QuerySetDescriptor) unwrap() (out sys.QuerySetDescriptor) {
@@ -357,7 +522,13 @@ func (q *QuerySetDescriptor) unwrap() (out sys.QuerySetDescriptor) {
 }
 
 func (q *QuerySetDescriptor) wrap(in *sys.QuerySetDescriptor) {
-	panic("TODO")
+	q.Chain = in.Chain
+	q.Label = strings.Clone(unsafe.String(
+		in.Label.Data,
+		in.Label.Length,
+	))
+	q.Type = in.Type
+	q.Count = in.Count
 }
 
 func (q *QueueDescriptor) unwrap() (out sys.QueueDescriptor) {
@@ -370,7 +541,11 @@ func (q *QueueDescriptor) unwrap() (out sys.QueueDescriptor) {
 }
 
 func (q *QueueDescriptor) wrap(in *sys.QueueDescriptor) {
-	panic("TODO")
+	q.Chain = in.Chain
+	q.Label = strings.Clone(unsafe.String(
+		in.Label.Data,
+		in.Label.Length,
+	))
 }
 
 func (r *RenderBundleDescriptor) unwrap() (out sys.RenderBundleDescriptor) {
@@ -383,7 +558,11 @@ func (r *RenderBundleDescriptor) unwrap() (out sys.RenderBundleDescriptor) {
 }
 
 func (r *RenderBundleDescriptor) wrap(in *sys.RenderBundleDescriptor) {
-	panic("TODO")
+	r.Chain = in.Chain
+	r.Label = strings.Clone(unsafe.String(
+		in.Label.Data,
+		in.Label.Length,
+	))
 }
 
 func (r *RenderBundleEncoderDescriptor) unwrap() (out sys.RenderBundleEncoderDescriptor) {
@@ -394,7 +573,7 @@ func (r *RenderBundleEncoderDescriptor) unwrap() (out sys.RenderBundleEncoderDes
 	}
 	if r.ColorFormats != nil {
 		out.ColorFormatsCount = uint(len(r.ColorFormats))
-		out.ColorFormats = &r.ColorFormats[0]
+		out.ColorFormats = unsafe.SliceData(r.ColorFormats)
 	}
 	out.DepthStencilFormat = r.DepthStencilFormat
 	out.SampleCount = r.SampleCount
@@ -404,14 +583,26 @@ func (r *RenderBundleEncoderDescriptor) unwrap() (out sys.RenderBundleEncoderDes
 }
 
 func (r *RenderBundleEncoderDescriptor) wrap(in *sys.RenderBundleEncoderDescriptor) {
-	panic("TODO")
+	r.Chain = in.Chain
+	r.Label = strings.Clone(unsafe.String(
+		in.Label.Data,
+		in.Label.Length,
+	))
+	r.DepthStencilFormat = in.DepthStencilFormat
+	r.SampleCount = in.SampleCount
+	r.DepthReadOnly = in.DepthReadOnly
+	r.StencilReadOnly = in.StencilReadOnly
 }
 
 func (r *RenderPassColorAttachment) unwrap() (out sys.RenderPassColorAttachment) {
 	out.Chain = r.Chain
-	out.View = r.View.inner
+	if r.View != nil {
+		out.View = r.View.inner
+	}
 	out.DepthSlice = r.DepthSlice
-	out.ResolveTarget = r.ResolveTarget.inner
+	if r.ResolveTarget != nil {
+		out.ResolveTarget = r.ResolveTarget.inner
+	}
 	out.LoadOp = r.LoadOp
 	out.StoreOp = r.StoreOp
 	out.ClearValue = r.ClearValue
@@ -419,12 +610,20 @@ func (r *RenderPassColorAttachment) unwrap() (out sys.RenderPassColorAttachment)
 }
 
 func (r *RenderPassColorAttachment) wrap(in *sys.RenderPassColorAttachment) {
-	panic("TODO")
+	r.Chain = in.Chain
+	r.View = new(TextureView{inner: in.View}).owned()
+	r.DepthSlice = in.DepthSlice
+	r.ResolveTarget = new(TextureView{inner: in.ResolveTarget}).owned()
+	r.LoadOp = in.LoadOp
+	r.StoreOp = in.StoreOp
+	r.ClearValue = in.ClearValue
 }
 
 func (r *RenderPassDepthStencilAttachment) unwrap() (out sys.RenderPassDepthStencilAttachment) {
 	out.Chain = r.Chain
-	out.View = r.View.inner
+	if r.View != nil {
+		out.View = r.View.inner
+	}
 	out.DepthLoadOp = r.DepthLoadOp
 	out.DepthStoreOp = r.DepthStoreOp
 	out.DepthClearValue = r.DepthClearValue
@@ -437,7 +636,16 @@ func (r *RenderPassDepthStencilAttachment) unwrap() (out sys.RenderPassDepthSten
 }
 
 func (r *RenderPassDepthStencilAttachment) wrap(in *sys.RenderPassDepthStencilAttachment) {
-	panic("TODO")
+	r.Chain = in.Chain
+	r.View = new(TextureView{inner: in.View}).owned()
+	r.DepthLoadOp = in.DepthLoadOp
+	r.DepthStoreOp = in.DepthStoreOp
+	r.DepthClearValue = in.DepthClearValue
+	r.DepthReadOnly = in.DepthReadOnly
+	r.StencilLoadOp = in.StencilLoadOp
+	r.StencilStoreOp = in.StencilStoreOp
+	r.StencilClearValue = in.StencilClearValue
+	r.StencilReadOnly = in.StencilReadOnly
 }
 
 func (r *RenderPassDescriptor) unwrap() (out sys.RenderPassDescriptor) {
@@ -452,12 +660,14 @@ func (r *RenderPassDescriptor) unwrap() (out sys.RenderPassDescriptor) {
 		for i := range colorAttachments {
 			colorAttachments[i] = r.ColorAttachments[i].unwrap()
 		}
-		out.ColorAttachments = &colorAttachments[0]
+		out.ColorAttachments = unsafe.SliceData(colorAttachments)
 	}
 	if r.DepthStencilAttachment != nil {
 		out.DepthStencilAttachment = new(r.DepthStencilAttachment.unwrap())
 	}
-	out.OcclusionQuerySet = r.OcclusionQuerySet.inner
+	if r.OcclusionQuerySet != nil {
+		out.OcclusionQuerySet = r.OcclusionQuerySet.inner
+	}
 	if r.TimestampWrites != nil {
 		out.TimestampWrites = new(r.TimestampWrites.unwrap())
 	}
@@ -465,7 +675,27 @@ func (r *RenderPassDescriptor) unwrap() (out sys.RenderPassDescriptor) {
 }
 
 func (r *RenderPassDescriptor) wrap(in *sys.RenderPassDescriptor) {
-	panic("TODO")
+	r.Chain = in.Chain
+	r.Label = strings.Clone(unsafe.String(
+		in.Label.Data,
+		in.Label.Length,
+	))
+	_colorAttachments := unsafe.Slice(in.ColorAttachments, in.ColorAttachmentsCount)
+	colorAttachments := make([]RenderPassColorAttachment, in.ColorAttachmentsCount)
+	for i := uint(0); i < in.ColorAttachmentsCount; i++ {
+		colorAttachments[i].wrap(&_colorAttachments[i])
+	}
+	r.ColorAttachments = colorAttachments
+
+	if in.DepthStencilAttachment != nil {
+		r.DepthStencilAttachment = new(RenderPassDepthStencilAttachment)
+		r.DepthStencilAttachment.wrap(in.DepthStencilAttachment)
+	}
+	r.OcclusionQuerySet = new(QuerySet{inner: in.OcclusionQuerySet}).owned()
+	if in.TimestampWrites != nil {
+		r.TimestampWrites = new(PassTimestampWrites)
+		r.TimestampWrites.wrap(in.TimestampWrites)
+	}
 }
 
 func (r *RenderPipelineDescriptor) unwrap() (out sys.RenderPipelineDescriptor) {
@@ -474,7 +704,9 @@ func (r *RenderPipelineDescriptor) unwrap() (out sys.RenderPipelineDescriptor) {
 		Length: uint(len(r.Label)),
 		Data:   unsafe.StringData(r.Label),
 	}
-	out.Layout = r.Layout.inner
+	if r.Layout != nil {
+		out.Layout = r.Layout.inner
+	}
 	out.Vertex = r.Vertex.unwrap()
 	out.Primitive = r.Primitive
 	if r.DepthStencil != nil {
@@ -488,7 +720,22 @@ func (r *RenderPipelineDescriptor) unwrap() (out sys.RenderPipelineDescriptor) {
 }
 
 func (r *RenderPipelineDescriptor) wrap(in *sys.RenderPipelineDescriptor) {
-	panic("TODO")
+	r.Chain = in.Chain
+	r.Label = strings.Clone(unsafe.String(
+		in.Label.Data,
+		in.Label.Length,
+	))
+	r.Layout = new(PipelineLayout{inner: in.Layout}).owned()
+	r.Vertex.wrap(&in.Vertex)
+	r.Primitive = in.Primitive
+	if in.DepthStencil != nil {
+		r.DepthStencil = in.DepthStencil
+	}
+	r.Multisample = in.Multisample
+	if in.Fragment != nil {
+		r.Fragment = new(FragmentState)
+		r.Fragment.wrap(in.Fragment)
+	}
 }
 
 func (r *RequestAdapterOptions) unwrap() (out sys.RequestAdapterOptions) {
@@ -497,12 +744,19 @@ func (r *RequestAdapterOptions) unwrap() (out sys.RequestAdapterOptions) {
 	out.PowerPreference = r.PowerPreference
 	out.ForceFallbackAdapter = r.ForceFallbackAdapter
 	out.BackendType = r.BackendType
-	out.CompatibleSurface = r.CompatibleSurface.inner
+	if r.CompatibleSurface != nil {
+		out.CompatibleSurface = r.CompatibleSurface.inner
+	}
 	return
 }
 
 func (r *RequestAdapterOptions) wrap(in *sys.RequestAdapterOptions) {
-	panic("TODO")
+	r.Chain = in.Chain
+	r.FeatureLevel = in.FeatureLevel
+	r.PowerPreference = in.PowerPreference
+	r.ForceFallbackAdapter = in.ForceFallbackAdapter
+	r.BackendType = in.BackendType
+	r.CompatibleSurface = new(Surface{inner: in.CompatibleSurface}).owned()
 }
 
 func (s *SamplerDescriptor) unwrap() (out sys.SamplerDescriptor) {
@@ -525,7 +779,21 @@ func (s *SamplerDescriptor) unwrap() (out sys.SamplerDescriptor) {
 }
 
 func (s *SamplerDescriptor) wrap(in *sys.SamplerDescriptor) {
-	panic("TODO")
+	s.Chain = in.Chain
+	s.Label = strings.Clone(unsafe.String(
+		in.Label.Data,
+		in.Label.Length,
+	))
+	s.AddressModeU = in.AddressModeU
+	s.AddressModeV = in.AddressModeV
+	s.AddressModeW = in.AddressModeW
+	s.MagFilter = in.MagFilter
+	s.MinFilter = in.MinFilter
+	s.MipmapFilter = in.MipmapFilter
+	s.LodMinClamp = in.LodMinClamp
+	s.LodMaxClamp = in.LodMaxClamp
+	s.Compare = in.Compare
+	s.MaxAnisotropy = in.MaxAnisotropy
 }
 
 func (s *ShaderModuleDescriptor) unwrap() (out sys.ShaderModuleDescriptor) {
@@ -538,7 +806,11 @@ func (s *ShaderModuleDescriptor) unwrap() (out sys.ShaderModuleDescriptor) {
 }
 
 func (s *ShaderModuleDescriptor) wrap(in *sys.ShaderModuleDescriptor) {
-	panic("TODO")
+	s.Chain = in.Chain
+	s.Label = strings.Clone(unsafe.String(
+		in.Label.Data,
+		in.Label.Length,
+	))
 }
 
 func (s *ShaderSourceWGSL) unwrap() (out sys.ShaderSourceWGSL) {
@@ -550,43 +822,43 @@ func (s *ShaderSourceWGSL) unwrap() (out sys.ShaderSourceWGSL) {
 }
 
 func (s *ShaderSourceWGSL) wrap(in *sys.ShaderSourceWGSL) {
-	panic("TODO")
+	s.Code = strings.Clone(unsafe.String(
+		in.Code.Data,
+		in.Code.Length,
+	))
 }
 
 func (s *SupportedFeatures) unwrap() (out sys.SupportedFeatures) {
 	if s.Features != nil {
 		out.FeaturesCount = uint(len(s.Features))
-		out.Features = &s.Features[0]
+		out.Features = unsafe.SliceData(s.Features)
 	}
 	return
 }
 
 func (s *SupportedFeatures) wrap(in *sys.SupportedFeatures) {
-	panic("TODO")
 }
 
 func (s *SupportedInstanceFeatures) unwrap() (out sys.SupportedInstanceFeatures) {
 	if s.Features != nil {
 		out.FeaturesCount = uint(len(s.Features))
-		out.Features = &s.Features[0]
+		out.Features = unsafe.SliceData(s.Features)
 	}
 	return
 }
 
 func (s *SupportedInstanceFeatures) wrap(in *sys.SupportedInstanceFeatures) {
-	panic("TODO")
 }
 
 func (s *SupportedWGSLLanguageFeatures) unwrap() (out sys.SupportedWGSLLanguageFeatures) {
 	if s.Features != nil {
 		out.FeaturesCount = uint(len(s.Features))
-		out.Features = &s.Features[0]
+		out.Features = unsafe.SliceData(s.Features)
 	}
 	return
 }
 
 func (s *SupportedWGSLLanguageFeatures) wrap(in *sys.SupportedWGSLLanguageFeatures) {
-	panic("TODO")
 }
 
 func (s *SurfaceCapabilities) unwrap() (out sys.SurfaceCapabilities) {
@@ -594,33 +866,36 @@ func (s *SurfaceCapabilities) unwrap() (out sys.SurfaceCapabilities) {
 	out.Usages = s.Usages
 	if s.Formats != nil {
 		out.FormatsCount = uint(len(s.Formats))
-		out.Formats = &s.Formats[0]
+		out.Formats = unsafe.SliceData(s.Formats)
 	}
 	if s.PresentModes != nil {
 		out.PresentModesCount = uint(len(s.PresentModes))
-		out.PresentModes = &s.PresentModes[0]
+		out.PresentModes = unsafe.SliceData(s.PresentModes)
 	}
 	if s.AlphaModes != nil {
 		out.AlphaModesCount = uint(len(s.AlphaModes))
-		out.AlphaModes = &s.AlphaModes[0]
+		out.AlphaModes = unsafe.SliceData(s.AlphaModes)
 	}
 	return
 }
 
 func (s *SurfaceCapabilities) wrap(in *sys.SurfaceCapabilities) {
-	panic("TODO")
+	s.Chain = in.Chain
+	s.Usages = in.Usages
 }
 
 func (s *SurfaceConfiguration) unwrap() (out sys.SurfaceConfiguration) {
 	out.Chain = s.Chain
-	out.Device = s.Device.inner
+	if s.Device != nil {
+		out.Device = s.Device.inner
+	}
 	out.Format = s.Format
 	out.Usage = s.Usage
 	out.Width = s.Width
 	out.Height = s.Height
 	if s.ViewFormats != nil {
 		out.ViewFormatsCount = uint(len(s.ViewFormats))
-		out.ViewFormats = &s.ViewFormats[0]
+		out.ViewFormats = unsafe.SliceData(s.ViewFormats)
 	}
 	out.AlphaMode = s.AlphaMode
 	out.PresentMode = s.PresentMode
@@ -628,7 +903,14 @@ func (s *SurfaceConfiguration) unwrap() (out sys.SurfaceConfiguration) {
 }
 
 func (s *SurfaceConfiguration) wrap(in *sys.SurfaceConfiguration) {
-	panic("TODO")
+	s.Chain = in.Chain
+	s.Device = new(Device{inner: in.Device}).owned()
+	s.Format = in.Format
+	s.Usage = in.Usage
+	s.Width = in.Width
+	s.Height = in.Height
+	s.AlphaMode = in.AlphaMode
+	s.PresentMode = in.PresentMode
 }
 
 func (s *SurfaceDescriptor) unwrap() (out sys.SurfaceDescriptor) {
@@ -641,32 +923,45 @@ func (s *SurfaceDescriptor) unwrap() (out sys.SurfaceDescriptor) {
 }
 
 func (s *SurfaceDescriptor) wrap(in *sys.SurfaceDescriptor) {
-	panic("TODO")
+	s.Chain = in.Chain
+	s.Label = strings.Clone(unsafe.String(
+		in.Label.Data,
+		in.Label.Length,
+	))
 }
 
 func (s *SurfaceTexture) unwrap() (out sys.SurfaceTexture) {
 	out.Chain = s.Chain
-	out.Texture = s.Texture.inner
+	if s.Texture != nil {
+		out.Texture = s.Texture.inner
+	}
 	out.Status = s.Status
 	return
 }
 
 func (s *SurfaceTexture) wrap(in *sys.SurfaceTexture) {
-	panic("TODO")
+	s.Chain = in.Chain
+	s.Texture = new(Texture{inner: in.Texture}).owned()
+	s.Status = in.Status
 }
 
 func (t *TexelCopyBufferInfo) unwrap() (out sys.TexelCopyBufferInfo) {
 	out.Layout = t.Layout
-	out.Buffer = t.Buffer.inner
+	if t.Buffer != nil {
+		out.Buffer = t.Buffer.inner
+	}
 	return
 }
 
 func (t *TexelCopyBufferInfo) wrap(in *sys.TexelCopyBufferInfo) {
-	panic("TODO")
+	t.Layout = in.Layout
+	t.Buffer = new(Buffer{inner: in.Buffer}).owned()
 }
 
 func (t *TexelCopyTextureInfo) unwrap() (out sys.TexelCopyTextureInfo) {
-	out.Texture = t.Texture.inner
+	if t.Texture != nil {
+		out.Texture = t.Texture.inner
+	}
 	out.MipLevel = t.MipLevel
 	out.Origin = t.Origin
 	out.Aspect = t.Aspect
@@ -674,7 +969,10 @@ func (t *TexelCopyTextureInfo) unwrap() (out sys.TexelCopyTextureInfo) {
 }
 
 func (t *TexelCopyTextureInfo) wrap(in *sys.TexelCopyTextureInfo) {
-	panic("TODO")
+	t.Texture = new(Texture{inner: in.Texture}).owned()
+	t.MipLevel = in.MipLevel
+	t.Origin = in.Origin
+	t.Aspect = in.Aspect
 }
 
 func (t *TextureDescriptor) unwrap() (out sys.TextureDescriptor) {
@@ -691,13 +989,23 @@ func (t *TextureDescriptor) unwrap() (out sys.TextureDescriptor) {
 	out.SampleCount = t.SampleCount
 	if t.ViewFormats != nil {
 		out.ViewFormatsCount = uint(len(t.ViewFormats))
-		out.ViewFormats = &t.ViewFormats[0]
+		out.ViewFormats = unsafe.SliceData(t.ViewFormats)
 	}
 	return
 }
 
 func (t *TextureDescriptor) wrap(in *sys.TextureDescriptor) {
-	panic("TODO")
+	t.Chain = in.Chain
+	t.Label = strings.Clone(unsafe.String(
+		in.Label.Data,
+		in.Label.Length,
+	))
+	t.Usage = in.Usage
+	t.Dimension = in.Dimension
+	t.Size = in.Size
+	t.Format = in.Format
+	t.MipLevelCount = in.MipLevelCount
+	t.SampleCount = in.SampleCount
 }
 
 func (t *TextureViewDescriptor) unwrap() (out sys.TextureViewDescriptor) {
@@ -718,7 +1026,19 @@ func (t *TextureViewDescriptor) unwrap() (out sys.TextureViewDescriptor) {
 }
 
 func (t *TextureViewDescriptor) wrap(in *sys.TextureViewDescriptor) {
-	panic("TODO")
+	t.Chain = in.Chain
+	t.Label = strings.Clone(unsafe.String(
+		in.Label.Data,
+		in.Label.Length,
+	))
+	t.Format = in.Format
+	t.Dimension = in.Dimension
+	t.BaseMipLevel = in.BaseMipLevel
+	t.MipLevelCount = in.MipLevelCount
+	t.BaseArrayLayer = in.BaseArrayLayer
+	t.ArrayLayerCount = in.ArrayLayerCount
+	t.Aspect = in.Aspect
+	t.Usage = in.Usage
 }
 
 func (v *VertexBufferLayout) unwrap() (out sys.VertexBufferLayout) {
@@ -727,18 +1047,23 @@ func (v *VertexBufferLayout) unwrap() (out sys.VertexBufferLayout) {
 	out.ArrayStride = v.ArrayStride
 	if v.Attributes != nil {
 		out.AttributesCount = uint(len(v.Attributes))
-		out.Attributes = &v.Attributes[0]
+		out.Attributes = unsafe.SliceData(v.Attributes)
 	}
 	return
 }
 
 func (v *VertexBufferLayout) wrap(in *sys.VertexBufferLayout) {
-	panic("TODO")
+	v.Chain = in.Chain
+	v.StepMode = in.StepMode
+	v.ArrayStride = in.ArrayStride
+	v.Attributes = unsafe.Slice(in.Attributes, in.AttributesCount)
 }
 
 func (v *VertexState) unwrap() (out sys.VertexState) {
 	out.Chain = v.Chain
-	out.Module = v.Module.inner
+	if v.Module != nil {
+		out.Module = v.Module.inner
+	}
 	out.EntryPoint = sys.StringView{
 		Length: uint(len(v.EntryPoint)),
 		Data:   unsafe.StringData(v.EntryPoint),
@@ -749,7 +1074,7 @@ func (v *VertexState) unwrap() (out sys.VertexState) {
 		for i := range constants {
 			constants[i] = v.Constants[i].unwrap()
 		}
-		out.Constants = &constants[0]
+		out.Constants = unsafe.SliceData(constants)
 	}
 	if v.Buffers != nil {
 		out.BuffersCount = uint(len(v.Buffers))
@@ -757,11 +1082,30 @@ func (v *VertexState) unwrap() (out sys.VertexState) {
 		for i := range buffers {
 			buffers[i] = v.Buffers[i].unwrap()
 		}
-		out.Buffers = &buffers[0]
+		out.Buffers = unsafe.SliceData(buffers)
 	}
 	return
 }
 
 func (v *VertexState) wrap(in *sys.VertexState) {
-	panic("TODO")
+	v.Chain = in.Chain
+	v.Module = new(ShaderModule{inner: in.Module}).owned()
+	v.EntryPoint = strings.Clone(unsafe.String(
+		in.EntryPoint.Data,
+		in.EntryPoint.Length,
+	))
+	_constants := unsafe.Slice(in.Constants, in.ConstantsCount)
+	constants := make([]ConstantEntry, in.ConstantsCount)
+	for i := uint(0); i < in.ConstantsCount; i++ {
+		constants[i].wrap(&_constants[i])
+	}
+	v.Constants = constants
+
+	_buffers := unsafe.Slice(in.Buffers, in.BuffersCount)
+	buffers := make([]VertexBufferLayout, in.BuffersCount)
+	for i := uint(0); i < in.BuffersCount; i++ {
+		buffers[i].wrap(&_buffers[i])
+	}
+	v.Buffers = buffers
+
 }
