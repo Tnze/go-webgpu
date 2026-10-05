@@ -11,9 +11,15 @@ package sys
 // #include <webgpu.h>
 import "C"
 
-import "unsafe"
+import (
+	"runtime"
+	"unsafe"
+)
 
 func AdapterGetLimits(adapter Adapter, limits *Limits) Status {
+	var pinner runtime.Pinner
+	limits.pin(&pinner)
+	defer pinner.Unpin()
 	return Status(C.wgpuAdapterGetLimits(
 		C.WGPUAdapter(adapter),
 		(*C.WGPULimits)(unsafe.Pointer(limits)),
@@ -29,6 +35,9 @@ func AdapterHasFeature(adapter Adapter, feature FeatureName) Bool {
 
 // Get the list of @ref WGPUFeatureName values supported by the adapter.
 func AdapterGetFeatures(adapter Adapter, features *SupportedFeatures) {
+	var pinner runtime.Pinner
+	features.pin(&pinner)
+	defer pinner.Unpin()
 	C.wgpuAdapterGetFeatures(
 		C.WGPUAdapter(adapter),
 		(*C.WGPUSupportedFeatures)(unsafe.Pointer(features)),
@@ -36,6 +45,9 @@ func AdapterGetFeatures(adapter Adapter, features *SupportedFeatures) {
 }
 
 func AdapterGetInfo(adapter Adapter, info *AdapterInfo) Status {
+	var pinner runtime.Pinner
+	info.pin(&pinner)
+	defer pinner.Unpin()
 	return Status(C.wgpuAdapterGetInfo(
 		C.WGPUAdapter(adapter),
 		(*C.WGPUAdapterInfo)(unsafe.Pointer(info)),
@@ -43,6 +55,10 @@ func AdapterGetInfo(adapter Adapter, info *AdapterInfo) Status {
 }
 
 func AdapterRequestDevice(adapter Adapter, descriptor *DeviceDescriptor, callback RequestDeviceCallbackInfo) {
+	var pinner runtime.Pinner
+	descriptor.pin(&pinner)
+	callback.pin(&pinner)
+	defer pinner.Unpin()
 	C.wgpuAdapterRequestDevice(
 		C.WGPUAdapter(adapter),
 		(*C.WGPUDeviceDescriptor)(unsafe.Pointer(descriptor)),
@@ -65,10 +81,14 @@ func AdapterRelease(adapter Adapter) {
 }
 
 func BindGroupSetLabel(bindGroup BindGroup, label StringView) {
+	var pinner runtime.Pinner
+	_label := (*C.char)(unsafe.Pointer(label.Data))
+	pinner.Pin(_label)
+	defer pinner.Unpin()
 	C.wgpuBindGroupSetLabel(
 		C.WGPUBindGroup(bindGroup),
 		C.WGPUStringView{
-			data:   (*C.char)(unsafe.Pointer(label.Data)),
+			data:   _label,
 			length: C.size_t(label.Length),
 		},
 	)
@@ -83,10 +103,14 @@ func BindGroupRelease(bindGroup BindGroup) {
 }
 
 func BindGroupLayoutSetLabel(bindGroupLayout BindGroupLayout, label StringView) {
+	var pinner runtime.Pinner
+	_label := (*C.char)(unsafe.Pointer(label.Data))
+	pinner.Pin(_label)
+	defer pinner.Unpin()
 	C.wgpuBindGroupLayoutSetLabel(
 		C.WGPUBindGroupLayout(bindGroupLayout),
 		C.WGPUStringView{
-			data:   (*C.char)(unsafe.Pointer(label.Data)),
+			data:   _label,
 			length: C.size_t(label.Length),
 		},
 	)
@@ -101,6 +125,9 @@ func BindGroupLayoutRelease(bindGroupLayout BindGroupLayout) {
 }
 
 func BufferMapAsync(buffer Buffer, mode MapMode, offset uintptr, size uintptr, callback BufferMapCallbackInfo) {
+	var pinner runtime.Pinner
+	callback.pin(&pinner)
+	defer pinner.Unpin()
 	C.wgpuBufferMapAsync(
 		C.WGPUBuffer(buffer),
 		C.WGPUMapMode(mode),
@@ -151,10 +178,13 @@ func BufferGetConstMappedRange(buffer Buffer, offset uintptr, size uintptr) unsa
 //
 // In Wasm, this is more efficient than copying from a mapped range into a `malloc`'d range.
 func BufferReadMappedRange(buffer Buffer, offset uintptr, data unsafe.Pointer, size uintptr) Status {
+	var pinner runtime.Pinner
+	pinner.Pin(data)
+	defer pinner.Unpin()
 	return Status(C.wgpuBufferReadMappedRange(
 		C.WGPUBuffer(buffer),
 		C.size_t(offset),
-		unsafe.Pointer(data),
+		data,
 		C.size_t(size),
 	))
 }
@@ -165,19 +195,26 @@ func BufferReadMappedRange(buffer Buffer, offset uintptr, data unsafe.Pointer, s
 //
 // In Wasm, this is more efficient than copying from a `malloc`'d range into a mapped range.
 func BufferWriteMappedRange(buffer Buffer, offset uintptr, data unsafe.Pointer, size uintptr) Status {
+	var pinner runtime.Pinner
+	pinner.Pin(data)
+	defer pinner.Unpin()
 	return Status(C.wgpuBufferWriteMappedRange(
 		C.WGPUBuffer(buffer),
 		C.size_t(offset),
-		unsafe.Pointer(data),
+		data,
 		C.size_t(size),
 	))
 }
 
 func BufferSetLabel(buffer Buffer, label StringView) {
+	var pinner runtime.Pinner
+	_label := (*C.char)(unsafe.Pointer(label.Data))
+	pinner.Pin(_label)
+	defer pinner.Unpin()
 	C.wgpuBufferSetLabel(
 		C.WGPUBuffer(buffer),
 		C.WGPUStringView{
-			data:   (*C.char)(unsafe.Pointer(label.Data)),
+			data:   _label,
 			length: C.size_t(label.Length),
 		},
 	)
@@ -222,10 +259,14 @@ func BufferRelease(buffer Buffer) {
 }
 
 func CommandBufferSetLabel(commandBuffer CommandBuffer, label StringView) {
+	var pinner runtime.Pinner
+	_label := (*C.char)(unsafe.Pointer(label.Data))
+	pinner.Pin(_label)
+	defer pinner.Unpin()
 	C.wgpuCommandBufferSetLabel(
 		C.WGPUCommandBuffer(commandBuffer),
 		C.WGPUStringView{
-			data:   (*C.char)(unsafe.Pointer(label.Data)),
+			data:   _label,
 			length: C.size_t(label.Length),
 		},
 	)
@@ -240,6 +281,9 @@ func CommandBufferRelease(commandBuffer CommandBuffer) {
 }
 
 func CommandEncoderFinish(commandEncoder CommandEncoder, descriptor *CommandBufferDescriptor) CommandBuffer {
+	var pinner runtime.Pinner
+	descriptor.pin(&pinner)
+	defer pinner.Unpin()
 	return CommandBuffer(C.wgpuCommandEncoderFinish(
 		C.WGPUCommandEncoder(commandEncoder),
 		(*C.WGPUCommandBufferDescriptor)(unsafe.Pointer(descriptor)),
@@ -247,6 +291,9 @@ func CommandEncoderFinish(commandEncoder CommandEncoder, descriptor *CommandBuff
 }
 
 func CommandEncoderBeginComputePass(commandEncoder CommandEncoder, descriptor *ComputePassDescriptor) ComputePassEncoder {
+	var pinner runtime.Pinner
+	descriptor.pin(&pinner)
+	defer pinner.Unpin()
 	return ComputePassEncoder(C.wgpuCommandEncoderBeginComputePass(
 		C.WGPUCommandEncoder(commandEncoder),
 		(*C.WGPUComputePassDescriptor)(unsafe.Pointer(descriptor)),
@@ -254,47 +301,65 @@ func CommandEncoderBeginComputePass(commandEncoder CommandEncoder, descriptor *C
 }
 
 func CommandEncoderBeginRenderPass(commandEncoder CommandEncoder, descriptor *RenderPassDescriptor) RenderPassEncoder {
+	var pinner runtime.Pinner
+	descriptor.pin(&pinner)
+	defer pinner.Unpin()
 	return RenderPassEncoder(C.wgpuCommandEncoderBeginRenderPass(
 		C.WGPUCommandEncoder(commandEncoder),
 		(*C.WGPURenderPassDescriptor)(unsafe.Pointer(descriptor)),
 	))
 }
 
-func CommandEncoderCopyBufferToBuffer(commandEncoder CommandEncoder, source Buffer, source_offset uint64, destination Buffer, destination_offset uint64, size uint64) {
+func CommandEncoderCopyBufferToBuffer(commandEncoder CommandEncoder, source Buffer, sourceOffset uint64, destination Buffer, destinationOffset uint64, size uint64) {
 	C.wgpuCommandEncoderCopyBufferToBuffer(
 		C.WGPUCommandEncoder(commandEncoder),
 		C.WGPUBuffer(source),
-		C.uint64_t(source_offset),
+		C.uint64_t(sourceOffset),
 		C.WGPUBuffer(destination),
-		C.uint64_t(destination_offset),
+		C.uint64_t(destinationOffset),
 		C.uint64_t(size),
 	)
 }
 
-func CommandEncoderCopyBufferToTexture(commandEncoder CommandEncoder, source *TexelCopyBufferInfo, destination *TexelCopyTextureInfo, copy_size *Extent3D) {
+func CommandEncoderCopyBufferToTexture(commandEncoder CommandEncoder, source *TexelCopyBufferInfo, destination *TexelCopyTextureInfo, copySize *Extent3D) {
+	var pinner runtime.Pinner
+	source.pin(&pinner)
+	destination.pin(&pinner)
+	copySize.pin(&pinner)
+	defer pinner.Unpin()
 	C.wgpuCommandEncoderCopyBufferToTexture(
 		C.WGPUCommandEncoder(commandEncoder),
 		(*C.WGPUTexelCopyBufferInfo)(unsafe.Pointer(source)),
 		(*C.WGPUTexelCopyTextureInfo)(unsafe.Pointer(destination)),
-		(*C.WGPUExtent3D)(unsafe.Pointer(copy_size)),
+		(*C.WGPUExtent3D)(unsafe.Pointer(copySize)),
 	)
 }
 
-func CommandEncoderCopyTextureToBuffer(commandEncoder CommandEncoder, source *TexelCopyTextureInfo, destination *TexelCopyBufferInfo, copy_size *Extent3D) {
+func CommandEncoderCopyTextureToBuffer(commandEncoder CommandEncoder, source *TexelCopyTextureInfo, destination *TexelCopyBufferInfo, copySize *Extent3D) {
+	var pinner runtime.Pinner
+	source.pin(&pinner)
+	destination.pin(&pinner)
+	copySize.pin(&pinner)
+	defer pinner.Unpin()
 	C.wgpuCommandEncoderCopyTextureToBuffer(
 		C.WGPUCommandEncoder(commandEncoder),
 		(*C.WGPUTexelCopyTextureInfo)(unsafe.Pointer(source)),
 		(*C.WGPUTexelCopyBufferInfo)(unsafe.Pointer(destination)),
-		(*C.WGPUExtent3D)(unsafe.Pointer(copy_size)),
+		(*C.WGPUExtent3D)(unsafe.Pointer(copySize)),
 	)
 }
 
-func CommandEncoderCopyTextureToTexture(commandEncoder CommandEncoder, source *TexelCopyTextureInfo, destination *TexelCopyTextureInfo, copy_size *Extent3D) {
+func CommandEncoderCopyTextureToTexture(commandEncoder CommandEncoder, source *TexelCopyTextureInfo, destination *TexelCopyTextureInfo, copySize *Extent3D) {
+	var pinner runtime.Pinner
+	source.pin(&pinner)
+	destination.pin(&pinner)
+	copySize.pin(&pinner)
+	defer pinner.Unpin()
 	C.wgpuCommandEncoderCopyTextureToTexture(
 		C.WGPUCommandEncoder(commandEncoder),
 		(*C.WGPUTexelCopyTextureInfo)(unsafe.Pointer(source)),
 		(*C.WGPUTexelCopyTextureInfo)(unsafe.Pointer(destination)),
-		(*C.WGPUExtent3D)(unsafe.Pointer(copy_size)),
+		(*C.WGPUExtent3D)(unsafe.Pointer(copySize)),
 	)
 }
 
@@ -307,12 +372,16 @@ func CommandEncoderClearBuffer(commandEncoder CommandEncoder, buffer Buffer, off
 	)
 }
 
-func CommandEncoderInsertDebugMarker(commandEncoder CommandEncoder, marker_label StringView) {
+func CommandEncoderInsertDebugMarker(commandEncoder CommandEncoder, markerLabel StringView) {
+	var pinner runtime.Pinner
+	_markerLabel := (*C.char)(unsafe.Pointer(markerLabel.Data))
+	pinner.Pin(_markerLabel)
+	defer pinner.Unpin()
 	C.wgpuCommandEncoderInsertDebugMarker(
 		C.WGPUCommandEncoder(commandEncoder),
 		C.WGPUStringView{
-			data:   (*C.char)(unsafe.Pointer(marker_label.Data)),
-			length: C.size_t(marker_label.Length),
+			data:   _markerLabel,
+			length: C.size_t(markerLabel.Length),
 		},
 	)
 }
@@ -323,40 +392,48 @@ func CommandEncoderPopDebugGroup(commandEncoder CommandEncoder) {
 	)
 }
 
-func CommandEncoderPushDebugGroup(commandEncoder CommandEncoder, group_label StringView) {
+func CommandEncoderPushDebugGroup(commandEncoder CommandEncoder, groupLabel StringView) {
+	var pinner runtime.Pinner
+	_groupLabel := (*C.char)(unsafe.Pointer(groupLabel.Data))
+	pinner.Pin(_groupLabel)
+	defer pinner.Unpin()
 	C.wgpuCommandEncoderPushDebugGroup(
 		C.WGPUCommandEncoder(commandEncoder),
 		C.WGPUStringView{
-			data:   (*C.char)(unsafe.Pointer(group_label.Data)),
-			length: C.size_t(group_label.Length),
+			data:   _groupLabel,
+			length: C.size_t(groupLabel.Length),
 		},
 	)
 }
 
-func CommandEncoderResolveQuerySet(commandEncoder CommandEncoder, query_set QuerySet, first_query uint32, query_count uint32, destination Buffer, destination_offset uint64) {
+func CommandEncoderResolveQuerySet(commandEncoder CommandEncoder, querySet QuerySet, firstQuery uint32, queryCount uint32, destination Buffer, destinationOffset uint64) {
 	C.wgpuCommandEncoderResolveQuerySet(
 		C.WGPUCommandEncoder(commandEncoder),
-		C.WGPUQuerySet(query_set),
-		C.uint32_t(first_query),
-		C.uint32_t(query_count),
+		C.WGPUQuerySet(querySet),
+		C.uint32_t(firstQuery),
+		C.uint32_t(queryCount),
 		C.WGPUBuffer(destination),
-		C.uint64_t(destination_offset),
+		C.uint64_t(destinationOffset),
 	)
 }
 
-func CommandEncoderWriteTimestamp(commandEncoder CommandEncoder, query_set QuerySet, query_index uint32) {
+func CommandEncoderWriteTimestamp(commandEncoder CommandEncoder, querySet QuerySet, queryIndex uint32) {
 	C.wgpuCommandEncoderWriteTimestamp(
 		C.WGPUCommandEncoder(commandEncoder),
-		C.WGPUQuerySet(query_set),
-		C.uint32_t(query_index),
+		C.WGPUQuerySet(querySet),
+		C.uint32_t(queryIndex),
 	)
 }
 
 func CommandEncoderSetLabel(commandEncoder CommandEncoder, label StringView) {
+	var pinner runtime.Pinner
+	_label := (*C.char)(unsafe.Pointer(label.Data))
+	pinner.Pin(_label)
+	defer pinner.Unpin()
 	C.wgpuCommandEncoderSetLabel(
 		C.WGPUCommandEncoder(commandEncoder),
 		C.WGPUStringView{
-			data:   (*C.char)(unsafe.Pointer(label.Data)),
+			data:   _label,
 			length: C.size_t(label.Length),
 		},
 	)
@@ -370,12 +447,16 @@ func CommandEncoderRelease(commandEncoder CommandEncoder) {
 	C.wgpuCommandEncoderRelease(C.WGPUCommandEncoder(commandEncoder))
 }
 
-func ComputePassEncoderInsertDebugMarker(computePassEncoder ComputePassEncoder, marker_label StringView) {
+func ComputePassEncoderInsertDebugMarker(computePassEncoder ComputePassEncoder, markerLabel StringView) {
+	var pinner runtime.Pinner
+	_markerLabel := (*C.char)(unsafe.Pointer(markerLabel.Data))
+	pinner.Pin(_markerLabel)
+	defer pinner.Unpin()
 	C.wgpuComputePassEncoderInsertDebugMarker(
 		C.WGPUComputePassEncoder(computePassEncoder),
 		C.WGPUStringView{
-			data:   (*C.char)(unsafe.Pointer(marker_label.Data)),
-			length: C.size_t(marker_label.Length),
+			data:   _markerLabel,
+			length: C.size_t(markerLabel.Length),
 		},
 	)
 }
@@ -386,12 +467,16 @@ func ComputePassEncoderPopDebugGroup(computePassEncoder ComputePassEncoder) {
 	)
 }
 
-func ComputePassEncoderPushDebugGroup(computePassEncoder ComputePassEncoder, group_label StringView) {
+func ComputePassEncoderPushDebugGroup(computePassEncoder ComputePassEncoder, groupLabel StringView) {
+	var pinner runtime.Pinner
+	_groupLabel := (*C.char)(unsafe.Pointer(groupLabel.Data))
+	pinner.Pin(_groupLabel)
+	defer pinner.Unpin()
 	C.wgpuComputePassEncoderPushDebugGroup(
 		C.WGPUComputePassEncoder(computePassEncoder),
 		C.WGPUStringView{
-			data:   (*C.char)(unsafe.Pointer(group_label.Data)),
-			length: C.size_t(group_label.Length),
+			data:   _groupLabel,
+			length: C.size_t(groupLabel.Length),
 		},
 	)
 }
@@ -403,21 +488,28 @@ func ComputePassEncoderSetPipeline(computePassEncoder ComputePassEncoder, pipeli
 	)
 }
 
-func ComputePassEncoderSetBindGroup(computePassEncoder ComputePassEncoder, group_index uint32, group BindGroup, dynamic_offsets []uint32) {
+func ComputePassEncoderSetBindGroup(computePassEncoder ComputePassEncoder, groupIndex uint32, group BindGroup, dynamicOffsets []uint32) {
+	var pinner runtime.Pinner
+	_dynamicOffsets := (*C.uint32_t)(unsafe.Pointer(&dynamicOffsets[0]))
+	pinner.Pin(_dynamicOffsets)
+	defer pinner.Unpin()
 	C.wgpuComputePassEncoderSetBindGroup(
 		C.WGPUComputePassEncoder(computePassEncoder),
-		C.uint32_t(group_index),
+		C.uint32_t(groupIndex),
 		C.WGPUBindGroup(group),
-		C.size_t(len(dynamic_offsets)),
-		(*C.uint32_t)(unsafe.Pointer(&dynamic_offsets[0])),
+		C.size_t(len(dynamicOffsets)),
+		_dynamicOffsets,
 	)
 }
 
 func ComputePassEncoderSetImmediates(computePassEncoder ComputePassEncoder, offset uint32, data unsafe.Pointer, size uintptr) {
+	var pinner runtime.Pinner
+	pinner.Pin(data)
+	defer pinner.Unpin()
 	C.wgpuComputePassEncoderSetImmediates(
 		C.WGPUComputePassEncoder(computePassEncoder),
 		C.uint32_t(offset),
-		unsafe.Pointer(data),
+		data,
 		C.size_t(size),
 	)
 }
@@ -431,11 +523,11 @@ func ComputePassEncoderDispatchWorkgroups(computePassEncoder ComputePassEncoder,
 	)
 }
 
-func ComputePassEncoderDispatchWorkgroupsIndirect(computePassEncoder ComputePassEncoder, indirect_buffer Buffer, indirect_offset uint64) {
+func ComputePassEncoderDispatchWorkgroupsIndirect(computePassEncoder ComputePassEncoder, indirectBuffer Buffer, indirectOffset uint64) {
 	C.wgpuComputePassEncoderDispatchWorkgroupsIndirect(
 		C.WGPUComputePassEncoder(computePassEncoder),
-		C.WGPUBuffer(indirect_buffer),
-		C.uint64_t(indirect_offset),
+		C.WGPUBuffer(indirectBuffer),
+		C.uint64_t(indirectOffset),
 	)
 }
 
@@ -446,10 +538,14 @@ func ComputePassEncoderEnd(computePassEncoder ComputePassEncoder) {
 }
 
 func ComputePassEncoderSetLabel(computePassEncoder ComputePassEncoder, label StringView) {
+	var pinner runtime.Pinner
+	_label := (*C.char)(unsafe.Pointer(label.Data))
+	pinner.Pin(_label)
+	defer pinner.Unpin()
 	C.wgpuComputePassEncoderSetLabel(
 		C.WGPUComputePassEncoder(computePassEncoder),
 		C.WGPUStringView{
-			data:   (*C.char)(unsafe.Pointer(label.Data)),
+			data:   _label,
 			length: C.size_t(label.Length),
 		},
 	)
@@ -463,18 +559,22 @@ func ComputePassEncoderRelease(computePassEncoder ComputePassEncoder) {
 	C.wgpuComputePassEncoderRelease(C.WGPUComputePassEncoder(computePassEncoder))
 }
 
-func ComputePipelineGetBindGroupLayout(computePipeline ComputePipeline, group_index uint32) BindGroupLayout {
+func ComputePipelineGetBindGroupLayout(computePipeline ComputePipeline, groupIndex uint32) BindGroupLayout {
 	return BindGroupLayout(C.wgpuComputePipelineGetBindGroupLayout(
 		C.WGPUComputePipeline(computePipeline),
-		C.uint32_t(group_index),
+		C.uint32_t(groupIndex),
 	))
 }
 
 func ComputePipelineSetLabel(computePipeline ComputePipeline, label StringView) {
+	var pinner runtime.Pinner
+	_label := (*C.char)(unsafe.Pointer(label.Data))
+	pinner.Pin(_label)
+	defer pinner.Unpin()
 	C.wgpuComputePipelineSetLabel(
 		C.WGPUComputePipeline(computePipeline),
 		C.WGPUStringView{
-			data:   (*C.char)(unsafe.Pointer(label.Data)),
+			data:   _label,
 			length: C.size_t(label.Length),
 		},
 	)
@@ -489,6 +589,9 @@ func ComputePipelineRelease(computePipeline ComputePipeline) {
 }
 
 func DeviceCreateBindGroup(device Device, descriptor *BindGroupDescriptor) BindGroup {
+	var pinner runtime.Pinner
+	descriptor.pin(&pinner)
+	defer pinner.Unpin()
 	return BindGroup(C.wgpuDeviceCreateBindGroup(
 		C.WGPUDevice(device),
 		(*C.WGPUBindGroupDescriptor)(unsafe.Pointer(descriptor)),
@@ -496,6 +599,9 @@ func DeviceCreateBindGroup(device Device, descriptor *BindGroupDescriptor) BindG
 }
 
 func DeviceCreateBindGroupLayout(device Device, descriptor *BindGroupLayoutDescriptor) BindGroupLayout {
+	var pinner runtime.Pinner
+	descriptor.pin(&pinner)
+	defer pinner.Unpin()
 	return BindGroupLayout(C.wgpuDeviceCreateBindGroupLayout(
 		C.WGPUDevice(device),
 		(*C.WGPUBindGroupLayoutDescriptor)(unsafe.Pointer(descriptor)),
@@ -507,6 +613,9 @@ func DeviceCreateBindGroupLayout(device Device, descriptor *BindGroupLayoutDescr
 // If @ref WGPUBufferDescriptor::mappedAtCreation is `true` and the mapping allocation fails,
 // returns `NULL`.
 func DeviceCreateBuffer(device Device, descriptor *BufferDescriptor) Buffer {
+	var pinner runtime.Pinner
+	descriptor.pin(&pinner)
+	defer pinner.Unpin()
 	return Buffer(C.wgpuDeviceCreateBuffer(
 		C.WGPUDevice(device),
 		(*C.WGPUBufferDescriptor)(unsafe.Pointer(descriptor)),
@@ -514,6 +623,9 @@ func DeviceCreateBuffer(device Device, descriptor *BufferDescriptor) Buffer {
 }
 
 func DeviceCreateCommandEncoder(device Device, descriptor *CommandEncoderDescriptor) CommandEncoder {
+	var pinner runtime.Pinner
+	descriptor.pin(&pinner)
+	defer pinner.Unpin()
 	return CommandEncoder(C.wgpuDeviceCreateCommandEncoder(
 		C.WGPUDevice(device),
 		(*C.WGPUCommandEncoderDescriptor)(unsafe.Pointer(descriptor)),
@@ -521,6 +633,9 @@ func DeviceCreateCommandEncoder(device Device, descriptor *CommandEncoderDescrip
 }
 
 func DeviceCreateComputePipeline(device Device, descriptor *ComputePipelineDescriptor) ComputePipeline {
+	var pinner runtime.Pinner
+	descriptor.pin(&pinner)
+	defer pinner.Unpin()
 	return ComputePipeline(C.wgpuDeviceCreateComputePipeline(
 		C.WGPUDevice(device),
 		(*C.WGPUComputePipelineDescriptor)(unsafe.Pointer(descriptor)),
@@ -528,6 +643,10 @@ func DeviceCreateComputePipeline(device Device, descriptor *ComputePipelineDescr
 }
 
 func DeviceCreateComputePipelineAsync(device Device, descriptor *ComputePipelineDescriptor, callback CreateComputePipelineAsyncCallbackInfo) {
+	var pinner runtime.Pinner
+	descriptor.pin(&pinner)
+	callback.pin(&pinner)
+	defer pinner.Unpin()
 	C.wgpuDeviceCreateComputePipelineAsync(
 		C.WGPUDevice(device),
 		(*C.WGPUComputePipelineDescriptor)(unsafe.Pointer(descriptor)),
@@ -542,6 +661,9 @@ func DeviceCreateComputePipelineAsync(device Device, descriptor *ComputePipeline
 }
 
 func DeviceCreatePipelineLayout(device Device, descriptor *PipelineLayoutDescriptor) PipelineLayout {
+	var pinner runtime.Pinner
+	descriptor.pin(&pinner)
+	defer pinner.Unpin()
 	return PipelineLayout(C.wgpuDeviceCreatePipelineLayout(
 		C.WGPUDevice(device),
 		(*C.WGPUPipelineLayoutDescriptor)(unsafe.Pointer(descriptor)),
@@ -549,6 +671,9 @@ func DeviceCreatePipelineLayout(device Device, descriptor *PipelineLayoutDescrip
 }
 
 func DeviceCreateQuerySet(device Device, descriptor *QuerySetDescriptor) QuerySet {
+	var pinner runtime.Pinner
+	descriptor.pin(&pinner)
+	defer pinner.Unpin()
 	return QuerySet(C.wgpuDeviceCreateQuerySet(
 		C.WGPUDevice(device),
 		(*C.WGPUQuerySetDescriptor)(unsafe.Pointer(descriptor)),
@@ -556,6 +681,10 @@ func DeviceCreateQuerySet(device Device, descriptor *QuerySetDescriptor) QuerySe
 }
 
 func DeviceCreateRenderPipelineAsync(device Device, descriptor *RenderPipelineDescriptor, callback CreateRenderPipelineAsyncCallbackInfo) {
+	var pinner runtime.Pinner
+	descriptor.pin(&pinner)
+	callback.pin(&pinner)
+	defer pinner.Unpin()
 	C.wgpuDeviceCreateRenderPipelineAsync(
 		C.WGPUDevice(device),
 		(*C.WGPURenderPipelineDescriptor)(unsafe.Pointer(descriptor)),
@@ -570,6 +699,9 @@ func DeviceCreateRenderPipelineAsync(device Device, descriptor *RenderPipelineDe
 }
 
 func DeviceCreateRenderBundleEncoder(device Device, descriptor *RenderBundleEncoderDescriptor) RenderBundleEncoder {
+	var pinner runtime.Pinner
+	descriptor.pin(&pinner)
+	defer pinner.Unpin()
 	return RenderBundleEncoder(C.wgpuDeviceCreateRenderBundleEncoder(
 		C.WGPUDevice(device),
 		(*C.WGPURenderBundleEncoderDescriptor)(unsafe.Pointer(descriptor)),
@@ -577,6 +709,9 @@ func DeviceCreateRenderBundleEncoder(device Device, descriptor *RenderBundleEnco
 }
 
 func DeviceCreateRenderPipeline(device Device, descriptor *RenderPipelineDescriptor) RenderPipeline {
+	var pinner runtime.Pinner
+	descriptor.pin(&pinner)
+	defer pinner.Unpin()
 	return RenderPipeline(C.wgpuDeviceCreateRenderPipeline(
 		C.WGPUDevice(device),
 		(*C.WGPURenderPipelineDescriptor)(unsafe.Pointer(descriptor)),
@@ -584,6 +719,9 @@ func DeviceCreateRenderPipeline(device Device, descriptor *RenderPipelineDescrip
 }
 
 func DeviceCreateSampler(device Device, descriptor *SamplerDescriptor) Sampler {
+	var pinner runtime.Pinner
+	descriptor.pin(&pinner)
+	defer pinner.Unpin()
 	return Sampler(C.wgpuDeviceCreateSampler(
 		C.WGPUDevice(device),
 		(*C.WGPUSamplerDescriptor)(unsafe.Pointer(descriptor)),
@@ -591,6 +729,9 @@ func DeviceCreateSampler(device Device, descriptor *SamplerDescriptor) Sampler {
 }
 
 func DeviceCreateShaderModule(device Device, descriptor *ShaderModuleDescriptor) ShaderModule {
+	var pinner runtime.Pinner
+	descriptor.pin(&pinner)
+	defer pinner.Unpin()
 	return ShaderModule(C.wgpuDeviceCreateShaderModule(
 		C.WGPUDevice(device),
 		(*C.WGPUShaderModuleDescriptor)(unsafe.Pointer(descriptor)),
@@ -598,6 +739,9 @@ func DeviceCreateShaderModule(device Device, descriptor *ShaderModuleDescriptor)
 }
 
 func DeviceCreateTexture(device Device, descriptor *TextureDescriptor) Texture {
+	var pinner runtime.Pinner
+	descriptor.pin(&pinner)
+	defer pinner.Unpin()
 	return Texture(C.wgpuDeviceCreateTexture(
 		C.WGPUDevice(device),
 		(*C.WGPUTextureDescriptor)(unsafe.Pointer(descriptor)),
@@ -617,6 +761,9 @@ func DeviceGetLostFuture(device Device) Future {
 }
 
 func DeviceGetLimits(device Device, limits *Limits) Status {
+	var pinner runtime.Pinner
+	limits.pin(&pinner)
+	defer pinner.Unpin()
 	return Status(C.wgpuDeviceGetLimits(
 		C.WGPUDevice(device),
 		(*C.WGPULimits)(unsafe.Pointer(limits)),
@@ -632,16 +779,22 @@ func DeviceHasFeature(device Device, feature FeatureName) Bool {
 
 // Get the list of @ref WGPUFeatureName values supported by the device.
 func DeviceGetFeatures(device Device, features *SupportedFeatures) {
+	var pinner runtime.Pinner
+	features.pin(&pinner)
+	defer pinner.Unpin()
 	C.wgpuDeviceGetFeatures(
 		C.WGPUDevice(device),
 		(*C.WGPUSupportedFeatures)(unsafe.Pointer(features)),
 	)
 }
 
-func DeviceGetAdapterInfo(device Device, adapter_info *AdapterInfo) Status {
+func DeviceGetAdapterInfo(device Device, adapterInfo *AdapterInfo) Status {
+	var pinner runtime.Pinner
+	adapterInfo.pin(&pinner)
+	defer pinner.Unpin()
 	return Status(C.wgpuDeviceGetAdapterInfo(
 		C.WGPUDevice(device),
-		(*C.WGPUAdapterInfo)(unsafe.Pointer(adapter_info)),
+		(*C.WGPUAdapterInfo)(unsafe.Pointer(adapterInfo)),
 	))
 }
 
@@ -663,6 +816,9 @@ func DevicePushErrorScope(device Device, filter ErrorFilter) {
 // Pops an error scope to the current thread's error scope stack,
 // asynchronously returning the result. See @ref ErrorScopes.
 func DevicePopErrorScope(device Device, callback PopErrorScopeCallbackInfo) {
+	var pinner runtime.Pinner
+	callback.pin(&pinner)
+	defer pinner.Unpin()
 	C.wgpuDevicePopErrorScope(
 		C.WGPUDevice(device),
 		C.WGPUPopErrorScopeCallbackInfo{
@@ -676,10 +832,14 @@ func DevicePopErrorScope(device Device, callback PopErrorScopeCallbackInfo) {
 }
 
 func DeviceSetLabel(device Device, label StringView) {
+	var pinner runtime.Pinner
+	_label := (*C.char)(unsafe.Pointer(label.Data))
+	pinner.Pin(_label)
+	defer pinner.Unpin()
 	C.wgpuDeviceSetLabel(
 		C.WGPUDevice(device),
 		C.WGPUStringView{
-			data:   (*C.char)(unsafe.Pointer(label.Data)),
+			data:   _label,
 			length: C.size_t(label.Length),
 		},
 	)
@@ -694,10 +854,14 @@ func DeviceRelease(device Device) {
 }
 
 func ExternalTextureSetLabel(externalTexture ExternalTexture, label StringView) {
+	var pinner runtime.Pinner
+	_label := (*C.char)(unsafe.Pointer(label.Data))
+	pinner.Pin(_label)
+	defer pinner.Unpin()
 	C.wgpuExternalTextureSetLabel(
 		C.WGPUExternalTexture(externalTexture),
 		C.WGPUStringView{
-			data:   (*C.char)(unsafe.Pointer(label.Data)),
+			data:   _label,
 			length: C.size_t(label.Length),
 		},
 	)
@@ -713,6 +877,9 @@ func ExternalTextureRelease(externalTexture ExternalTexture) {
 
 // Creates a @ref WGPUSurface, see @ref Surface-Creation for more details.
 func InstanceCreateSurface(instance Instance, descriptor *SurfaceDescriptor) Surface {
+	var pinner runtime.Pinner
+	descriptor.pin(&pinner)
+	defer pinner.Unpin()
 	return Surface(C.wgpuInstanceCreateSurface(
 		C.WGPUInstance(instance),
 		(*C.WGPUSurfaceDescriptor)(unsafe.Pointer(descriptor)),
@@ -721,6 +888,9 @@ func InstanceCreateSurface(instance Instance, descriptor *SurfaceDescriptor) Sur
 
 // Get the list of @ref WGPUWGSLLanguageFeatureName values supported by the instance.
 func InstanceGetWGSLLanguageFeatures(instance Instance, features *SupportedWGSLLanguageFeatures) {
+	var pinner runtime.Pinner
+	features.pin(&pinner)
+	defer pinner.Unpin()
 	C.wgpuInstanceGetWGSLLanguageFeatures(
 		C.WGPUInstance(instance),
 		(*C.WGPUSupportedWGSLLanguageFeatures)(unsafe.Pointer(features)),
@@ -744,6 +914,10 @@ func InstanceProcessEvents(instance Instance) {
 }
 
 func InstanceRequestAdapter(instance Instance, options *RequestAdapterOptions, callback RequestAdapterCallbackInfo) {
+	var pinner runtime.Pinner
+	options.pin(&pinner)
+	callback.pin(&pinner)
+	defer pinner.Unpin()
 	C.wgpuInstanceRequestAdapter(
 		C.WGPUInstance(instance),
 		(*C.WGPURequestAdapterOptions)(unsafe.Pointer(options)),
@@ -760,12 +934,15 @@ func InstanceRequestAdapter(instance Instance, options *RequestAdapterOptions, c
 // Wait for at least one WGPUFuture in `futures` to complete, and call callbacks of the respective completed asynchronous operations.
 //
 // See @ref Wait-Any for more information.
-func InstanceWaitAny(instance Instance, future_count uintptr, futures *FutureWaitInfo, timeout_NS uint64) WaitStatus {
+func InstanceWaitAny(instance Instance, futureCount uintptr, futures *FutureWaitInfo, timeoutNS uint64) WaitStatus {
+	var pinner runtime.Pinner
+	futures.pin(&pinner)
+	defer pinner.Unpin()
 	return WaitStatus(C.wgpuInstanceWaitAny(
 		C.WGPUInstance(instance),
-		C.size_t(future_count),
+		C.size_t(futureCount),
 		(*C.WGPUFutureWaitInfo)(unsafe.Pointer(futures)),
-		C.uint64_t(timeout_NS),
+		C.uint64_t(timeoutNS),
 	))
 }
 
@@ -778,10 +955,14 @@ func InstanceRelease(instance Instance) {
 }
 
 func PipelineLayoutSetLabel(pipelineLayout PipelineLayout, label StringView) {
+	var pinner runtime.Pinner
+	_label := (*C.char)(unsafe.Pointer(label.Data))
+	pinner.Pin(_label)
+	defer pinner.Unpin()
 	C.wgpuPipelineLayoutSetLabel(
 		C.WGPUPipelineLayout(pipelineLayout),
 		C.WGPUStringView{
-			data:   (*C.char)(unsafe.Pointer(label.Data)),
+			data:   _label,
 			length: C.size_t(label.Length),
 		},
 	)
@@ -796,10 +977,14 @@ func PipelineLayoutRelease(pipelineLayout PipelineLayout) {
 }
 
 func QuerySetSetLabel(querySet QuerySet, label StringView) {
+	var pinner runtime.Pinner
+	_label := (*C.char)(unsafe.Pointer(label.Data))
+	pinner.Pin(_label)
+	defer pinner.Unpin()
 	C.wgpuQuerySetSetLabel(
 		C.WGPUQuerySet(querySet),
 		C.WGPUStringView{
-			data:   (*C.char)(unsafe.Pointer(label.Data)),
+			data:   _label,
 			length: C.size_t(label.Length),
 		},
 	)
@@ -832,14 +1017,21 @@ func QuerySetRelease(querySet QuerySet) {
 }
 
 func QueueSubmit(queue Queue, commands []CommandBuffer) {
+	var pinner runtime.Pinner
+	_commands := (*C.WGPUCommandBuffer)(unsafe.Pointer(&commands[0]))
+	pinner.Pin(_commands)
+	defer pinner.Unpin()
 	C.wgpuQueueSubmit(
 		C.WGPUQueue(queue),
 		C.size_t(len(commands)),
-		(*C.WGPUCommandBuffer)(unsafe.Pointer(&commands[0])),
+		_commands,
 	)
 }
 
 func QueueOnSubmittedWorkDone(queue Queue, callback QueueWorkDoneCallbackInfo) {
+	var pinner runtime.Pinner
+	callback.pin(&pinner)
+	defer pinner.Unpin()
 	C.wgpuQueueOnSubmittedWorkDone(
 		C.WGPUQueue(queue),
 		C.WGPUQueueWorkDoneCallbackInfo{
@@ -854,32 +1046,45 @@ func QueueOnSubmittedWorkDone(queue Queue, callback QueueWorkDoneCallbackInfo) {
 
 // Produces a @ref DeviceError both content-timeline (`size` alignment) and device-timeline
 // errors defined by the WebGPU specification.
-func QueueWriteBuffer(queue Queue, buffer Buffer, buffer_offset uint64, data unsafe.Pointer, size uintptr) {
+func QueueWriteBuffer(queue Queue, buffer Buffer, bufferOffset uint64, data unsafe.Pointer, size uintptr) {
+	var pinner runtime.Pinner
+	pinner.Pin(data)
+	defer pinner.Unpin()
 	C.wgpuQueueWriteBuffer(
 		C.WGPUQueue(queue),
 		C.WGPUBuffer(buffer),
-		C.uint64_t(buffer_offset),
-		unsafe.Pointer(data),
+		C.uint64_t(bufferOffset),
+		data,
 		C.size_t(size),
 	)
 }
 
-func QueueWriteTexture(queue Queue, destination *TexelCopyTextureInfo, data unsafe.Pointer, data_size uintptr, data_layout *TexelCopyBufferLayout, write_size *Extent3D) {
+func QueueWriteTexture(queue Queue, destination *TexelCopyTextureInfo, data unsafe.Pointer, dataSize uintptr, dataLayout *TexelCopyBufferLayout, writeSize *Extent3D) {
+	var pinner runtime.Pinner
+	destination.pin(&pinner)
+	pinner.Pin(data)
+	dataLayout.pin(&pinner)
+	writeSize.pin(&pinner)
+	defer pinner.Unpin()
 	C.wgpuQueueWriteTexture(
 		C.WGPUQueue(queue),
 		(*C.WGPUTexelCopyTextureInfo)(unsafe.Pointer(destination)),
-		unsafe.Pointer(data),
-		C.size_t(data_size),
-		(*C.WGPUTexelCopyBufferLayout)(unsafe.Pointer(data_layout)),
-		(*C.WGPUExtent3D)(unsafe.Pointer(write_size)),
+		data,
+		C.size_t(dataSize),
+		(*C.WGPUTexelCopyBufferLayout)(unsafe.Pointer(dataLayout)),
+		(*C.WGPUExtent3D)(unsafe.Pointer(writeSize)),
 	)
 }
 
 func QueueSetLabel(queue Queue, label StringView) {
+	var pinner runtime.Pinner
+	_label := (*C.char)(unsafe.Pointer(label.Data))
+	pinner.Pin(_label)
+	defer pinner.Unpin()
 	C.wgpuQueueSetLabel(
 		C.WGPUQueue(queue),
 		C.WGPUStringView{
-			data:   (*C.char)(unsafe.Pointer(label.Data)),
+			data:   _label,
 			length: C.size_t(label.Length),
 		},
 	)
@@ -894,10 +1099,14 @@ func QueueRelease(queue Queue) {
 }
 
 func RenderBundleSetLabel(renderBundle RenderBundle, label StringView) {
+	var pinner runtime.Pinner
+	_label := (*C.char)(unsafe.Pointer(label.Data))
+	pinner.Pin(_label)
+	defer pinner.Unpin()
 	C.wgpuRenderBundleSetLabel(
 		C.WGPURenderBundle(renderBundle),
 		C.WGPUStringView{
-			data:   (*C.char)(unsafe.Pointer(label.Data)),
+			data:   _label,
 			length: C.size_t(label.Length),
 		},
 	)
@@ -918,68 +1127,79 @@ func RenderBundleEncoderSetPipeline(renderBundleEncoder RenderBundleEncoder, pip
 	)
 }
 
-func RenderBundleEncoderSetBindGroup(renderBundleEncoder RenderBundleEncoder, group_index uint32, group BindGroup, dynamic_offsets []uint32) {
+func RenderBundleEncoderSetBindGroup(renderBundleEncoder RenderBundleEncoder, groupIndex uint32, group BindGroup, dynamicOffsets []uint32) {
+	var pinner runtime.Pinner
+	_dynamicOffsets := (*C.uint32_t)(unsafe.Pointer(&dynamicOffsets[0]))
+	pinner.Pin(_dynamicOffsets)
+	defer pinner.Unpin()
 	C.wgpuRenderBundleEncoderSetBindGroup(
 		C.WGPURenderBundleEncoder(renderBundleEncoder),
-		C.uint32_t(group_index),
+		C.uint32_t(groupIndex),
 		C.WGPUBindGroup(group),
-		C.size_t(len(dynamic_offsets)),
-		(*C.uint32_t)(unsafe.Pointer(&dynamic_offsets[0])),
+		C.size_t(len(dynamicOffsets)),
+		_dynamicOffsets,
 	)
 }
 
 func RenderBundleEncoderSetImmediates(renderBundleEncoder RenderBundleEncoder, offset uint32, data unsafe.Pointer, size uintptr) {
+	var pinner runtime.Pinner
+	pinner.Pin(data)
+	defer pinner.Unpin()
 	C.wgpuRenderBundleEncoderSetImmediates(
 		C.WGPURenderBundleEncoder(renderBundleEncoder),
 		C.uint32_t(offset),
-		unsafe.Pointer(data),
+		data,
 		C.size_t(size),
 	)
 }
 
-func RenderBundleEncoderDraw(renderBundleEncoder RenderBundleEncoder, vertex_count uint32, instance_count uint32, first_vertex uint32, first_instance uint32) {
+func RenderBundleEncoderDraw(renderBundleEncoder RenderBundleEncoder, vertexCount uint32, instanceCount uint32, firstVertex uint32, firstInstance uint32) {
 	C.wgpuRenderBundleEncoderDraw(
 		C.WGPURenderBundleEncoder(renderBundleEncoder),
-		C.uint32_t(vertex_count),
-		C.uint32_t(instance_count),
-		C.uint32_t(first_vertex),
-		C.uint32_t(first_instance),
+		C.uint32_t(vertexCount),
+		C.uint32_t(instanceCount),
+		C.uint32_t(firstVertex),
+		C.uint32_t(firstInstance),
 	)
 }
 
-func RenderBundleEncoderDrawIndexed(renderBundleEncoder RenderBundleEncoder, index_count uint32, instance_count uint32, first_index uint32, base_vertex int32, first_instance uint32) {
+func RenderBundleEncoderDrawIndexed(renderBundleEncoder RenderBundleEncoder, indexCount uint32, instanceCount uint32, firstIndex uint32, baseVertex int32, firstInstance uint32) {
 	C.wgpuRenderBundleEncoderDrawIndexed(
 		C.WGPURenderBundleEncoder(renderBundleEncoder),
-		C.uint32_t(index_count),
-		C.uint32_t(instance_count),
-		C.uint32_t(first_index),
-		C.int32_t(base_vertex),
-		C.uint32_t(first_instance),
+		C.uint32_t(indexCount),
+		C.uint32_t(instanceCount),
+		C.uint32_t(firstIndex),
+		C.int32_t(baseVertex),
+		C.uint32_t(firstInstance),
 	)
 }
 
-func RenderBundleEncoderDrawIndirect(renderBundleEncoder RenderBundleEncoder, indirect_buffer Buffer, indirect_offset uint64) {
+func RenderBundleEncoderDrawIndirect(renderBundleEncoder RenderBundleEncoder, indirectBuffer Buffer, indirectOffset uint64) {
 	C.wgpuRenderBundleEncoderDrawIndirect(
 		C.WGPURenderBundleEncoder(renderBundleEncoder),
-		C.WGPUBuffer(indirect_buffer),
-		C.uint64_t(indirect_offset),
+		C.WGPUBuffer(indirectBuffer),
+		C.uint64_t(indirectOffset),
 	)
 }
 
-func RenderBundleEncoderDrawIndexedIndirect(renderBundleEncoder RenderBundleEncoder, indirect_buffer Buffer, indirect_offset uint64) {
+func RenderBundleEncoderDrawIndexedIndirect(renderBundleEncoder RenderBundleEncoder, indirectBuffer Buffer, indirectOffset uint64) {
 	C.wgpuRenderBundleEncoderDrawIndexedIndirect(
 		C.WGPURenderBundleEncoder(renderBundleEncoder),
-		C.WGPUBuffer(indirect_buffer),
-		C.uint64_t(indirect_offset),
+		C.WGPUBuffer(indirectBuffer),
+		C.uint64_t(indirectOffset),
 	)
 }
 
-func RenderBundleEncoderInsertDebugMarker(renderBundleEncoder RenderBundleEncoder, marker_label StringView) {
+func RenderBundleEncoderInsertDebugMarker(renderBundleEncoder RenderBundleEncoder, markerLabel StringView) {
+	var pinner runtime.Pinner
+	_markerLabel := (*C.char)(unsafe.Pointer(markerLabel.Data))
+	pinner.Pin(_markerLabel)
+	defer pinner.Unpin()
 	C.wgpuRenderBundleEncoderInsertDebugMarker(
 		C.WGPURenderBundleEncoder(renderBundleEncoder),
 		C.WGPUStringView{
-			data:   (*C.char)(unsafe.Pointer(marker_label.Data)),
-			length: C.size_t(marker_label.Length),
+			data:   _markerLabel,
+			length: C.size_t(markerLabel.Length),
 		},
 	)
 }
@@ -990,12 +1210,16 @@ func RenderBundleEncoderPopDebugGroup(renderBundleEncoder RenderBundleEncoder) {
 	)
 }
 
-func RenderBundleEncoderPushDebugGroup(renderBundleEncoder RenderBundleEncoder, group_label StringView) {
+func RenderBundleEncoderPushDebugGroup(renderBundleEncoder RenderBundleEncoder, groupLabel StringView) {
+	var pinner runtime.Pinner
+	_groupLabel := (*C.char)(unsafe.Pointer(groupLabel.Data))
+	pinner.Pin(_groupLabel)
+	defer pinner.Unpin()
 	C.wgpuRenderBundleEncoderPushDebugGroup(
 		C.WGPURenderBundleEncoder(renderBundleEncoder),
 		C.WGPUStringView{
-			data:   (*C.char)(unsafe.Pointer(group_label.Data)),
-			length: C.size_t(group_label.Length),
+			data:   _groupLabel,
+			length: C.size_t(groupLabel.Length),
 		},
 	)
 }
@@ -1021,6 +1245,9 @@ func RenderBundleEncoderSetIndexBuffer(renderBundleEncoder RenderBundleEncoder, 
 }
 
 func RenderBundleEncoderFinish(renderBundleEncoder RenderBundleEncoder, descriptor *RenderBundleDescriptor) RenderBundle {
+	var pinner runtime.Pinner
+	descriptor.pin(&pinner)
+	defer pinner.Unpin()
 	return RenderBundle(C.wgpuRenderBundleEncoderFinish(
 		C.WGPURenderBundleEncoder(renderBundleEncoder),
 		(*C.WGPURenderBundleDescriptor)(unsafe.Pointer(descriptor)),
@@ -1028,10 +1255,14 @@ func RenderBundleEncoderFinish(renderBundleEncoder RenderBundleEncoder, descript
 }
 
 func RenderBundleEncoderSetLabel(renderBundleEncoder RenderBundleEncoder, label StringView) {
+	var pinner runtime.Pinner
+	_label := (*C.char)(unsafe.Pointer(label.Data))
+	pinner.Pin(_label)
+	defer pinner.Unpin()
 	C.wgpuRenderBundleEncoderSetLabel(
 		C.WGPURenderBundleEncoder(renderBundleEncoder),
 		C.WGPUStringView{
-			data:   (*C.char)(unsafe.Pointer(label.Data)),
+			data:   _label,
 			length: C.size_t(label.Length),
 		},
 	)
@@ -1052,76 +1283,91 @@ func RenderPassEncoderSetPipeline(renderPassEncoder RenderPassEncoder, pipeline 
 	)
 }
 
-func RenderPassEncoderSetBindGroup(renderPassEncoder RenderPassEncoder, group_index uint32, group BindGroup, dynamic_offsets []uint32) {
+func RenderPassEncoderSetBindGroup(renderPassEncoder RenderPassEncoder, groupIndex uint32, group BindGroup, dynamicOffsets []uint32) {
+	var pinner runtime.Pinner
+	_dynamicOffsets := (*C.uint32_t)(unsafe.Pointer(&dynamicOffsets[0]))
+	pinner.Pin(_dynamicOffsets)
+	defer pinner.Unpin()
 	C.wgpuRenderPassEncoderSetBindGroup(
 		C.WGPURenderPassEncoder(renderPassEncoder),
-		C.uint32_t(group_index),
+		C.uint32_t(groupIndex),
 		C.WGPUBindGroup(group),
-		C.size_t(len(dynamic_offsets)),
-		(*C.uint32_t)(unsafe.Pointer(&dynamic_offsets[0])),
+		C.size_t(len(dynamicOffsets)),
+		_dynamicOffsets,
 	)
 }
 
 func RenderPassEncoderSetImmediates(renderPassEncoder RenderPassEncoder, offset uint32, data unsafe.Pointer, size uintptr) {
+	var pinner runtime.Pinner
+	pinner.Pin(data)
+	defer pinner.Unpin()
 	C.wgpuRenderPassEncoderSetImmediates(
 		C.WGPURenderPassEncoder(renderPassEncoder),
 		C.uint32_t(offset),
-		unsafe.Pointer(data),
+		data,
 		C.size_t(size),
 	)
 }
 
-func RenderPassEncoderDraw(renderPassEncoder RenderPassEncoder, vertex_count uint32, instance_count uint32, first_vertex uint32, first_instance uint32) {
+func RenderPassEncoderDraw(renderPassEncoder RenderPassEncoder, vertexCount uint32, instanceCount uint32, firstVertex uint32, firstInstance uint32) {
 	C.wgpuRenderPassEncoderDraw(
 		C.WGPURenderPassEncoder(renderPassEncoder),
-		C.uint32_t(vertex_count),
-		C.uint32_t(instance_count),
-		C.uint32_t(first_vertex),
-		C.uint32_t(first_instance),
+		C.uint32_t(vertexCount),
+		C.uint32_t(instanceCount),
+		C.uint32_t(firstVertex),
+		C.uint32_t(firstInstance),
 	)
 }
 
-func RenderPassEncoderDrawIndexed(renderPassEncoder RenderPassEncoder, index_count uint32, instance_count uint32, first_index uint32, base_vertex int32, first_instance uint32) {
+func RenderPassEncoderDrawIndexed(renderPassEncoder RenderPassEncoder, indexCount uint32, instanceCount uint32, firstIndex uint32, baseVertex int32, firstInstance uint32) {
 	C.wgpuRenderPassEncoderDrawIndexed(
 		C.WGPURenderPassEncoder(renderPassEncoder),
-		C.uint32_t(index_count),
-		C.uint32_t(instance_count),
-		C.uint32_t(first_index),
-		C.int32_t(base_vertex),
-		C.uint32_t(first_instance),
+		C.uint32_t(indexCount),
+		C.uint32_t(instanceCount),
+		C.uint32_t(firstIndex),
+		C.int32_t(baseVertex),
+		C.uint32_t(firstInstance),
 	)
 }
 
-func RenderPassEncoderDrawIndirect(renderPassEncoder RenderPassEncoder, indirect_buffer Buffer, indirect_offset uint64) {
+func RenderPassEncoderDrawIndirect(renderPassEncoder RenderPassEncoder, indirectBuffer Buffer, indirectOffset uint64) {
 	C.wgpuRenderPassEncoderDrawIndirect(
 		C.WGPURenderPassEncoder(renderPassEncoder),
-		C.WGPUBuffer(indirect_buffer),
-		C.uint64_t(indirect_offset),
+		C.WGPUBuffer(indirectBuffer),
+		C.uint64_t(indirectOffset),
 	)
 }
 
-func RenderPassEncoderDrawIndexedIndirect(renderPassEncoder RenderPassEncoder, indirect_buffer Buffer, indirect_offset uint64) {
+func RenderPassEncoderDrawIndexedIndirect(renderPassEncoder RenderPassEncoder, indirectBuffer Buffer, indirectOffset uint64) {
 	C.wgpuRenderPassEncoderDrawIndexedIndirect(
 		C.WGPURenderPassEncoder(renderPassEncoder),
-		C.WGPUBuffer(indirect_buffer),
-		C.uint64_t(indirect_offset),
+		C.WGPUBuffer(indirectBuffer),
+		C.uint64_t(indirectOffset),
 	)
 }
 
 func RenderPassEncoderExecuteBundles(renderPassEncoder RenderPassEncoder, bundles []RenderBundle) {
+	var pinner runtime.Pinner
+	_bundles := (*C.WGPURenderBundle)(unsafe.Pointer(&bundles[0]))
+	pinner.Pin(_bundles)
+	defer pinner.Unpin()
 	C.wgpuRenderPassEncoderExecuteBundles(
 		C.WGPURenderPassEncoder(renderPassEncoder),
 		C.size_t(len(bundles)),
-		(*C.WGPURenderBundle)(unsafe.Pointer(&bundles[0])),
+		_bundles,
 	)
 }
 
-func RenderPassEncoderInsertDebugMarker(renderPassEncoder RenderPassEncoder, marker_label StringView) {
+func RenderPassEncoderInsertDebugMarker(renderPassEncoder RenderPassEncoder, markerLabel StringView) {
+	var pinner runtime.Pinner
+	_markerLabel := (*C.char)(unsafe.Pointer(markerLabel.Data))
+	pinner.Pin(_markerLabel)
+	defer pinner.Unpin()
 	C.wgpuRenderPassEncoderInsertDebugMarker(
 		C.WGPURenderPassEncoder(renderPassEncoder),
 		C.WGPUStringView{
-			data:   (*C.char)(unsafe.Pointer(marker_label.Data)),
-			length: C.size_t(marker_label.Length),
+			data:   _markerLabel,
+			length: C.size_t(markerLabel.Length),
 		},
 	)
 }
@@ -1132,12 +1378,16 @@ func RenderPassEncoderPopDebugGroup(renderPassEncoder RenderPassEncoder) {
 	)
 }
 
-func RenderPassEncoderPushDebugGroup(renderPassEncoder RenderPassEncoder, group_label StringView) {
+func RenderPassEncoderPushDebugGroup(renderPassEncoder RenderPassEncoder, groupLabel StringView) {
+	var pinner runtime.Pinner
+	_groupLabel := (*C.char)(unsafe.Pointer(groupLabel.Data))
+	pinner.Pin(_groupLabel)
+	defer pinner.Unpin()
 	C.wgpuRenderPassEncoderPushDebugGroup(
 		C.WGPURenderPassEncoder(renderPassEncoder),
 		C.WGPUStringView{
-			data:   (*C.char)(unsafe.Pointer(group_label.Data)),
-			length: C.size_t(group_label.Length),
+			data:   _groupLabel,
+			length: C.size_t(groupLabel.Length),
 		},
 	)
 }
@@ -1150,6 +1400,9 @@ func RenderPassEncoderSetStencilReference(renderPassEncoder RenderPassEncoder, r
 }
 
 func RenderPassEncoderSetBlendConstant(renderPassEncoder RenderPassEncoder, color *Color) {
+	var pinner runtime.Pinner
+	color.pin(&pinner)
+	defer pinner.Unpin()
 	C.wgpuRenderPassEncoderSetBlendConstant(
 		C.WGPURenderPassEncoder(renderPassEncoder),
 		(*C.WGPUColor)(unsafe.Pointer(color)),
@@ -1159,15 +1412,15 @@ func RenderPassEncoderSetBlendConstant(renderPassEncoder RenderPassEncoder, colo
 // TODO
 //
 // If any argument is non-finite, produces a @ref NonFiniteFloatValueError.
-func RenderPassEncoderSetViewport(renderPassEncoder RenderPassEncoder, x float32, y float32, width float32, height float32, min_depth float32, max_depth float32) {
+func RenderPassEncoderSetViewport(renderPassEncoder RenderPassEncoder, x float32, y float32, width float32, height float32, minDepth float32, maxDepth float32) {
 	C.wgpuRenderPassEncoderSetViewport(
 		C.WGPURenderPassEncoder(renderPassEncoder),
 		C.float(x),
 		C.float(y),
 		C.float(width),
 		C.float(height),
-		C.float(min_depth),
-		C.float(max_depth),
+		C.float(minDepth),
+		C.float(maxDepth),
 	)
 }
 
@@ -1201,10 +1454,10 @@ func RenderPassEncoderSetIndexBuffer(renderPassEncoder RenderPassEncoder, buffer
 	)
 }
 
-func RenderPassEncoderBeginOcclusionQuery(renderPassEncoder RenderPassEncoder, query_index uint32) {
+func RenderPassEncoderBeginOcclusionQuery(renderPassEncoder RenderPassEncoder, queryIndex uint32) {
 	C.wgpuRenderPassEncoderBeginOcclusionQuery(
 		C.WGPURenderPassEncoder(renderPassEncoder),
-		C.uint32_t(query_index),
+		C.uint32_t(queryIndex),
 	)
 }
 
@@ -1221,10 +1474,14 @@ func RenderPassEncoderEnd(renderPassEncoder RenderPassEncoder) {
 }
 
 func RenderPassEncoderSetLabel(renderPassEncoder RenderPassEncoder, label StringView) {
+	var pinner runtime.Pinner
+	_label := (*C.char)(unsafe.Pointer(label.Data))
+	pinner.Pin(_label)
+	defer pinner.Unpin()
 	C.wgpuRenderPassEncoderSetLabel(
 		C.WGPURenderPassEncoder(renderPassEncoder),
 		C.WGPUStringView{
-			data:   (*C.char)(unsafe.Pointer(label.Data)),
+			data:   _label,
 			length: C.size_t(label.Length),
 		},
 	)
@@ -1238,18 +1495,22 @@ func RenderPassEncoderRelease(renderPassEncoder RenderPassEncoder) {
 	C.wgpuRenderPassEncoderRelease(C.WGPURenderPassEncoder(renderPassEncoder))
 }
 
-func RenderPipelineGetBindGroupLayout(renderPipeline RenderPipeline, group_index uint32) BindGroupLayout {
+func RenderPipelineGetBindGroupLayout(renderPipeline RenderPipeline, groupIndex uint32) BindGroupLayout {
 	return BindGroupLayout(C.wgpuRenderPipelineGetBindGroupLayout(
 		C.WGPURenderPipeline(renderPipeline),
-		C.uint32_t(group_index),
+		C.uint32_t(groupIndex),
 	))
 }
 
 func RenderPipelineSetLabel(renderPipeline RenderPipeline, label StringView) {
+	var pinner runtime.Pinner
+	_label := (*C.char)(unsafe.Pointer(label.Data))
+	pinner.Pin(_label)
+	defer pinner.Unpin()
 	C.wgpuRenderPipelineSetLabel(
 		C.WGPURenderPipeline(renderPipeline),
 		C.WGPUStringView{
-			data:   (*C.char)(unsafe.Pointer(label.Data)),
+			data:   _label,
 			length: C.size_t(label.Length),
 		},
 	)
@@ -1264,10 +1525,14 @@ func RenderPipelineRelease(renderPipeline RenderPipeline) {
 }
 
 func SamplerSetLabel(sampler Sampler, label StringView) {
+	var pinner runtime.Pinner
+	_label := (*C.char)(unsafe.Pointer(label.Data))
+	pinner.Pin(_label)
+	defer pinner.Unpin()
 	C.wgpuSamplerSetLabel(
 		C.WGPUSampler(sampler),
 		C.WGPUStringView{
-			data:   (*C.char)(unsafe.Pointer(label.Data)),
+			data:   _label,
 			length: C.size_t(label.Length),
 		},
 	)
@@ -1282,6 +1547,9 @@ func SamplerRelease(sampler Sampler) {
 }
 
 func ShaderModuleGetCompilationInfo(shaderModule ShaderModule, callback CompilationInfoCallbackInfo) {
+	var pinner runtime.Pinner
+	callback.pin(&pinner)
+	defer pinner.Unpin()
 	C.wgpuShaderModuleGetCompilationInfo(
 		C.WGPUShaderModule(shaderModule),
 		C.WGPUCompilationInfoCallbackInfo{
@@ -1295,10 +1563,14 @@ func ShaderModuleGetCompilationInfo(shaderModule ShaderModule, callback Compilat
 }
 
 func ShaderModuleSetLabel(shaderModule ShaderModule, label StringView) {
+	var pinner runtime.Pinner
+	_label := (*C.char)(unsafe.Pointer(label.Data))
+	pinner.Pin(_label)
+	defer pinner.Unpin()
 	C.wgpuShaderModuleSetLabel(
 		C.WGPUShaderModule(shaderModule),
 		C.WGPUStringView{
-			data:   (*C.char)(unsafe.Pointer(label.Data)),
+			data:   _label,
 			length: C.size_t(label.Length),
 		},
 	)
@@ -1317,6 +1589,9 @@ func ShaderModuleRelease(shaderModule ShaderModule) {
 //
 // See @ref Surface-Configuration for more details.
 func SurfaceConfigure(surface Surface, config *SurfaceConfiguration) {
+	var pinner runtime.Pinner
+	config.pin(&pinner)
+	defer pinner.Unpin()
 	C.wgpuSurfaceConfigure(
 		C.WGPUSurface(surface),
 		(*C.WGPUSurfaceConfiguration)(unsafe.Pointer(config)),
@@ -1326,6 +1601,9 @@ func SurfaceConfigure(surface Surface, config *SurfaceConfiguration) {
 // Provides information on how `adapter` is able to use `surface`.
 // See @ref Surface-Capabilities for more details.
 func SurfaceGetCapabilities(surface Surface, adapter Adapter, capabilities *SurfaceCapabilities) Status {
+	var pinner runtime.Pinner
+	capabilities.pin(&pinner)
+	defer pinner.Unpin()
 	return Status(C.wgpuSurfaceGetCapabilities(
 		C.WGPUSurface(surface),
 		C.WGPUAdapter(adapter),
@@ -1337,10 +1615,13 @@ func SurfaceGetCapabilities(surface Surface, adapter Adapter, capabilities *Surf
 // Returns `NULL` and @ref WGPUSurfaceGetCurrentTextureStatus_Error if the surface is not configured.
 //
 // See @ref Surface-Presenting for more details.
-func SurfaceGetCurrentTexture(surface Surface, surface_texture *SurfaceTexture) {
+func SurfaceGetCurrentTexture(surface Surface, surfaceTexture *SurfaceTexture) {
+	var pinner runtime.Pinner
+	surfaceTexture.pin(&pinner)
+	defer pinner.Unpin()
 	C.wgpuSurfaceGetCurrentTexture(
 		C.WGPUSurface(surface),
-		(*C.WGPUSurfaceTexture)(unsafe.Pointer(surface_texture)),
+		(*C.WGPUSurfaceTexture)(unsafe.Pointer(surfaceTexture)),
 	)
 }
 
@@ -1362,10 +1643,14 @@ func SurfaceUnconfigure(surface Surface) {
 
 // Modifies the label used to refer to `surface`.
 func SurfaceSetLabel(surface Surface, label StringView) {
+	var pinner runtime.Pinner
+	_label := (*C.char)(unsafe.Pointer(label.Data))
+	pinner.Pin(_label)
+	defer pinner.Unpin()
 	C.wgpuSurfaceSetLabel(
 		C.WGPUSurface(surface),
 		C.WGPUStringView{
-			data:   (*C.char)(unsafe.Pointer(label.Data)),
+			data:   _label,
 			length: C.size_t(label.Length),
 		},
 	)
@@ -1380,6 +1665,9 @@ func SurfaceRelease(surface Surface) {
 }
 
 func TextureCreateView(texture Texture, descriptor *TextureViewDescriptor) TextureView {
+	var pinner runtime.Pinner
+	descriptor.pin(&pinner)
+	defer pinner.Unpin()
 	return TextureView(C.wgpuTextureCreateView(
 		C.WGPUTexture(texture),
 		(*C.WGPUTextureViewDescriptor)(unsafe.Pointer(descriptor)),
@@ -1387,10 +1675,14 @@ func TextureCreateView(texture Texture, descriptor *TextureViewDescriptor) Textu
 }
 
 func TextureSetLabel(texture Texture, label StringView) {
+	var pinner runtime.Pinner
+	_label := (*C.char)(unsafe.Pointer(label.Data))
+	pinner.Pin(_label)
+	defer pinner.Unpin()
 	C.wgpuTextureSetLabel(
 		C.WGPUTexture(texture),
 		C.WGPUStringView{
-			data:   (*C.char)(unsafe.Pointer(label.Data)),
+			data:   _label,
 			length: C.size_t(label.Length),
 		},
 	)
@@ -1465,10 +1757,14 @@ func TextureRelease(texture Texture) {
 }
 
 func TextureViewSetLabel(textureView TextureView, label StringView) {
+	var pinner runtime.Pinner
+	_label := (*C.char)(unsafe.Pointer(label.Data))
+	pinner.Pin(_label)
+	defer pinner.Unpin()
 	C.wgpuTextureViewSetLabel(
 		C.WGPUTextureView(textureView),
 		C.WGPUStringView{
-			data:   (*C.char)(unsafe.Pointer(label.Data)),
+			data:   _label,
 			length: C.size_t(label.Length),
 		},
 	)

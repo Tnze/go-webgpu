@@ -6,13 +6,15 @@
 package sys
 
 import (
+	"runtime"
 	"structs"
 	"unsafe"
 )
 
 type AdapterInfo struct {
-	_               structs.HostLayout
-	Chain           *ChainedStruct
+	_     structs.HostLayout
+	Chain *ChainedStruct
+
 	Vendor          StringView
 	Architecture    StringView
 	Device          StringView
@@ -25,9 +27,29 @@ type AdapterInfo struct {
 	SubgroupMaxSize uint32
 }
 
+func (a *AdapterInfo) pin(pinner *runtime.Pinner) {
+	pinner.Pin(a)
+	for next := a.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+	if a.Vendor.Data != nil {
+		pinner.Pin(a.Vendor.Data)
+	}
+	if a.Architecture.Data != nil {
+		pinner.Pin(a.Architecture.Data)
+	}
+	if a.Device.Data != nil {
+		pinner.Pin(a.Device.Data)
+	}
+	if a.Description.Data != nil {
+		pinner.Pin(a.Description.Data)
+	}
+}
+
 type BindGroupDescriptor struct {
-	_      structs.HostLayout
-	Chain  *ChainedStruct
+	_     structs.HostLayout
+	Chain *ChainedStruct
+
 	Label  StringView
 	Layout BindGroupLayout
 	// Array count for Entries
@@ -35,9 +57,23 @@ type BindGroupDescriptor struct {
 	Entries      *BindGroupEntry
 }
 
+func (b *BindGroupDescriptor) pin(pinner *runtime.Pinner) {
+	pinner.Pin(b)
+	for next := b.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+	if b.Label.Data != nil {
+		pinner.Pin(b.Label.Data)
+	}
+	if b.Entries != nil {
+		pinner.Pin(b.Entries)
+	}
+}
+
 type BindGroupEntry struct {
 	_     structs.HostLayout
 	Chain *ChainedStruct
+
 	// Binding index in the bind group.
 	Binding uint32
 	// Set this if the binding is a buffer object.
@@ -58,18 +94,40 @@ type BindGroupEntry struct {
 	TextureView TextureView
 }
 
+func (b *BindGroupEntry) pin(pinner *runtime.Pinner) {
+	pinner.Pin(b)
+	for next := b.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+}
+
 type BindGroupLayoutDescriptor struct {
 	_     structs.HostLayout
 	Chain *ChainedStruct
+
 	Label StringView
 	// Array count for Entries
 	EntriesCount uint
 	Entries      *BindGroupLayoutEntry
 }
 
+func (b *BindGroupLayoutDescriptor) pin(pinner *runtime.Pinner) {
+	pinner.Pin(b)
+	for next := b.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+	if b.Label.Data != nil {
+		pinner.Pin(b.Label.Data)
+	}
+	if b.Entries != nil {
+		pinner.Pin(b.Entries)
+	}
+}
+
 type BindGroupLayoutEntry struct {
-	_          structs.HostLayout
-	Chain      *ChainedStruct
+	_     structs.HostLayout
+	Chain *ChainedStruct
+
 	Binding    uint32
 	Visibility ShaderStage
 	// If non-zero, this entry defines a binding array with this size.
@@ -78,6 +136,13 @@ type BindGroupLayoutEntry struct {
 	Sampler          SamplerBindingLayout
 	Texture          TextureBindingLayout
 	StorageTexture   StorageTextureBindingLayout
+}
+
+func (b *BindGroupLayoutEntry) pin(pinner *runtime.Pinner) {
+	pinner.Pin(b)
+	for next := b.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
 }
 
 type BlendComponent struct {
@@ -94,6 +159,10 @@ type BlendComponent struct {
 	DstFactor BlendFactor
 }
 
+func (b *BlendComponent) pin(pinner *runtime.Pinner) {
+	pinner.Pin(b)
+}
+
 type BlendState struct {
 	_ structs.HostLayout
 
@@ -101,9 +170,14 @@ type BlendState struct {
 	Alpha BlendComponent
 }
 
+func (b *BlendState) pin(pinner *runtime.Pinner) {
+	pinner.Pin(b)
+}
+
 type BufferBindingLayout struct {
 	_     structs.HostLayout
 	Chain *ChainedStruct
+
 	// If set to @ref WGPUBufferBindingType_Undefined,
 	// [defaults](@ref SentinelValues) to @ref WGPUBufferBindingType_Uniform.
 	Type             BufferBindingType
@@ -111,9 +185,17 @@ type BufferBindingLayout struct {
 	MinBindingSize   uint64
 }
 
+func (b *BufferBindingLayout) pin(pinner *runtime.Pinner) {
+	pinner.Pin(b)
+	for next := b.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+}
+
 type BufferDescriptor struct {
 	_     structs.HostLayout
 	Chain *ChainedStruct
+
 	Label StringView
 	Usage BufferUsage
 	Size  uint64
@@ -121,6 +203,16 @@ type BufferDescriptor struct {
 	//
 	// @note Mapping at creation does **not** require the usage @ref WGPUBufferUsage_MapWrite.
 	MappedAtCreation Bool
+}
+
+func (b *BufferDescriptor) pin(pinner *runtime.Pinner) {
+	pinner.Pin(b)
+	for next := b.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+	if b.Label.Data != nil {
+		pinner.Pin(b.Label.Data)
+	}
 }
 
 // An RGBA color. Represents a `f32`, `i32`, or `u32` color using @ref DoubleAsSupertype.
@@ -135,9 +227,14 @@ type Color struct {
 	A float64
 }
 
+func (c *Color) pin(pinner *runtime.Pinner) {
+	pinner.Pin(c)
+}
+
 type ColorTargetState struct {
 	_     structs.HostLayout
 	Chain *ChainedStruct
+
 	// The texture format of the target. If @ref WGPUTextureFormat_Undefined,
 	// indicates a "hole" in the parent @ref WGPUFragmentState `targets` array:
 	// the pipeline does not output a value at this `location`.
@@ -146,24 +243,58 @@ type ColorTargetState struct {
 	WriteMask ColorWriteMask
 }
 
+func (c *ColorTargetState) pin(pinner *runtime.Pinner) {
+	pinner.Pin(c)
+	for next := c.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+	if c.Blend != nil {
+		pinner.Pin(c.Blend)
+	}
+
+}
+
 type CommandBufferDescriptor struct {
 	_     structs.HostLayout
 	Chain *ChainedStruct
+
 	Label StringView
+}
+
+func (c *CommandBufferDescriptor) pin(pinner *runtime.Pinner) {
+	pinner.Pin(c)
+	for next := c.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+	if c.Label.Data != nil {
+		pinner.Pin(c.Label.Data)
+	}
 }
 
 type CommandEncoderDescriptor struct {
 	_     structs.HostLayout
 	Chain *ChainedStruct
+
 	Label StringView
+}
+
+func (c *CommandEncoderDescriptor) pin(pinner *runtime.Pinner) {
+	pinner.Pin(c)
+	for next := c.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+	if c.Label.Data != nil {
+		pinner.Pin(c.Label.Data)
+	}
 }
 
 // Note: While Compatibility Mode is optional to implement, this extension struct
 // is required to be supported (for both queries and requests) and behave as
 // defined in the WebGPU spec.
 type CompatibilityModeLimits struct {
-	_                                 structs.HostLayout
-	NextInChain                       ChainedStruct
+	_           structs.HostLayout
+	NextInChain ChainedStruct
+
 	MaxStorageBuffersInVertexStage    uint32
 	MaxStorageTexturesInVertexStage   uint32
 	MaxStorageBuffersInFragmentStage  uint32
@@ -183,6 +314,13 @@ type CompilationInfo struct {
 	Messages      *CompilationMessage
 }
 
+func (c *CompilationInfo) pin(pinner *runtime.Pinner) {
+	pinner.Pin(c)
+	if c.Messages != nil {
+		pinner.Pin(c.Messages)
+	}
+}
+
 type CompilationMessage struct {
 	_ structs.HostLayout
 
@@ -200,24 +338,58 @@ type CompilationMessage struct {
 	Length uint64
 }
 
+func (c *CompilationMessage) pin(pinner *runtime.Pinner) {
+	pinner.Pin(c)
+	if c.Message.Data != nil {
+		pinner.Pin(c.Message.Data)
+	}
+}
+
 type ComputePassDescriptor struct {
-	_               structs.HostLayout
-	Chain           *ChainedStruct
+	_     structs.HostLayout
+	Chain *ChainedStruct
+
 	Label           StringView
 	TimestampWrites *PassTimestampWrites
 }
 
+func (c *ComputePassDescriptor) pin(pinner *runtime.Pinner) {
+	pinner.Pin(c)
+	for next := c.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+	if c.Label.Data != nil {
+		pinner.Pin(c.Label.Data)
+	}
+	if c.TimestampWrites != nil {
+		pinner.Pin(c.TimestampWrites)
+	}
+
+}
+
 type ComputePipelineDescriptor struct {
-	_       structs.HostLayout
-	Chain   *ChainedStruct
+	_     structs.HostLayout
+	Chain *ChainedStruct
+
 	Label   StringView
 	Layout  PipelineLayout
 	Compute ComputeState
 }
 
+func (c *ComputePipelineDescriptor) pin(pinner *runtime.Pinner) {
+	pinner.Pin(c)
+	for next := c.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+	if c.Label.Data != nil {
+		pinner.Pin(c.Label.Data)
+	}
+}
+
 type ComputeState struct {
-	_          structs.HostLayout
-	Chain      *ChainedStruct
+	_     structs.HostLayout
+	Chain *ChainedStruct
+
 	Module     ShaderModule
 	EntryPoint StringView
 	// Array count for Constants
@@ -225,19 +397,44 @@ type ComputeState struct {
 	Constants      *ConstantEntry
 }
 
+func (c *ComputeState) pin(pinner *runtime.Pinner) {
+	pinner.Pin(c)
+	for next := c.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+	if c.EntryPoint.Data != nil {
+		pinner.Pin(c.EntryPoint.Data)
+	}
+	if c.Constants != nil {
+		pinner.Pin(c.Constants)
+	}
+}
+
 type ConstantEntry struct {
 	_     structs.HostLayout
 	Chain *ChainedStruct
-	Key   StringView
+
+	Key StringView
 	// Represents a WGSL numeric or boolean value using @ref DoubleAsSupertype.
 	//
 	// If non-finite, produces a @ref NonFiniteFloatValueError.
 	Value float64
 }
 
+func (c *ConstantEntry) pin(pinner *runtime.Pinner) {
+	pinner.Pin(c)
+	for next := c.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+	if c.Key.Data != nil {
+		pinner.Pin(c.Key.Data)
+	}
+}
+
 type DepthStencilState struct {
-	_                 structs.HostLayout
-	Chain             *ChainedStruct
+	_     structs.HostLayout
+	Chain *ChainedStruct
+
 	Format            TextureFormat
 	DepthWriteEnabled OptionalBool
 	DepthCompare      CompareFunction
@@ -256,9 +453,17 @@ type DepthStencilState struct {
 	DepthBiasClamp float32
 }
 
+func (d *DepthStencilState) pin(pinner *runtime.Pinner) {
+	pinner.Pin(d)
+	for next := d.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+}
+
 type DeviceDescriptor struct {
 	_     structs.HostLayout
 	Chain *ChainedStruct
+
 	Label StringView
 	// Array count for RequiredFeatures
 	RequiredFeaturesCount  uint
@@ -273,6 +478,23 @@ type DeviceDescriptor struct {
 	UncapturedErrorCallbackInfo UncapturedErrorCallbackInfo
 }
 
+func (d *DeviceDescriptor) pin(pinner *runtime.Pinner) {
+	pinner.Pin(d)
+	for next := d.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+	if d.Label.Data != nil {
+		pinner.Pin(d.Label.Data)
+	}
+	if d.RequiredFeatures != nil {
+		pinner.Pin(d.RequiredFeatures)
+	}
+	if d.RequiredLimits != nil {
+		pinner.Pin(d.RequiredLimits)
+	}
+
+}
+
 type Extent3D struct {
 	_ structs.HostLayout
 
@@ -281,10 +503,15 @@ type Extent3D struct {
 	DepthOrArrayLayers uint32
 }
 
+func (e *Extent3D) pin(pinner *runtime.Pinner) {
+	pinner.Pin(e)
+}
+
 // Chained in an @ref WGPUBindGroupEntry to set it to an @ref WGPUExternalTexture. This must have a corresponding @ref WGPUExternalTextureBindingLayout in the @ref WGPUBindGroupLayout.
 type ExternalTextureBindingEntry struct {
-	_               structs.HostLayout
-	NextInChain     ChainedStruct
+	_           structs.HostLayout
+	NextInChain ChainedStruct
+
 	ExternalTexture ExternalTexture
 }
 
@@ -305,8 +532,9 @@ func (e *ExternalTextureBindingLayout) Chain() *ChainedStruct {
 }
 
 type FragmentState struct {
-	_          structs.HostLayout
-	Chain      *ChainedStruct
+	_     structs.HostLayout
+	Chain *ChainedStruct
+
 	Module     ShaderModule
 	EntryPoint StringView
 	// Array count for Constants
@@ -317,12 +545,32 @@ type FragmentState struct {
 	Targets      *ColorTargetState
 }
 
+func (f *FragmentState) pin(pinner *runtime.Pinner) {
+	pinner.Pin(f)
+	for next := f.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+	if f.EntryPoint.Data != nil {
+		pinner.Pin(f.EntryPoint.Data)
+	}
+	if f.Constants != nil {
+		pinner.Pin(f.Constants)
+	}
+	if f.Targets != nil {
+		pinner.Pin(f.Targets)
+	}
+}
+
 // Opaque handle to an asynchronous operation. See @ref Asynchronous-Operations for more information.
 type Future struct {
 	_ structs.HostLayout
 
 	// Opaque id of the @ref WGPUFuture
 	Id uint64
+}
+
+func (f *Future) pin(pinner *runtime.Pinner) {
+	pinner.Pin(f)
 }
 
 // Struct holding a future to wait on, and a `completed` boolean flag.
@@ -335,25 +583,53 @@ type FutureWaitInfo struct {
 	Completed Bool
 }
 
+func (f *FutureWaitInfo) pin(pinner *runtime.Pinner) {
+	pinner.Pin(f)
+}
+
 type InstanceDescriptor struct {
 	_     structs.HostLayout
 	Chain *ChainedStruct
+
 	// Array count for RequiredFeatures
 	RequiredFeaturesCount uint
 	RequiredFeatures      *InstanceFeatureName
 	RequiredLimits        *InstanceLimits
 }
 
+func (i *InstanceDescriptor) pin(pinner *runtime.Pinner) {
+	pinner.Pin(i)
+	for next := i.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+	if i.RequiredFeatures != nil {
+		pinner.Pin(i.RequiredFeatures)
+	}
+	if i.RequiredLimits != nil {
+		pinner.Pin(i.RequiredLimits)
+	}
+
+}
+
 type InstanceLimits struct {
 	_     structs.HostLayout
 	Chain *ChainedStruct
+
 	// The maximum number @ref WGPUFutureWaitInfo supported in a call to ::wgpuInstanceWaitAny with `timeoutNS > 0`.
 	TimedWaitAnyMaxCount uintptr
 }
 
+func (i *InstanceLimits) pin(pinner *runtime.Pinner) {
+	pinner.Pin(i)
+	for next := i.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+}
+
 type Limits struct {
-	_                                         structs.HostLayout
-	Chain                                     *ChainedStruct
+	_     structs.HostLayout
+	Chain *ChainedStruct
+
 	MaxTextureDimension1D                     uint32
 	MaxTextureDimension2D                     uint32
 	MaxTextureDimension3D                     uint32
@@ -388,12 +664,27 @@ type Limits struct {
 	MaxImmediateSize                          uint32
 }
 
+func (l *Limits) pin(pinner *runtime.Pinner) {
+	pinner.Pin(l)
+	for next := l.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+}
+
 type MultisampleState struct {
-	_                      structs.HostLayout
-	Chain                  *ChainedStruct
+	_     structs.HostLayout
+	Chain *ChainedStruct
+
 	Count                  uint32
 	Mask                   uint32
 	AlphaToCoverageEnabled Bool
+}
+
+func (m *MultisampleState) pin(pinner *runtime.Pinner) {
+	pinner.Pin(m)
+	for next := m.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
 }
 
 type Origin3D struct {
@@ -404,18 +695,31 @@ type Origin3D struct {
 	Z uint32
 }
 
+func (o *Origin3D) pin(pinner *runtime.Pinner) {
+	pinner.Pin(o)
+}
+
 type PassTimestampWrites struct {
 	_     structs.HostLayout
 	Chain *ChainedStruct
+
 	// Query set to write timestamps to.
 	QuerySet                  QuerySet
 	BeginningOfPassWriteIndex uint32
 	EndOfPassWriteIndex       uint32
 }
 
+func (p *PassTimestampWrites) pin(pinner *runtime.Pinner) {
+	pinner.Pin(p)
+	for next := p.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+}
+
 type PipelineLayoutDescriptor struct {
 	_     structs.HostLayout
 	Chain *ChainedStruct
+
 	Label StringView
 	// Array count for BindGroupLayouts
 	BindGroupLayoutsCount uint
@@ -423,9 +727,23 @@ type PipelineLayoutDescriptor struct {
 	ImmediateSize         uint32
 }
 
+func (p *PipelineLayoutDescriptor) pin(pinner *runtime.Pinner) {
+	pinner.Pin(p)
+	for next := p.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+	if p.Label.Data != nil {
+		pinner.Pin(p.Label.Data)
+	}
+	if p.BindGroupLayouts != nil {
+		pinner.Pin(p.BindGroupLayouts)
+	}
+}
+
 type PrimitiveState struct {
 	_     structs.HostLayout
 	Chain *ChainedStruct
+
 	// If set to @ref WGPUPrimitiveTopology_Undefined,
 	// [defaults](@ref SentinelValues) to @ref WGPUPrimitiveTopology_TriangleList.
 	Topology         PrimitiveTopology
@@ -439,29 +757,70 @@ type PrimitiveState struct {
 	UnclippedDepth Bool
 }
 
+func (p *PrimitiveState) pin(pinner *runtime.Pinner) {
+	pinner.Pin(p)
+	for next := p.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+}
+
 type QuerySetDescriptor struct {
 	_     structs.HostLayout
 	Chain *ChainedStruct
+
 	Label StringView
 	Type  QueryType
 	Count uint32
 }
 
+func (q *QuerySetDescriptor) pin(pinner *runtime.Pinner) {
+	pinner.Pin(q)
+	for next := q.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+	if q.Label.Data != nil {
+		pinner.Pin(q.Label.Data)
+	}
+}
+
 type QueueDescriptor struct {
 	_     structs.HostLayout
 	Chain *ChainedStruct
+
 	Label StringView
+}
+
+func (q *QueueDescriptor) pin(pinner *runtime.Pinner) {
+	pinner.Pin(q)
+	for next := q.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+	if q.Label.Data != nil {
+		pinner.Pin(q.Label.Data)
+	}
 }
 
 type RenderBundleDescriptor struct {
 	_     structs.HostLayout
 	Chain *ChainedStruct
+
 	Label StringView
+}
+
+func (r *RenderBundleDescriptor) pin(pinner *runtime.Pinner) {
+	pinner.Pin(r)
+	for next := r.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+	if r.Label.Data != nil {
+		pinner.Pin(r.Label.Data)
+	}
 }
 
 type RenderBundleEncoderDescriptor struct {
 	_     structs.HostLayout
 	Chain *ChainedStruct
+
 	Label StringView
 	// Array count for ColorFormats
 	ColorFormatsCount  uint
@@ -472,9 +831,23 @@ type RenderBundleEncoderDescriptor struct {
 	StencilReadOnly    Bool
 }
 
+func (r *RenderBundleEncoderDescriptor) pin(pinner *runtime.Pinner) {
+	pinner.Pin(r)
+	for next := r.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+	if r.Label.Data != nil {
+		pinner.Pin(r.Label.Data)
+	}
+	if r.ColorFormats != nil {
+		pinner.Pin(r.ColorFormats)
+	}
+}
+
 type RenderPassColorAttachment struct {
 	_     structs.HostLayout
 	Chain *ChainedStruct
+
 	// If `NULL`, indicates a hole in the parent
 	// @ref WGPURenderPassDescriptor::colorAttachments array.
 	View          TextureView
@@ -485,9 +858,17 @@ type RenderPassColorAttachment struct {
 	ClearValue    Color
 }
 
+func (r *RenderPassColorAttachment) pin(pinner *runtime.Pinner) {
+	pinner.Pin(r)
+	for next := r.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+}
+
 type RenderPassDepthStencilAttachment struct {
-	_            structs.HostLayout
-	Chain        *ChainedStruct
+	_     structs.HostLayout
+	Chain *ChainedStruct
+
 	View         TextureView
 	DepthLoadOp  LoadOp
 	DepthStoreOp StoreOp
@@ -505,9 +886,17 @@ type RenderPassDepthStencilAttachment struct {
 	StencilReadOnly   Bool
 }
 
+func (r *RenderPassDepthStencilAttachment) pin(pinner *runtime.Pinner) {
+	pinner.Pin(r)
+	for next := r.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+}
+
 type RenderPassDescriptor struct {
 	_     structs.HostLayout
 	Chain *ChainedStruct
+
 	Label StringView
 	// Array count for ColorAttachments
 	ColorAttachmentsCount  uint
@@ -517,9 +906,31 @@ type RenderPassDescriptor struct {
 	TimestampWrites        *PassTimestampWrites
 }
 
+func (r *RenderPassDescriptor) pin(pinner *runtime.Pinner) {
+	pinner.Pin(r)
+	for next := r.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+	if r.Label.Data != nil {
+		pinner.Pin(r.Label.Data)
+	}
+	if r.ColorAttachments != nil {
+		pinner.Pin(r.ColorAttachments)
+	}
+	if r.DepthStencilAttachment != nil {
+		pinner.Pin(r.DepthStencilAttachment)
+	}
+
+	if r.TimestampWrites != nil {
+		pinner.Pin(r.TimestampWrites)
+	}
+
+}
+
 type RenderPassMaxDrawCount struct {
-	_            structs.HostLayout
-	NextInChain  ChainedStruct
+	_           structs.HostLayout
+	NextInChain ChainedStruct
+
 	MaxDrawCount uint64
 }
 
@@ -529,8 +940,9 @@ func (r *RenderPassMaxDrawCount) Chain() *ChainedStruct {
 }
 
 type RenderPipelineDescriptor struct {
-	_            structs.HostLayout
-	Chain        *ChainedStruct
+	_     structs.HostLayout
+	Chain *ChainedStruct
+
 	Label        StringView
 	Layout       PipelineLayout
 	Vertex       VertexState
@@ -540,9 +952,28 @@ type RenderPipelineDescriptor struct {
 	Fragment     *FragmentState
 }
 
+func (r *RenderPipelineDescriptor) pin(pinner *runtime.Pinner) {
+	pinner.Pin(r)
+	for next := r.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+	if r.Label.Data != nil {
+		pinner.Pin(r.Label.Data)
+	}
+	if r.DepthStencil != nil {
+		pinner.Pin(r.DepthStencil)
+	}
+
+	if r.Fragment != nil {
+		pinner.Pin(r.Fragment)
+	}
+
+}
+
 type RequestAdapterOptions struct {
 	_     structs.HostLayout
 	Chain *ChainedStruct
+
 	// "Feature level" for the adapter request. If an adapter is returned, it must support the features and limits in the requested feature level.
 	//
 	// If set to @ref WGPUFeatureLevel_Undefined,
@@ -562,10 +993,18 @@ type RequestAdapterOptions struct {
 	CompatibleSurface Surface
 }
 
+func (r *RequestAdapterOptions) pin(pinner *runtime.Pinner) {
+	pinner.Pin(r)
+	for next := r.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+}
+
 // Extension providing requestAdapter options for implementations with WebXR interop (i.e. Wasm).
 type RequestAdapterWebXROptions struct {
 	_           structs.HostLayout
 	NextInChain ChainedStruct
+
 	// Sets the `xrCompatible` option in the JS API.
 	XrCompatible Bool
 }
@@ -578,14 +1017,23 @@ func (r *RequestAdapterWebXROptions) Chain() *ChainedStruct {
 type SamplerBindingLayout struct {
 	_     structs.HostLayout
 	Chain *ChainedStruct
+
 	// If set to @ref WGPUSamplerBindingType_Undefined,
 	// [defaults](@ref SentinelValues) to @ref WGPUSamplerBindingType_Filtering.
 	Type SamplerBindingType
 }
 
+func (s *SamplerBindingLayout) pin(pinner *runtime.Pinner) {
+	pinner.Pin(s)
+	for next := s.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+}
+
 type SamplerDescriptor struct {
 	_     structs.HostLayout
 	Chain *ChainedStruct
+
 	Label StringView
 	// If set to @ref WGPUAddressMode_Undefined,
 	// [defaults](@ref SentinelValues) to @ref WGPUAddressMode_ClampToEdge.
@@ -617,17 +1065,39 @@ type SamplerDescriptor struct {
 	MaxAnisotropy uint16
 }
 
+func (s *SamplerDescriptor) pin(pinner *runtime.Pinner) {
+	pinner.Pin(s)
+	for next := s.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+	if s.Label.Data != nil {
+		pinner.Pin(s.Label.Data)
+	}
+}
+
 type ShaderModuleDescriptor struct {
 	_     structs.HostLayout
 	Chain *ChainedStruct
+
 	Label StringView
+}
+
+func (s *ShaderModuleDescriptor) pin(pinner *runtime.Pinner) {
+	pinner.Pin(s)
+	for next := s.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+	if s.Label.Data != nil {
+		pinner.Pin(s.Label.Data)
+	}
 }
 
 type ShaderSourceSPIRV struct {
 	_           structs.HostLayout
 	NextInChain ChainedStruct
-	CodeSize    uint32
-	Code        *uint32
+
+	CodeSize uint32
+	Code     *uint32
 }
 
 func (s *ShaderSourceSPIRV) Chain() *ChainedStruct {
@@ -638,7 +1108,8 @@ func (s *ShaderSourceSPIRV) Chain() *ChainedStruct {
 type ShaderSourceWGSL struct {
 	_           structs.HostLayout
 	NextInChain ChainedStruct
-	Code        StringView
+
+	Code StringView
 }
 
 func (s *ShaderSourceWGSL) Chain() *ChainedStruct {
@@ -663,9 +1134,14 @@ type StencilFaceState struct {
 	PassOp StencilOperation
 }
 
+func (s *StencilFaceState) pin(pinner *runtime.Pinner) {
+	pinner.Pin(s)
+}
+
 type StorageTextureBindingLayout struct {
 	_     structs.HostLayout
 	Chain *ChainedStruct
+
 	// If set to @ref WGPUStorageTextureAccess_Undefined,
 	// [defaults](@ref SentinelValues) to @ref WGPUStorageTextureAccess_WriteOnly.
 	Access StorageTextureAccess
@@ -673,6 +1149,13 @@ type StorageTextureBindingLayout struct {
 	// If set to @ref WGPUTextureViewDimension_Undefined,
 	// [defaults](@ref SentinelValues) to @ref WGPUTextureViewDimension_2D.
 	ViewDimension TextureViewDimension
+}
+
+func (s *StorageTextureBindingLayout) pin(pinner *runtime.Pinner) {
+	pinner.Pin(s)
+	for next := s.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
 }
 
 type SupportedFeatures struct {
@@ -683,12 +1166,26 @@ type SupportedFeatures struct {
 	Features      *FeatureName
 }
 
+func (s *SupportedFeatures) pin(pinner *runtime.Pinner) {
+	pinner.Pin(s)
+	if s.Features != nil {
+		pinner.Pin(s.Features)
+	}
+}
+
 type SupportedInstanceFeatures struct {
 	_ structs.HostLayout
 
 	// Array count for Features
 	FeaturesCount uint
 	Features      *InstanceFeatureName
+}
+
+func (s *SupportedInstanceFeatures) pin(pinner *runtime.Pinner) {
+	pinner.Pin(s)
+	if s.Features != nil {
+		pinner.Pin(s.Features)
+	}
 }
 
 type SupportedWGSLLanguageFeatures struct {
@@ -699,10 +1196,18 @@ type SupportedWGSLLanguageFeatures struct {
 	Features      *WGSLLanguageFeatureName
 }
 
+func (s *SupportedWGSLLanguageFeatures) pin(pinner *runtime.Pinner) {
+	pinner.Pin(s)
+	if s.Features != nil {
+		pinner.Pin(s.Features)
+	}
+}
+
 // Filled by @ref wgpuSurfaceGetCapabilities with what's supported for @ref wgpuSurfaceConfigure for a pair of @ref WGPUSurface and @ref WGPUAdapter.
 type SurfaceCapabilities struct {
 	_     structs.HostLayout
 	Chain *ChainedStruct
+
 	// The bit set of supported @ref WGPUTextureUsage bits.
 	// Guaranteed to contain @ref WGPUTextureUsage_RenderAttachment.
 	Usages TextureUsage
@@ -722,10 +1227,27 @@ type SurfaceCapabilities struct {
 	AlphaModes *CompositeAlphaMode
 }
 
+func (s *SurfaceCapabilities) pin(pinner *runtime.Pinner) {
+	pinner.Pin(s)
+	for next := s.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+	if s.Formats != nil {
+		pinner.Pin(s.Formats)
+	}
+	if s.PresentModes != nil {
+		pinner.Pin(s.PresentModes)
+	}
+	if s.AlphaModes != nil {
+		pinner.Pin(s.AlphaModes)
+	}
+}
+
 // Extension of @ref WGPUSurfaceConfiguration for color spaces and HDR.
 type SurfaceColorManagement struct {
-	_               structs.HostLayout
-	NextInChain     ChainedStruct
+	_           structs.HostLayout
+	NextInChain ChainedStruct
+
 	ColorSpace      PredefinedColorSpace
 	ToneMappingMode ToneMappingMode
 }
@@ -740,6 +1262,7 @@ func (s *SurfaceColorManagement) Chain() *ChainedStruct {
 type SurfaceConfiguration struct {
 	_     structs.HostLayout
 	Chain *ChainedStruct
+
 	// The @ref WGPUDevice to use to render to surface's textures.
 	Device Device
 	// The @ref WGPUTextureFormat of the surface's textures.
@@ -767,20 +1290,42 @@ type SurfaceConfiguration struct {
 	PresentMode PresentMode
 }
 
+func (s *SurfaceConfiguration) pin(pinner *runtime.Pinner) {
+	pinner.Pin(s)
+	for next := s.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+	if s.ViewFormats != nil {
+		pinner.Pin(s.ViewFormats)
+	}
+}
+
 // The root descriptor for the creation of an @ref WGPUSurface with @ref wgpuInstanceCreateSurface.
 // It isn't sufficient by itself and must have one of the `WGPUSurfaceSource*` in its chain.
 // See @ref Surface-Creation for more details.
 type SurfaceDescriptor struct {
 	_     structs.HostLayout
 	Chain *ChainedStruct
+
 	// Label used to refer to the object.
 	Label StringView
+}
+
+func (s *SurfaceDescriptor) pin(pinner *runtime.Pinner) {
+	pinner.Pin(s)
+	for next := s.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+	if s.Label.Data != nil {
+		pinner.Pin(s.Label.Data)
+	}
 }
 
 // Chained in @ref WGPUSurfaceDescriptor to make an @ref WGPUSurface wrapping an Android [`ANativeWindow`](https://developer.android.com/ndk/reference/group/a-native-window).
 type SurfaceSourceAndroidNativeWindow struct {
 	_           structs.HostLayout
 	NextInChain ChainedStruct
+
 	// The pointer to the [`ANativeWindow`](https://developer.android.com/ndk/reference/group/a-native-window) that will be wrapped by the @ref WGPUSurface.
 	Window unsafe.Pointer
 }
@@ -794,6 +1339,7 @@ func (s *SurfaceSourceAndroidNativeWindow) Chain() *ChainedStruct {
 type SurfaceSourceMetalLayer struct {
 	_           structs.HostLayout
 	NextInChain ChainedStruct
+
 	// The pointer to the [`CAMetalLayer`](https://developer.apple.com/documentation/quartzcore/cametallayer?language=objc) that will be wrapped by the @ref WGPUSurface.
 	Layer unsafe.Pointer
 }
@@ -807,6 +1353,7 @@ func (s *SurfaceSourceMetalLayer) Chain() *ChainedStruct {
 type SurfaceSourceWaylandSurface struct {
 	_           structs.HostLayout
 	NextInChain ChainedStruct
+
 	// A [`wl_display`](https://wayland.freedesktop.org/docs/html/apa.html#protocol-spec-wl_display) for this Wayland instance.
 	Display unsafe.Pointer
 	// A [`wl_surface`](https://wayland.freedesktop.org/docs/html/apa.html#protocol-spec-wl_surface) that will be wrapped by the @ref WGPUSurface
@@ -822,6 +1369,7 @@ func (s *SurfaceSourceWaylandSurface) Chain() *ChainedStruct {
 type SurfaceSourceWindowsHWND struct {
 	_           structs.HostLayout
 	NextInChain ChainedStruct
+
 	// The [`HINSTANCE`](https://learn.microsoft.com/en-us/windows/win32/learnwin32/winmain--the-application-entry-point) for this application.
 	// Most commonly `GetModuleHandle(nullptr)`.
 	Hinstance unsafe.Pointer
@@ -838,6 +1386,7 @@ func (s *SurfaceSourceWindowsHWND) Chain() *ChainedStruct {
 type SurfaceSourceXCBWindow struct {
 	_           structs.HostLayout
 	NextInChain ChainedStruct
+
 	// The `xcb_connection_t` for the connection to the X server.
 	Connection unsafe.Pointer
 	// The `xcb_window_t` for the window that will be wrapped by the @ref WGPUSurface.
@@ -853,6 +1402,7 @@ func (s *SurfaceSourceXCBWindow) Chain() *ChainedStruct {
 type SurfaceSourceXlibWindow struct {
 	_           structs.HostLayout
 	NextInChain ChainedStruct
+
 	// A pointer to the [`Display`](https://www.x.org/releases/current/doc/libX11/libX11/libX11.html#Opening_the_Display) connected to the X server.
 	Display unsafe.Pointer
 	// The [`Window`](https://www.x.org/releases/current/doc/libX11/libX11/libX11.html#Creating_Windows) that will be wrapped by the @ref WGPUSurface.
@@ -869,11 +1419,19 @@ func (s *SurfaceSourceXlibWindow) Chain() *ChainedStruct {
 type SurfaceTexture struct {
 	_     structs.HostLayout
 	Chain *ChainedStruct
+
 	// The @ref WGPUTexture representing the frame that will be shown on the surface.
 	// It is @ref ReturnedWithOwnership from @ref wgpuSurfaceGetCurrentTexture.
 	Texture Texture
 	// Whether the call to @ref wgpuSurfaceGetCurrentTexture succeeded and a hint as to why it might not have.
 	Status SurfaceGetCurrentTextureStatus
+}
+
+func (s *SurfaceTexture) pin(pinner *runtime.Pinner) {
+	pinner.Pin(s)
+	for next := s.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
 }
 
 type TexelCopyBufferInfo struct {
@@ -883,12 +1441,20 @@ type TexelCopyBufferInfo struct {
 	Buffer Buffer
 }
 
+func (t *TexelCopyBufferInfo) pin(pinner *runtime.Pinner) {
+	pinner.Pin(t)
+}
+
 type TexelCopyBufferLayout struct {
 	_ structs.HostLayout
 
 	Offset       uint64
 	BytesPerRow  uint32
 	RowsPerImage uint32
+}
+
+func (t *TexelCopyBufferLayout) pin(pinner *runtime.Pinner) {
+	pinner.Pin(t)
 }
 
 type TexelCopyTextureInfo struct {
@@ -902,9 +1468,14 @@ type TexelCopyTextureInfo struct {
 	Aspect TextureAspect
 }
 
+func (t *TexelCopyTextureInfo) pin(pinner *runtime.Pinner) {
+	pinner.Pin(t)
+}
+
 type TextureBindingLayout struct {
 	_     structs.HostLayout
 	Chain *ChainedStruct
+
 	// If set to @ref WGPUTextureSampleType_Undefined,
 	// [defaults](@ref SentinelValues) to @ref WGPUTextureSampleType_Float.
 	SampleType TextureSampleType
@@ -914,12 +1485,20 @@ type TextureBindingLayout struct {
 	Multisampled  Bool
 }
 
+func (t *TextureBindingLayout) pin(pinner *runtime.Pinner) {
+	pinner.Pin(t)
+	for next := t.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+}
+
 // Note: While Compatibility Mode is optional to implement, this extension struct
 // is required to be accepted (but per the WebGPU spec, its contents are ignored
 // on devices that have the @ref WGPUFeatureName_CoreFeaturesAndLimits feature).
 type TextureBindingViewDimension struct {
-	_                           structs.HostLayout
-	NextInChain                 ChainedStruct
+	_           structs.HostLayout
+	NextInChain ChainedStruct
+
 	TextureBindingViewDimension TextureViewDimension
 }
 
@@ -957,10 +1536,15 @@ type TextureComponentSwizzle struct {
 	A ComponentSwizzle
 }
 
+func (t *TextureComponentSwizzle) pin(pinner *runtime.Pinner) {
+	pinner.Pin(t)
+}
+
 type TextureComponentSwizzleDescriptor struct {
 	_           structs.HostLayout
 	NextInChain ChainedStruct
-	Swizzle     TextureComponentSwizzle
+
+	Swizzle TextureComponentSwizzle
 }
 
 func (t *TextureComponentSwizzleDescriptor) Chain() *ChainedStruct {
@@ -971,6 +1555,7 @@ func (t *TextureComponentSwizzleDescriptor) Chain() *ChainedStruct {
 type TextureDescriptor struct {
 	_     structs.HostLayout
 	Chain *ChainedStruct
+
 	Label StringView
 	Usage TextureUsage
 	// If set to @ref WGPUTextureDimension_Undefined,
@@ -985,9 +1570,23 @@ type TextureDescriptor struct {
 	ViewFormats      *TextureFormat
 }
 
+func (t *TextureDescriptor) pin(pinner *runtime.Pinner) {
+	pinner.Pin(t)
+	for next := t.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+	if t.Label.Data != nil {
+		pinner.Pin(t.Label.Data)
+	}
+	if t.ViewFormats != nil {
+		pinner.Pin(t.ViewFormats)
+	}
+}
+
 type TextureViewDescriptor struct {
-	_               structs.HostLayout
-	Chain           *ChainedStruct
+	_     structs.HostLayout
+	Chain *ChainedStruct
+
 	Label           StringView
 	Format          TextureFormat
 	Dimension       TextureViewDimension
@@ -1001,12 +1600,30 @@ type TextureViewDescriptor struct {
 	Usage  TextureUsage
 }
 
+func (t *TextureViewDescriptor) pin(pinner *runtime.Pinner) {
+	pinner.Pin(t)
+	for next := t.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+	if t.Label.Data != nil {
+		pinner.Pin(t.Label.Data)
+	}
+}
+
 type VertexAttribute struct {
-	_              structs.HostLayout
-	Chain          *ChainedStruct
+	_     structs.HostLayout
+	Chain *ChainedStruct
+
 	Format         VertexFormat
 	Offset         uint64
 	ShaderLocation uint32
+}
+
+func (v *VertexAttribute) pin(pinner *runtime.Pinner) {
+	pinner.Pin(v)
+	for next := v.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
 }
 
 // If `attributes` is empty *and* `stepMode` is @ref WGPUVertexStepMode_Undefined,
@@ -1022,8 +1639,9 @@ type VertexAttribute struct {
 // If `stepMode` is @ref WGPUVertexStepMode_Undefined but `attributes` is *not* empty,
 // `stepMode` [defaults](@ref SentinelValues) to @ref WGPUVertexStepMode_Vertex.
 type VertexBufferLayout struct {
-	_           structs.HostLayout
-	Chain       *ChainedStruct
+	_     structs.HostLayout
+	Chain *ChainedStruct
+
 	StepMode    VertexStepMode
 	ArrayStride uint64
 	// Array count for Attributes
@@ -1031,9 +1649,20 @@ type VertexBufferLayout struct {
 	Attributes      *VertexAttribute
 }
 
+func (v *VertexBufferLayout) pin(pinner *runtime.Pinner) {
+	pinner.Pin(v)
+	for next := v.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+	if v.Attributes != nil {
+		pinner.Pin(v.Attributes)
+	}
+}
+
 type VertexState struct {
-	_          structs.HostLayout
-	Chain      *ChainedStruct
+	_     structs.HostLayout
+	Chain *ChainedStruct
+
 	Module     ShaderModule
 	EntryPoint StringView
 	// Array count for Constants
@@ -1042,4 +1671,20 @@ type VertexState struct {
 	// Array count for Buffers
 	BuffersCount uint
 	Buffers      *VertexBufferLayout
+}
+
+func (v *VertexState) pin(pinner *runtime.Pinner) {
+	pinner.Pin(v)
+	for next := v.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+	if v.EntryPoint.Data != nil {
+		pinner.Pin(v.EntryPoint.Data)
+	}
+	if v.Constants != nil {
+		pinner.Pin(v.Constants)
+	}
+	if v.Buffers != nil {
+		pinner.Pin(v.Buffers)
+	}
 }

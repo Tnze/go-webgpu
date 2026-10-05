@@ -18,7 +18,7 @@ type {{ $objectName }} struct {
 {{ range .Methods }}
 func ({{ $r }} *{{ pascalCase $object.Name }}) {{ pascalCase .Name }}(
 	{{- range $index, $arg := .Args -}}
-		{{ if ne $index 0 }}, {{ end }}
+		{{ if ne $index 0 }}, {{ end -}}
 		{{ $arrayElem := arrayElem .Type }}{{- if $arrayElem -}}
 			{{ camelCase .Name }} []{{ if hasPrefix $arrayElem "object."}}*{{ end }}{{ goType $arrayElem }}
 		{{- else -}}
@@ -65,9 +65,9 @@ func ({{ $r }} *{{ pascalCase $object.Name }}) {{ pascalCase .Name }}(
 	{{- end }}
 
 	{{- if .Callback }}
-	callback := {{ slice .Callback 9 | camelCase }}Callback{
-		C: make(chan {{ slice .Callback 9 | camelCase }}CallbackResult, 1),
-	}
+	done := make(chan {{ slice .Callback 9 | camelCase }}CallbackResult, 1)
+	callbackInfo, delete := new{{ slice .Callback 9 | pascalCase }}Callback(done)
+	defer delete()
 	{{ end }}
 	{{ if .Returns }}ret := {{ end -}}
 	sys.{{ pascalCase $object.Name }}{{ pascalCase .Name }}(
@@ -90,11 +90,11 @@ func ({{ $r }} *{{ pascalCase $object.Name }}) {{ pascalCase .Name }}(
 		{{- end }}
 		{{- end }}
 		{{- if .Callback }}
-		callback.info(),
+		callbackInfo,
 		{{- end }}
 	)
 	{{- if .Callback }}
-	ret := <-callback.C
+	ret := <-done
 	{{- end }}
 	{{- /* Struct postprocess */ -}}
 	{{- range .Args }}{{ if eq .Pointer "mutable" }}{{ if hasPrefix .Type "struct." }}{{ if $.GetDef .Type | $.IsPureData | not }}

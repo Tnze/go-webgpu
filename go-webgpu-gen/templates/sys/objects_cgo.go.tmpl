@@ -8,7 +8,10 @@ package {{ .PackageName }}
 // #include <webgpu.h>
 import "C"
 
-import "unsafe"
+import (
+	"runtime"
+	"unsafe"
+)
 {{ range .Objects -}}
 {{ $object := . -}}
 {{ $objectName := pascalCase .Name -}}
@@ -16,17 +19,41 @@ import "unsafe"
 {{ goDoc .Doc "" -}}
 func {{ $objectName }}{{ pascalCase .Name }}(
 	{{- camelCase $object.Name }} {{ $objectName }}
-	{{- range .Args -}}
+	{{- range .Args }}{{ $argName := camelCase .Name -}}
 		, {{ if arrayElem .Type -}}
-			{{ .Name }} []{{ arrayElem .Type | goType }}
+			{{ $argName }} []{{ arrayElem .Type | goType }}
 		{{- else -}}
-			{{ .Name }} {{ if and .Pointer (.Type | goType | ne "unsafe.Pointer") }}*{{ end }}{{ .Type | goType }}
+			{{ $argName }} {{ if and .Pointer (.Type | goType | ne "unsafe.Pointer") }}*{{ end }}{{ goType .Type }}
 		{{- end }}
 	{{- end -}}
 	{{- if .Callback -}}
 		, callback {{ goType .Callback }}
 	{{- end -}}
 ) {{ if .Returns }}{{ .Returns.Type | goType }} {{ end }}{
+	{{- $hasPinner := false }}
+	{{- range .Args }}{{ $argName := camelCase .Name }}{{ $conv := cType .Type }}
+	{{- if arrayElem .Type }}
+	{{- if not $hasPinner }}{{ "\n\t" }}var pinner runtime.Pinner{{ $hasPinner = true }}{{ end }}
+	_{{ $argName }} := (*C.{{ .Type | arrayElem | cType }})(unsafe.Pointer(&{{ $argName }}[0]))
+	pinner.Pin(_{{ $argName }})
+	{{- else if eq $conv "WGPUStringView" }}
+	{{- if not $hasPinner }}{{ "\n\t" }}var pinner runtime.Pinner{{ $hasPinner = true }}{{ end }}
+	_{{ $argName }} := (*C.char)(unsafe.Pointer({{ $argName }}.Data))
+	pinner.Pin(_{{ $argName }})
+	{{- else if eq $conv "void*" }}
+	{{- if not $hasPinner }}{{ "\n\t" }}var pinner runtime.Pinner{{ $hasPinner = true }}{{ end }}
+	pinner.Pin({{ $argName }})
+	{{- else if .Pointer }}
+	{{- if not $hasPinner }}{{ "\n\t" }}var pinner runtime.Pinner{{ $hasPinner = true }}{{ end }}
+	{{ $argName }}.pin(&pinner)
+	{{- end }}
+	{{- end }}
+	{{- if .Callback }}
+	{{- if not $hasPinner }}{{ "\n\t" }}var pinner runtime.Pinner{{ $hasPinner = true }}{{ end }}
+	callback.pin(&pinner)
+	{{- end }}
+	{{- if $hasPinner }}
+	defer pinner.Unpin(){{ end }}
 	{{ if .Returns -}}
 		{{ if eq .Returns.Type "struct.future" -}}
 		return Future{ Id: uint64(
@@ -36,21 +63,21 @@ func {{ $objectName }}{{ pascalCase .Name }}(
 	{{- end -}}
 	C.wgpu{{ $objectName }}{{ .Name | pascalCase }}(
 		C.WGPU{{ $objectName }}({{ camelCase $object.Name }}),
-	{{- range .Args }}{{ $conv := cType .Type }}
+	{{- range .Args }}{{ $argName := camelCase .Name }}{{ $conv := cType .Type }}
 		{{ if arrayElem .Type -}}
-			C.size_t(len({{ .Name }})),
-		(*C.{{ .Type | arrayElem | cType }})(unsafe.Pointer(&{{ .Name }}[0]))
+			C.size_t(len({{ $argName }})),
+			_{{ $argName }}
 		{{- else if eq $conv "void*" -}}
-			unsafe.Pointer({{ .Name }})
+			{{ $argName }}
 		{{- else if .Pointer -}}
-			(*C.{{ $conv }})(unsafe.Pointer({{ .Name }}))
+			(*C.{{ $conv }})(unsafe.Pointer({{ $argName }}))
 		{{- else if eq $conv "WGPUStringView" -}}
 			C.WGPUStringView{
-			data:   (*C.char)(unsafe.Pointer({{ .Name }}.Data)),
-			length: C.size_t({{ .Name }}.Length),
+			data:   _{{ $argName }},
+			length: C.size_t({{ $argName }}.Length),
 		}
 		{{- else -}}
-			C.{{ $conv }}({{ .Name }})
+			C.{{ $conv }}({{ $argName }})
 		{{- end }},
 	{{- end }}
 	{{- if and .Callback (hasPrefix .Callback "callback.") }}

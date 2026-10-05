@@ -48,12 +48,14 @@ func (b *BindGroupDescriptor) unwrap() (out sys.BindGroupDescriptor) {
 		Data:   unsafe.StringData(b.Label),
 	}
 	out.Layout = b.Layout.inner
-	out.EntriesCount = uint(len(b.Entries))
-	entries := make([]sys.BindGroupEntry, len(b.Entries))
-	for i := range entries {
-		entries[i] = b.Entries[i].unwrap()
+	if b.Entries != nil {
+		out.EntriesCount = uint(len(b.Entries))
+		entries := make([]sys.BindGroupEntry, len(b.Entries))
+		for i := range entries {
+			entries[i] = b.Entries[i].unwrap()
+		}
+		out.Entries = &entries[0]
 	}
-	out.Entries = &entries[0]
 	return
 }
 
@@ -82,8 +84,10 @@ func (b *BindGroupLayoutDescriptor) unwrap() (out sys.BindGroupLayoutDescriptor)
 		Length: uint(len(b.Label)),
 		Data:   unsafe.StringData(b.Label),
 	}
-	out.EntriesCount = uint(len(b.Entries))
-	out.Entries = &b.Entries[0]
+	if b.Entries != nil {
+		out.EntriesCount = uint(len(b.Entries))
+		out.Entries = &b.Entries[0]
+	}
 	return
 }
 
@@ -134,13 +138,14 @@ func (c *CommandEncoderDescriptor) wrap(in *sys.CommandEncoderDescriptor) {
 }
 
 func (c *CompilationInfo) unwrap() (out sys.CompilationInfo) {
-
-	out.MessagesCount = uint(len(c.Messages))
-	messages := make([]sys.CompilationMessage, len(c.Messages))
-	for i := range messages {
-		messages[i] = c.Messages[i].unwrap()
+	if c.Messages != nil {
+		out.MessagesCount = uint(len(c.Messages))
+		messages := make([]sys.CompilationMessage, len(c.Messages))
+		for i := range messages {
+			messages[i] = c.Messages[i].unwrap()
+		}
+		out.Messages = &messages[0]
 	}
-	out.Messages = &messages[0]
 	return
 }
 
@@ -149,7 +154,6 @@ func (c *CompilationInfo) wrap(in *sys.CompilationInfo) {
 }
 
 func (c *CompilationMessage) unwrap() (out sys.CompilationMessage) {
-
 	out.Message = sys.StringView{
 		Length: uint(len(c.Message)),
 		Data:   unsafe.StringData(c.Message),
@@ -204,12 +208,14 @@ func (c *ComputeState) unwrap() (out sys.ComputeState) {
 		Length: uint(len(c.EntryPoint)),
 		Data:   unsafe.StringData(c.EntryPoint),
 	}
-	out.ConstantsCount = uint(len(c.Constants))
-	constants := make([]sys.ConstantEntry, len(c.Constants))
-	for i := range constants {
-		constants[i] = c.Constants[i].unwrap()
+	if c.Constants != nil {
+		out.ConstantsCount = uint(len(c.Constants))
+		constants := make([]sys.ConstantEntry, len(c.Constants))
+		for i := range constants {
+			constants[i] = c.Constants[i].unwrap()
+		}
+		out.Constants = &constants[0]
 	}
-	out.Constants = &constants[0]
 	return
 }
 
@@ -237,8 +243,10 @@ func (d *DeviceDescriptor) unwrap() (out sys.DeviceDescriptor) {
 		Length: uint(len(d.Label)),
 		Data:   unsafe.StringData(d.Label),
 	}
-	out.RequiredFeaturesCount = uint(len(d.RequiredFeatures))
-	out.RequiredFeatures = &d.RequiredFeatures[0]
+	if d.RequiredFeatures != nil {
+		out.RequiredFeaturesCount = uint(len(d.RequiredFeatures))
+		out.RequiredFeatures = &d.RequiredFeatures[0]
+	}
 	if d.RequiredLimits != nil {
 		out.RequiredLimits = d.RequiredLimits
 	}
@@ -253,7 +261,6 @@ func (d *DeviceDescriptor) wrap(in *sys.DeviceDescriptor) {
 }
 
 func (e *ExternalTextureBindingEntry) unwrap() (out sys.ExternalTextureBindingEntry) {
-
 	out.ExternalTexture = e.ExternalTexture.inner
 	return
 }
@@ -269,14 +276,18 @@ func (f *FragmentState) unwrap() (out sys.FragmentState) {
 		Length: uint(len(f.EntryPoint)),
 		Data:   unsafe.StringData(f.EntryPoint),
 	}
-	out.ConstantsCount = uint(len(f.Constants))
-	constants := make([]sys.ConstantEntry, len(f.Constants))
-	for i := range constants {
-		constants[i] = f.Constants[i].unwrap()
+	if f.Constants != nil {
+		out.ConstantsCount = uint(len(f.Constants))
+		constants := make([]sys.ConstantEntry, len(f.Constants))
+		for i := range constants {
+			constants[i] = f.Constants[i].unwrap()
+		}
+		out.Constants = &constants[0]
 	}
-	out.Constants = &constants[0]
-	out.TargetsCount = uint(len(f.Targets))
-	out.Targets = &f.Targets[0]
+	if f.Targets != nil {
+		out.TargetsCount = uint(len(f.Targets))
+		out.Targets = &f.Targets[0]
+	}
 	return
 }
 
@@ -286,8 +297,10 @@ func (f *FragmentState) wrap(in *sys.FragmentState) {
 
 func (i *InstanceDescriptor) unwrap() (out sys.InstanceDescriptor) {
 	out.Chain = i.Chain
-	out.RequiredFeaturesCount = uint(len(i.RequiredFeatures))
-	out.RequiredFeatures = &i.RequiredFeatures[0]
+	if i.RequiredFeatures != nil {
+		out.RequiredFeaturesCount = uint(len(i.RequiredFeatures))
+		out.RequiredFeatures = &i.RequiredFeatures[0]
+	}
 	if i.RequiredLimits != nil {
 		out.RequiredLimits = i.RequiredLimits
 	}
@@ -316,12 +329,14 @@ func (p *PipelineLayoutDescriptor) unwrap() (out sys.PipelineLayoutDescriptor) {
 		Length: uint(len(p.Label)),
 		Data:   unsafe.StringData(p.Label),
 	}
-	out.BindGroupLayoutsCount = uint(len(p.BindGroupLayouts))
-	bindGroupLayouts := make([]sys.BindGroupLayout, len(p.BindGroupLayouts))
-	for i := range bindGroupLayouts {
-		bindGroupLayouts[i] = p.BindGroupLayouts[i].inner
+	if p.BindGroupLayouts != nil {
+		out.BindGroupLayoutsCount = uint(len(p.BindGroupLayouts))
+		bindGroupLayouts := make([]sys.BindGroupLayout, len(p.BindGroupLayouts))
+		for i := range bindGroupLayouts {
+			bindGroupLayouts[i] = p.BindGroupLayouts[i].inner
+		}
+		out.BindGroupLayouts = &bindGroupLayouts[0]
 	}
-	out.BindGroupLayouts = &bindGroupLayouts[0]
 	out.ImmediateSize = p.ImmediateSize
 	return
 }
@@ -377,8 +392,10 @@ func (r *RenderBundleEncoderDescriptor) unwrap() (out sys.RenderBundleEncoderDes
 		Length: uint(len(r.Label)),
 		Data:   unsafe.StringData(r.Label),
 	}
-	out.ColorFormatsCount = uint(len(r.ColorFormats))
-	out.ColorFormats = &r.ColorFormats[0]
+	if r.ColorFormats != nil {
+		out.ColorFormatsCount = uint(len(r.ColorFormats))
+		out.ColorFormats = &r.ColorFormats[0]
+	}
 	out.DepthStencilFormat = r.DepthStencilFormat
 	out.SampleCount = r.SampleCount
 	out.DepthReadOnly = r.DepthReadOnly
@@ -429,12 +446,14 @@ func (r *RenderPassDescriptor) unwrap() (out sys.RenderPassDescriptor) {
 		Length: uint(len(r.Label)),
 		Data:   unsafe.StringData(r.Label),
 	}
-	out.ColorAttachmentsCount = uint(len(r.ColorAttachments))
-	colorAttachments := make([]sys.RenderPassColorAttachment, len(r.ColorAttachments))
-	for i := range colorAttachments {
-		colorAttachments[i] = r.ColorAttachments[i].unwrap()
+	if r.ColorAttachments != nil {
+		out.ColorAttachmentsCount = uint(len(r.ColorAttachments))
+		colorAttachments := make([]sys.RenderPassColorAttachment, len(r.ColorAttachments))
+		for i := range colorAttachments {
+			colorAttachments[i] = r.ColorAttachments[i].unwrap()
+		}
+		out.ColorAttachments = &colorAttachments[0]
 	}
-	out.ColorAttachments = &colorAttachments[0]
 	if r.DepthStencilAttachment != nil {
 		out.DepthStencilAttachment = new(r.DepthStencilAttachment.unwrap())
 	}
@@ -523,7 +542,6 @@ func (s *ShaderModuleDescriptor) wrap(in *sys.ShaderModuleDescriptor) {
 }
 
 func (s *ShaderSourceWGSL) unwrap() (out sys.ShaderSourceWGSL) {
-
 	out.Code = sys.StringView{
 		Length: uint(len(s.Code)),
 		Data:   unsafe.StringData(s.Code),
@@ -536,9 +554,10 @@ func (s *ShaderSourceWGSL) wrap(in *sys.ShaderSourceWGSL) {
 }
 
 func (s *SupportedFeatures) unwrap() (out sys.SupportedFeatures) {
-
-	out.FeaturesCount = uint(len(s.Features))
-	out.Features = &s.Features[0]
+	if s.Features != nil {
+		out.FeaturesCount = uint(len(s.Features))
+		out.Features = &s.Features[0]
+	}
 	return
 }
 
@@ -547,9 +566,10 @@ func (s *SupportedFeatures) wrap(in *sys.SupportedFeatures) {
 }
 
 func (s *SupportedInstanceFeatures) unwrap() (out sys.SupportedInstanceFeatures) {
-
-	out.FeaturesCount = uint(len(s.Features))
-	out.Features = &s.Features[0]
+	if s.Features != nil {
+		out.FeaturesCount = uint(len(s.Features))
+		out.Features = &s.Features[0]
+	}
 	return
 }
 
@@ -558,9 +578,10 @@ func (s *SupportedInstanceFeatures) wrap(in *sys.SupportedInstanceFeatures) {
 }
 
 func (s *SupportedWGSLLanguageFeatures) unwrap() (out sys.SupportedWGSLLanguageFeatures) {
-
-	out.FeaturesCount = uint(len(s.Features))
-	out.Features = &s.Features[0]
+	if s.Features != nil {
+		out.FeaturesCount = uint(len(s.Features))
+		out.Features = &s.Features[0]
+	}
 	return
 }
 
@@ -571,12 +592,18 @@ func (s *SupportedWGSLLanguageFeatures) wrap(in *sys.SupportedWGSLLanguageFeatur
 func (s *SurfaceCapabilities) unwrap() (out sys.SurfaceCapabilities) {
 	out.Chain = s.Chain
 	out.Usages = s.Usages
-	out.FormatsCount = uint(len(s.Formats))
-	out.Formats = &s.Formats[0]
-	out.PresentModesCount = uint(len(s.PresentModes))
-	out.PresentModes = &s.PresentModes[0]
-	out.AlphaModesCount = uint(len(s.AlphaModes))
-	out.AlphaModes = &s.AlphaModes[0]
+	if s.Formats != nil {
+		out.FormatsCount = uint(len(s.Formats))
+		out.Formats = &s.Formats[0]
+	}
+	if s.PresentModes != nil {
+		out.PresentModesCount = uint(len(s.PresentModes))
+		out.PresentModes = &s.PresentModes[0]
+	}
+	if s.AlphaModes != nil {
+		out.AlphaModesCount = uint(len(s.AlphaModes))
+		out.AlphaModes = &s.AlphaModes[0]
+	}
 	return
 }
 
@@ -591,8 +618,10 @@ func (s *SurfaceConfiguration) unwrap() (out sys.SurfaceConfiguration) {
 	out.Usage = s.Usage
 	out.Width = s.Width
 	out.Height = s.Height
-	out.ViewFormatsCount = uint(len(s.ViewFormats))
-	out.ViewFormats = &s.ViewFormats[0]
+	if s.ViewFormats != nil {
+		out.ViewFormatsCount = uint(len(s.ViewFormats))
+		out.ViewFormats = &s.ViewFormats[0]
+	}
 	out.AlphaMode = s.AlphaMode
 	out.PresentMode = s.PresentMode
 	return
@@ -627,7 +656,6 @@ func (s *SurfaceTexture) wrap(in *sys.SurfaceTexture) {
 }
 
 func (t *TexelCopyBufferInfo) unwrap() (out sys.TexelCopyBufferInfo) {
-
 	out.Layout = t.Layout
 	out.Buffer = t.Buffer.inner
 	return
@@ -638,7 +666,6 @@ func (t *TexelCopyBufferInfo) wrap(in *sys.TexelCopyBufferInfo) {
 }
 
 func (t *TexelCopyTextureInfo) unwrap() (out sys.TexelCopyTextureInfo) {
-
 	out.Texture = t.Texture.inner
 	out.MipLevel = t.MipLevel
 	out.Origin = t.Origin
@@ -662,8 +689,10 @@ func (t *TextureDescriptor) unwrap() (out sys.TextureDescriptor) {
 	out.Format = t.Format
 	out.MipLevelCount = t.MipLevelCount
 	out.SampleCount = t.SampleCount
-	out.ViewFormatsCount = uint(len(t.ViewFormats))
-	out.ViewFormats = &t.ViewFormats[0]
+	if t.ViewFormats != nil {
+		out.ViewFormatsCount = uint(len(t.ViewFormats))
+		out.ViewFormats = &t.ViewFormats[0]
+	}
 	return
 }
 
@@ -696,8 +725,10 @@ func (v *VertexBufferLayout) unwrap() (out sys.VertexBufferLayout) {
 	out.Chain = v.Chain
 	out.StepMode = v.StepMode
 	out.ArrayStride = v.ArrayStride
-	out.AttributesCount = uint(len(v.Attributes))
-	out.Attributes = &v.Attributes[0]
+	if v.Attributes != nil {
+		out.AttributesCount = uint(len(v.Attributes))
+		out.Attributes = &v.Attributes[0]
+	}
 	return
 }
 
@@ -712,18 +743,22 @@ func (v *VertexState) unwrap() (out sys.VertexState) {
 		Length: uint(len(v.EntryPoint)),
 		Data:   unsafe.StringData(v.EntryPoint),
 	}
-	out.ConstantsCount = uint(len(v.Constants))
-	constants := make([]sys.ConstantEntry, len(v.Constants))
-	for i := range constants {
-		constants[i] = v.Constants[i].unwrap()
+	if v.Constants != nil {
+		out.ConstantsCount = uint(len(v.Constants))
+		constants := make([]sys.ConstantEntry, len(v.Constants))
+		for i := range constants {
+			constants[i] = v.Constants[i].unwrap()
+		}
+		out.Constants = &constants[0]
 	}
-	out.Constants = &constants[0]
-	out.BuffersCount = uint(len(v.Buffers))
-	buffers := make([]sys.VertexBufferLayout, len(v.Buffers))
-	for i := range buffers {
-		buffers[i] = v.Buffers[i].unwrap()
+	if v.Buffers != nil {
+		out.BuffersCount = uint(len(v.Buffers))
+		buffers := make([]sys.VertexBufferLayout, len(v.Buffers))
+		for i := range buffers {
+			buffers[i] = v.Buffers[i].unwrap()
+		}
+		out.Buffers = &buffers[0]
 	}
-	out.Buffers = &buffers[0]
 	return
 }
 

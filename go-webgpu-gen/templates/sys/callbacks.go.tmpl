@@ -5,16 +5,31 @@
 package {{ .PackageName }}
 
 import (
+	"runtime"
 	"structs"
 	"unsafe"
 )
 {{ range .Callbacks }}
-{{ goDoc .Doc "" -}}
-type {{ .Name | pascalCase }}CallbackInfo struct {
+{{ goDoc .Doc "" -}}{{ $callbackName := printf "%sCallbackInfo" (pascalCase .Name) }}
+type {{ $callbackName }} struct {
 	_                    structs.HostLayout
 	NextInChain          *ChainedStruct{{ if eq .Style "callback_mode" }}
 	Mode                 CallbackMode{{ end }}
 	Callback             unsafe.Pointer
 	Userdata1, Userdata2 unsafe.Pointer
+}
+{{ $r := slice (camelCase .Name) 0 1 }}
+func ({{ $r }} *{{ $callbackName }}) pin(pinner *runtime.Pinner) {
+	pinner.Pin({{ $r }}){{/* Is that needed? */}}
+	for next := {{ $r }}.NextInChain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+	pinner.Pin({{ $r }}.Callback)
+	if {{ $r }}.Userdata1 != nil {
+		pinner.Pin({{ $r }}.Userdata1)
+	}
+	if {{ $r }}.Userdata2 != nil {
+		pinner.Pin({{ $r }}.Userdata2)
+	}
 }
 {{ end }}

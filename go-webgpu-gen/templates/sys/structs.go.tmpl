@@ -3,6 +3,7 @@
 package {{ .PackageName }}
 
 import (
+	"runtime"
 	"structs"
 	"unsafe"
 )
@@ -10,9 +11,12 @@ import (
 {{ goDoc .Doc "" -}}
 type {{ $structName }} struct {
 	_ structs.HostLayout
-	{{ if eq .Type "extensible" }}Chain *ChainedStruct
-	{{- else if eq .Type "extension" -}}NextInChain ChainedStruct{{- end }}
-{{- range .Members }}{{ $fieldName := pascalCase .Name -}}
+	{{- if eq .Type "extensible" }}
+	Chain *ChainedStruct
+	{{- else if eq .Type "extension" }}
+	NextInChain ChainedStruct
+	{{- end }}
+{{ range .Members }}{{ $fieldName := pascalCase .Name -}}
 	{{ if arrayElem .Type }}
 	// Array count for {{ $fieldName }}
 	{{ $fieldName }}Count uint
@@ -24,8 +28,31 @@ type {{ $structName }} struct {
 	{{- end }}
 {{- end }}
 }
-{{ if eq .Type "extension" -}}
-{{ $r := slice (camelCase .Name) 0 1 -}}
+{{ $r := slice (camelCase .Name) 0 1 }}{{ if ne .Type "extension" }}
+func ({{ $r }} *{{ $structName }}) pin(pinner *runtime.Pinner) {
+	pinner.Pin({{ $r }})
+	{{- if eq .Type "extensible" }}
+	for next := {{ $r }}.Chain; next != nil; next = next.Next {
+		pinner.Pin(next)
+	}
+	{{- end }}
+	{{- range .Members }}
+	{{- if arrayElem .Type }}
+	if {{ $r }}.{{ pascalCase .Name }} != nil {
+		pinner.Pin({{ $r }}.{{ pascalCase .Name }})
+	}
+	{{- else if eq (goType .Type) "StringView" }}
+	if {{ $r }}.{{ pascalCase .Name }}.Data != nil {
+		pinner.Pin({{ $r }}.{{ pascalCase .Name }}.Data)
+	}
+	{{- else if .Pointer }}
+	if {{ $r }}.{{ pascalCase .Name }} != nil {
+		pinner.Pin({{ $r }}.{{ pascalCase .Name }})
+	}
+	{{ end }}
+	{{- end }}
+}
+{{ else }}
 func ({{ $r }} *{{ $structName }}) Chain() *ChainedStruct {
 	{{ $r }}.NextInChain.SType = SType{{ $structName }}
 	return &{{ $r }}.NextInChain

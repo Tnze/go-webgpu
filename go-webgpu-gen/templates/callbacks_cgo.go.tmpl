@@ -16,6 +16,7 @@ package {{ .PackageName }}
 import "C"
 
 import (
+	"runtime/cgo"
 	"unsafe"
 
 	{{ $importPath := .ImportPath }}{{ printf "%q" (printf "%s/sys" $importPath) }}
@@ -28,8 +29,7 @@ func gowebgpu{{ $callbackName }}Callback(
 {{- if ne $index 0 }}, {{ end -}}
 {{ goIdent .Name .Type }} {{ if .Pointer }}*{{ end }}C.{{ cType .Type -}}
 {{- end }}, userdata1, userdata2 unsafe.Pointer) {
-	{{ $callbackName := camelCase .Name -}}
-	(*{{ $callbackName }}Callback)(userdata1).C <- {{ $callbackName }}CallbackResult{
+	(*cgo.Handle)(userdata1).Value().(chan<- {{ camelCase .Name }}CallbackResult) <- {{ camelCase .Name }}CallbackResult{
 		{{- range .Args }}{{ $argName := goIdent .Name .Type }}
 		{{ $argName }}: {{ if hasPrefix .Type "struct." -}}
 			({{ if .Pointer }}*{{ end }}{{ goType .Type }})(unsafe.Pointer({{ $argName }}))
@@ -43,18 +43,14 @@ func gowebgpu{{ $callbackName }}Callback(
 		{{- end }}
 	}
 }
-{{ end }}
-{{- range .Callbacks }}{{ $callbackName := camelCase .Name }}
-{{- if ne .Style "callback_mode" }}{{ continue }}{{ end }}
-type {{ $callbackName }}Callback struct {
-	C chan {{ $callbackName }}CallbackResult
-}
-{{ $r := slice $callbackName 0 1 }}
-func ({{ $r }} *{{ $callbackName }}Callback) info() sys.{{ pascalCase .Name }}CallbackInfo {
-	return sys.{{ pascalCase .Name }}CallbackInfo{
+
+func new{{ $callbackName }}Callback(done chan<- {{ camelCase .Name }}CallbackResult) (callbackInfo sys.{{ $callbackName }}CallbackInfo, delete func()) {
+	handle := new(cgo.NewHandle(done))
+	info := sys.{{ $callbackName }}CallbackInfo {
 		Mode:      CallbackModeAllowProcessEvents,
-		Callback:  C.gowebgpu{{ pascalCase .Name }}Callback,
-		Userdata1: unsafe.Pointer({{ $r }}),
+		Callback:  C.gowebgpu{{ $callbackName }}Callback,
+		Userdata1: unsafe.Pointer(handle),
 	}
+	return info, handle.Delete
 }
-{{- end }}
+{{ end }}

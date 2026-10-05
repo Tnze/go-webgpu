@@ -10,7 +10,8 @@ import (
 {{- if $.IsPureData . }}{{ continue }}{{ end -}}
 {{ $r := slice .Name 0 1 }}
 func ({{ $r }} *{{ $structName }}) unwrap() (out sys.{{ $structName }}) {
-	{{ if eq .Type "extensible" }}out.Chain = {{ $r }}.Chain{{ end }}
+	{{- if eq .Type "extensible" }}
+	out.Chain = {{ $r }}.Chain{{ end }}
 	{{- range .Members }}{{ $fieldName := pascalCase .Name }}
 	{{- /* string */}}
 	{{ if eq (goType .Type) "StringView" -}}
@@ -36,25 +37,27 @@ func ({{ $r }} *{{ $structName }}) unwrap() (out sys.{{ $structName }}) {
 	{{ if $arrayElem -}}
 	{{- /* array */ -}}
 	{{- $targetArray := printf "%s.%s" $r $fieldName -}}
-	{{- /* array of structs */ -}}
-	out.{{ $fieldName }}Count = uint(len({{ $r }}.{{ $fieldName }}))
-	{{ if hasPrefix $arrayElem "struct." -}}
-	{{ if $.GetDef $arrayElem | $.IsPureData | not -}}
-	{{ $targetArray = camelCase .Name -}}
-	{{ $targetArray }} := make([]sys.{{ goType $arrayElem }}, len({{ $r }}.{{ $fieldName }}))
-	for i := range {{ $targetArray }} {
-		{{ $targetArray }}[i] = {{ $r }}.{{ $fieldName }}[i].unwrap()
+	if {{ $targetArray }} != nil {
+		{{- /* array of structs */}}
+		out.{{ $fieldName }}Count = uint(len({{ $r }}.{{ $fieldName }}))
+		{{ if hasPrefix $arrayElem "struct." -}}
+		{{ if $.GetDef $arrayElem | $.IsPureData | not -}}
+		{{ $targetArray = camelCase .Name -}}
+		{{ $targetArray }} := make([]sys.{{ goType $arrayElem }}, len({{ $r }}.{{ $fieldName }}))
+		for i := range {{ $targetArray }} {
+			{{ $targetArray }}[i] = {{ $r }}.{{ $fieldName }}[i].unwrap()
+		}
+		{{ end }}
+		{{- /* array of objects*/ -}}
+		{{- else if hasPrefix $arrayElem "object." -}}
+		{{ $targetArray = camelCase .Name -}}
+		{{ $targetArray }} := make([]sys.{{ goType $arrayElem }}, len({{ $r }}.{{ $fieldName }}))
+		for i := range {{ $targetArray }} {
+			{{ $targetArray }}[i] = {{ $r }}.{{ $fieldName }}[i].inner
+		}
+		{{ end -}}
+		out.{{ $fieldName }} = &{{ $targetArray }}[0]
 	}
-	{{ end }}
-	{{- /* array of objects*/ -}}
-	{{- else if hasPrefix $arrayElem "object." -}}
-	{{ $targetArray = camelCase .Name -}}
-	{{ $targetArray }} := make([]sys.{{ goType $arrayElem }}, len({{ $r }}.{{ $fieldName }}))
-	for i := range {{ $targetArray }} {
-		{{ $targetArray }}[i] = {{ $r }}.{{ $fieldName }}[i].inner
-	}
-	{{ end -}}
-	out.{{ $fieldName }} = &{{ $targetArray }}[0]
 	{{- else -}}
 	{{- /* other */ -}}
 	out.{{ $fieldName }} = {{ $r }}.{{ $fieldName }}
