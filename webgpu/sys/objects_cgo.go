@@ -490,7 +490,7 @@ func ComputePassEncoderSetPipeline(computePassEncoder ComputePassEncoder, pipeli
 
 func ComputePassEncoderSetBindGroup(computePassEncoder ComputePassEncoder, groupIndex uint32, group BindGroup, dynamicOffsets []uint32) {
 	var pinner runtime.Pinner
-	_dynamicOffsets := (*C.uint32_t)(unsafe.Pointer(&dynamicOffsets[0]))
+	_dynamicOffsets := (*C.uint32_t)(unsafe.Pointer(unsafe.SliceData(dynamicOffsets)))
 	pinner.Pin(_dynamicOffsets)
 	defer pinner.Unpin()
 	C.wgpuComputePassEncoderSetBindGroup(
@@ -1018,7 +1018,7 @@ func QuerySetRelease(querySet QuerySet) {
 
 func QueueSubmit(queue Queue, commands []CommandBuffer) {
 	var pinner runtime.Pinner
-	_commands := (*C.WGPUCommandBuffer)(unsafe.Pointer(&commands[0]))
+	_commands := (*C.WGPUCommandBuffer)(unsafe.Pointer(unsafe.SliceData(commands)))
 	pinner.Pin(_commands)
 	defer pinner.Unpin()
 	C.wgpuQueueSubmit(
@@ -1129,7 +1129,7 @@ func RenderBundleEncoderSetPipeline(renderBundleEncoder RenderBundleEncoder, pip
 
 func RenderBundleEncoderSetBindGroup(renderBundleEncoder RenderBundleEncoder, groupIndex uint32, group BindGroup, dynamicOffsets []uint32) {
 	var pinner runtime.Pinner
-	_dynamicOffsets := (*C.uint32_t)(unsafe.Pointer(&dynamicOffsets[0]))
+	_dynamicOffsets := (*C.uint32_t)(unsafe.Pointer(unsafe.SliceData(dynamicOffsets)))
 	pinner.Pin(_dynamicOffsets)
 	defer pinner.Unpin()
 	C.wgpuRenderBundleEncoderSetBindGroup(
@@ -1285,7 +1285,7 @@ func RenderPassEncoderSetPipeline(renderPassEncoder RenderPassEncoder, pipeline 
 
 func RenderPassEncoderSetBindGroup(renderPassEncoder RenderPassEncoder, groupIndex uint32, group BindGroup, dynamicOffsets []uint32) {
 	var pinner runtime.Pinner
-	_dynamicOffsets := (*C.uint32_t)(unsafe.Pointer(&dynamicOffsets[0]))
+	_dynamicOffsets := (*C.uint32_t)(unsafe.Pointer(unsafe.SliceData(dynamicOffsets)))
 	pinner.Pin(_dynamicOffsets)
 	defer pinner.Unpin()
 	C.wgpuRenderPassEncoderSetBindGroup(
@@ -1348,7 +1348,7 @@ func RenderPassEncoderDrawIndexedIndirect(renderPassEncoder RenderPassEncoder, i
 
 func RenderPassEncoderExecuteBundles(renderPassEncoder RenderPassEncoder, bundles []RenderBundle) {
 	var pinner runtime.Pinner
-	_bundles := (*C.WGPURenderBundle)(unsafe.Pointer(&bundles[0]))
+	_bundles := (*C.WGPURenderBundle)(unsafe.Pointer(unsafe.SliceData(bundles)))
 	pinner.Pin(_bundles)
 	defer pinner.Unpin()
 	C.wgpuRenderPassEncoderExecuteBundles(

@@ -143,6 +143,10 @@ func (b *BindGroupLayoutEntry) pin(pinner *runtime.Pinner) {
 	for next := b.Chain; next != nil; next = next.Next {
 		pinner.Pin(next)
 	}
+	b.Buffer.pin(pinner)
+	b.Sampler.pin(pinner)
+	b.Texture.pin(pinner)
+	b.StorageTexture.pin(pinner)
 }
 
 type BlendComponent struct {
@@ -172,6 +176,8 @@ type BlendState struct {
 
 func (b *BlendState) pin(pinner *runtime.Pinner) {
 	pinner.Pin(b)
+	b.Color.pin(pinner)
+	b.Alpha.pin(pinner)
 }
 
 type BufferBindingLayout struct {
@@ -251,7 +257,6 @@ func (c *ColorTargetState) pin(pinner *runtime.Pinner) {
 	if c.Blend != nil {
 		pinner.Pin(c.Blend)
 	}
-
 }
 
 type CommandBufferDescriptor struct {
@@ -364,7 +369,6 @@ func (c *ComputePassDescriptor) pin(pinner *runtime.Pinner) {
 	if c.TimestampWrites != nil {
 		pinner.Pin(c.TimestampWrites)
 	}
-
 }
 
 type ComputePipelineDescriptor struct {
@@ -384,6 +388,7 @@ func (c *ComputePipelineDescriptor) pin(pinner *runtime.Pinner) {
 	if c.Label.Data != nil {
 		pinner.Pin(c.Label.Data)
 	}
+	c.Compute.pin(pinner)
 }
 
 type ComputeState struct {
@@ -458,6 +463,8 @@ func (d *DepthStencilState) pin(pinner *runtime.Pinner) {
 	for next := d.Chain; next != nil; next = next.Next {
 		pinner.Pin(next)
 	}
+	d.StencilFront.pin(pinner)
+	d.StencilBack.pin(pinner)
 }
 
 type DeviceDescriptor struct {
@@ -492,7 +499,9 @@ func (d *DeviceDescriptor) pin(pinner *runtime.Pinner) {
 	if d.RequiredLimits != nil {
 		pinner.Pin(d.RequiredLimits)
 	}
-
+	d.DefaultQueue.pin(pinner)
+	d.DeviceLostCallbackInfo.pin(pinner)
+	d.UncapturedErrorCallbackInfo.pin(pinner)
 }
 
 type Extent3D struct {
@@ -585,6 +594,7 @@ type FutureWaitInfo struct {
 
 func (f *FutureWaitInfo) pin(pinner *runtime.Pinner) {
 	pinner.Pin(f)
+	f.Future.pin(pinner)
 }
 
 type InstanceDescriptor struct {
@@ -608,7 +618,6 @@ func (i *InstanceDescriptor) pin(pinner *runtime.Pinner) {
 	if i.RequiredLimits != nil {
 		pinner.Pin(i.RequiredLimits)
 	}
-
 }
 
 type InstanceLimits struct {
@@ -863,6 +872,7 @@ func (r *RenderPassColorAttachment) pin(pinner *runtime.Pinner) {
 	for next := r.Chain; next != nil; next = next.Next {
 		pinner.Pin(next)
 	}
+	r.ClearValue.pin(pinner)
 }
 
 type RenderPassDepthStencilAttachment struct {
@@ -920,11 +930,9 @@ func (r *RenderPassDescriptor) pin(pinner *runtime.Pinner) {
 	if r.DepthStencilAttachment != nil {
 		pinner.Pin(r.DepthStencilAttachment)
 	}
-
 	if r.TimestampWrites != nil {
 		pinner.Pin(r.TimestampWrites)
 	}
-
 }
 
 type RenderPassMaxDrawCount struct {
@@ -960,14 +968,15 @@ func (r *RenderPipelineDescriptor) pin(pinner *runtime.Pinner) {
 	if r.Label.Data != nil {
 		pinner.Pin(r.Label.Data)
 	}
+	r.Vertex.pin(pinner)
+	r.Primitive.pin(pinner)
 	if r.DepthStencil != nil {
 		pinner.Pin(r.DepthStencil)
 	}
-
+	r.Multisample.pin(pinner)
 	if r.Fragment != nil {
 		pinner.Pin(r.Fragment)
 	}
-
 }
 
 type RequestAdapterOptions struct {
@@ -1443,6 +1452,7 @@ type TexelCopyBufferInfo struct {
 
 func (t *TexelCopyBufferInfo) pin(pinner *runtime.Pinner) {
 	pinner.Pin(t)
+	t.Layout.pin(pinner)
 }
 
 type TexelCopyBufferLayout struct {
@@ -1470,6 +1480,7 @@ type TexelCopyTextureInfo struct {
 
 func (t *TexelCopyTextureInfo) pin(pinner *runtime.Pinner) {
 	pinner.Pin(t)
+	t.Origin.pin(pinner)
 }
 
 type TextureBindingLayout struct {
@@ -1578,6 +1589,7 @@ func (t *TextureDescriptor) pin(pinner *runtime.Pinner) {
 	if t.Label.Data != nil {
 		pinner.Pin(t.Label.Data)
 	}
+	t.Size.pin(pinner)
 	if t.ViewFormats != nil {
 		pinner.Pin(t.ViewFormats)
 	}

@@ -49,7 +49,9 @@ func ({{ $r }} *{{ $structName }}) pin(pinner *runtime.Pinner) {
 	if {{ $r }}.{{ pascalCase .Name }} != nil {
 		pinner.Pin({{ $r }}.{{ pascalCase .Name }})
 	}
-	{{ end }}
+	{{- else if or (hasPrefix .Type "callback.") (hasPrefix .Type "struct." ) }}
+	{{ $r }}.{{ pascalCase .Name }}.pin(pinner)
+	{{- end }}
 	{{- end }}
 }
 {{ else }}

@@ -34,7 +34,7 @@ func {{ $objectName }}{{ pascalCase .Name }}(
 	{{- range .Args }}{{ $argName := camelCase .Name }}{{ $conv := cType .Type }}
 	{{- if arrayElem .Type }}
 	{{- if not $hasPinner }}{{ "\n\t" }}var pinner runtime.Pinner{{ $hasPinner = true }}{{ end }}
-	_{{ $argName }} := (*C.{{ .Type | arrayElem | cType }})(unsafe.Pointer(&{{ $argName }}[0]))
+	_{{ $argName }} := (*C.{{ .Type | arrayElem | cType }})(unsafe.Pointer(unsafe.SliceData({{ $argName }})))
 	pinner.Pin(_{{ $argName }})
 	{{- else if eq $conv "WGPUStringView" }}
 	{{- if not $hasPinner }}{{ "\n\t" }}var pinner runtime.Pinner{{ $hasPinner = true }}{{ end }}
