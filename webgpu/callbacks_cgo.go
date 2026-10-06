@@ -196,3 +196,18 @@ func newRequestDeviceCallback(done chan<- requestDeviceCallbackResult) (callback
 	}
 	return info, handle.Delete
 }
+
+//export gowebgpuUncapturedErrorCallback
+func gowebgpuUncapturedErrorCallback(device *C.WGPUDevice, errorType C.WGPUErrorType, message C.WGPUStringView, userdata1, userdata2 unsafe.Pointer) {
+	callback := (*cgo.Handle)(userdata1).Value().(func(device sys.Device, errorType ErrorType, message string, userdata2 unsafe.Pointer))
+	callback(sys.Device(device), ErrorType(errorType), unsafe.String((*byte)(unsafe.Pointer(message.data)), message.length), userdata2)
+}
+
+func NewUncapturedErrorCallback(callback func(device sys.Device, errorType ErrorType, message string, userdata2 unsafe.Pointer), userdata2 unsafe.Pointer) sys.UncapturedErrorCallbackInfo {
+	handle := new(cgo.NewHandle(callback))
+	return sys.UncapturedErrorCallbackInfo{
+		Callback:  C.gowebgpuUncapturedErrorCallback,
+		Userdata1: unsafe.Pointer(handle),
+		Userdata2: userdata2,
+	}
+}
