@@ -1,0 +1,66 @@
+// Code generated; DO NOT EDIT.
+{{ goDoc .Copyright "" }}
+//go:build !cgo && amd64
+
+package {{ .PackageName }}
+
+import (
+	"syscall"
+	"unsafe"
+)
+
+var (
+	webgpuDLL = syscall.NewLazyDLL("wgpu-native.dll")
+	{{- range .Objects }}{{ $object := . }}{{ range .Methods }}
+	{{ camelCase $object.Name }}{{ pascalCase .Name}}Proc = webgpuDLL.NewProc("{{ pascalCase $object.Name }}{{ pascalCase .Name }}")
+	{{- end }}
+	{{ camelCase $object.Name }}AddRefProc = webgpuDLL.NewProc("{{ pascalCase $object.Name }}AddRef")
+	{{ camelCase $object.Name }}ReleaseProc = webgpuDLL.NewProc("{{ pascalCase $object.Name }}Release")
+	{{- end }}
+)
+{{ range .Objects }}{{ $object := . }}{{ $objectName := pascalCase .Name }}{{ range .Methods }}
+func {{ $objectName }}{{ pascalCase .Name }}(
+	{{- camelCase $object.Name }} {{ $objectName }}
+	{{- range .Args }}{{ $argName := camelCase .Name -}}
+		, {{ if arrayElem .Type -}}
+			{{ $argName }} []{{ arrayElem .Type | goType }}
+		{{- else -}}
+			{{ $argName }} {{ if and .Pointer (.Type | goType | ne "unsafe.Pointer") }}*{{ end }}{{ goType .Type }}
+		{{- end }}
+	{{- end -}}
+	{{- if .Callback -}}
+		, callback {{ goType .Callback }}
+	{{- end -}}
+) {{ if .Returns }}{{ goType .Returns.Type }} {{ end }}{
+	{{ range .Args }}
+	_, _, err := {{ camelCase $object.Name }}{{ pascalCase .Name }}Proc.Call({{ range .Args }}{{ $argName := camelCase .Name }}
+	{{- if hasPrefix .Name "struct." }}{{ $size := $.SizeOf .Type }}{{ if .Pointer }}
+		uintptr(unsafe.Pointer({{ $argName }})),
+	{{- else if eq $size 1 }}
+		uintptr(*(*uint8)(unsafe.Pointer(&{{ $argName }}))),
+	{{- else if eq $size 2 }}
+		uintptr(*(*uint16)(unsafe.Pointer(&{{ $argName }}))),
+	{{- else if eq $size 4 }}
+		uintptr(*(*uint32)(unsafe.Pointer(&{{ $argName }}))),
+	{{- else if eq $size 8 }}
+		uintptr(*(*uint64)(unsafe.Pointer(&{{ $argName }}))),
+	{{- else }}
+		uintptr(unsafe.Pointer(&{{ $argName }})),
+	{{- end }}
+	{{- else }}
+	{{- end }}
+	{{ end }})
+	if err != nil {
+		panic(err)
+	}
+}
+{{ end }}
+{{- $r := camelCase $object.Name }}
+func {{ $objectName }}AddRef({{ $r }} {{ $objectName }}) {
+	{{ $r }}AddRefProc.Call(uintptr({{ $r }}))
+}
+
+func {{ $objectName }}Release({{- $r }} {{ $objectName }}) {
+	{{ $r }}ReleaseProc.Call(uintptr({{ $r }}))
+}
+{{ end }}
