@@ -32,9 +32,13 @@ func {{ $objectName }}{{ pascalCase .Name }}(
 		, callback {{ goType .Callback }}
 	{{- end -}}
 ) {{ if .Returns }}{{ goType .Returns.Type }} {{ end }}{
-	{{ range .Args }}
-	_, _, err := {{ camelCase $object.Name }}{{ pascalCase .Name }}Proc.Call({{ range .Args }}{{ $argName := camelCase .Name }}
-	{{- if hasPrefix .Name "struct." }}{{ $size := $.SizeOf .Type }}{{ if .Pointer }}
+	{{ if .Returns }}ret{{ else }}_{{ end }}, _, err := {{ camelCase $object.Name }}{{ pascalCase .Name }}Proc.Call(
+		uintptr({{ camelCase $object.Name }}),
+	{{- range .Args }}{{ $argName := camelCase .Name }}{{ $arrayElem := arrayElem .Type }}
+	{{- if $arrayElem }}
+		uintptr(len({{ $argName }})),
+		uintptr(unsafe.Pointer(unsafe.SliceData({{ $argName }}))),
+	{{- else if or (hasPrefix .Type "struct.") (eq .Type "string_with_default_empty") }}{{ $size := $.SizeOf .Type }}{{ if .Pointer }}
 		uintptr(unsafe.Pointer({{ $argName }})),
 	{{- else if eq $size 1 }}
 		uintptr(*(*uint8)(unsafe.Pointer(&{{ $argName }}))),
@@ -48,11 +52,23 @@ func {{ $objectName }}{{ pascalCase .Name }}(
 		uintptr(unsafe.Pointer(&{{ $argName }})),
 	{{- end }}
 	{{- else }}
+		uintptr({{ $argName }}), // {{ .Type }}
 	{{- end }}
-	{{ end }})
+	{{- end }}
+	)
 	if err != nil {
 		panic(err)
 	}
+	{{- if .Returns }}{{ if hasPrefix .Returns.Type "struct." }}{{ $size := $.SizeOf .Returns.Type }}
+	{{- if eq $size 8 }}
+	return *(*{{ goType .Returns.Type }})(unsafe.Pointer(new(uint64(ret))))
+	{{- else }}
+	panic("TODO")
+	{{- end }}
+	{{- else }}{{ $conv := goType .Returns.Type }}
+	return {{ $conv }}(ret)
+	{{- end }}
+	{{- end }}
 }
 {{ end }}
 {{- $r := camelCase $object.Name }}

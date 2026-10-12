@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-//go:build !cgo
+//go:build !cgo && amd64
 
 package sys
 
@@ -209,40 +209,53 @@ var (
 )
 
 func AdapterGetLimits(adapter Adapter, limits *Limits) Status {
-
-	_, _, err := adapterGetLimitsProc.Call()
+	ret, _, err := adapterGetLimitsProc.Call(
+		uintptr(adapter),
+		uintptr(unsafe.Pointer(limits)),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return Status(ret)
 }
 
 func AdapterHasFeature(adapter Adapter, feature FeatureName) Bool {
-
-	_, _, err := adapterHasFeatureProc.Call()
+	ret, _, err := adapterHasFeatureProc.Call(
+		uintptr(adapter),
+		uintptr(feature), // enum.feature_name
+	)
 	if err != nil {
 		panic(err)
 	}
+	return Bool(ret)
 }
 
 func AdapterGetFeatures(adapter Adapter, features *SupportedFeatures) {
-
-	_, _, err := adapterGetFeaturesProc.Call()
+	_, _, err := adapterGetFeaturesProc.Call(
+		uintptr(adapter),
+		uintptr(unsafe.Pointer(features)),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func AdapterGetInfo(adapter Adapter, info *AdapterInfo) Status {
-
-	_, _, err := adapterGetInfoProc.Call()
+	ret, _, err := adapterGetInfoProc.Call(
+		uintptr(adapter),
+		uintptr(unsafe.Pointer(info)),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return Status(ret)
 }
 
 func AdapterRequestDevice(adapter Adapter, descriptor *DeviceDescriptor, callback RequestDeviceCallbackInfo) {
-
-	_, _, err := adapterRequestDeviceProc.Call()
+	_, _, err := adapterRequestDeviceProc.Call(
+		uintptr(adapter),
+		uintptr(unsafe.Pointer(descriptor)),
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -257,8 +270,10 @@ func AdapterRelease(adapter Adapter) {
 }
 
 func BindGroupSetLabel(bindGroup BindGroup, label StringView) {
-
-	_, _, err := bindGroupSetLabelProc.Call()
+	_, _, err := bindGroupSetLabelProc.Call(
+		uintptr(bindGroup),
+		uintptr(unsafe.Pointer(&label)),
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -273,8 +288,10 @@ func BindGroupRelease(bindGroup BindGroup) {
 }
 
 func BindGroupLayoutSetLabel(bindGroupLayout BindGroupLayout, label StringView) {
-
-	_, _, err := bindGroupLayoutSetLabelProc.Call()
+	_, _, err := bindGroupLayoutSetLabelProc.Call(
+		uintptr(bindGroupLayout),
+		uintptr(unsafe.Pointer(&label)),
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -289,88 +306,120 @@ func BindGroupLayoutRelease(bindGroupLayout BindGroupLayout) {
 }
 
 func BufferMapAsync(buffer Buffer, mode MapMode, offset uintptr, size uintptr, callback BufferMapCallbackInfo) {
-
-	_, _, err := bufferMapAsyncProc.Call()
+	_, _, err := bufferMapAsyncProc.Call(
+		uintptr(buffer),
+		uintptr(mode),   // bitflag.map_mode
+		uintptr(offset), // usize
+		uintptr(size),   // usize
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func BufferGetMappedRange(buffer Buffer, offset uintptr, size uintptr) unsafe.Pointer {
-
-	_, _, err := bufferGetMappedRangeProc.Call()
+	ret, _, err := bufferGetMappedRangeProc.Call(
+		uintptr(buffer),
+		uintptr(offset), // usize
+		uintptr(size),   // usize
+	)
 	if err != nil {
 		panic(err)
 	}
+	return unsafe.Pointer(ret)
 }
 
 func BufferGetConstMappedRange(buffer Buffer, offset uintptr, size uintptr) unsafe.Pointer {
-
-	_, _, err := bufferGetConstMappedRangeProc.Call()
+	ret, _, err := bufferGetConstMappedRangeProc.Call(
+		uintptr(buffer),
+		uintptr(offset), // usize
+		uintptr(size),   // usize
+	)
 	if err != nil {
 		panic(err)
 	}
+	return unsafe.Pointer(ret)
 }
 
 func BufferReadMappedRange(buffer Buffer, offset uintptr, data unsafe.Pointer, size uintptr) Status {
-
-	_, _, err := bufferReadMappedRangeProc.Call()
+	ret, _, err := bufferReadMappedRangeProc.Call(
+		uintptr(buffer),
+		uintptr(offset), // usize
+		uintptr(data),   // c_void_data_ptr
+		uintptr(size),   // usize
+	)
 	if err != nil {
 		panic(err)
 	}
+	return Status(ret)
 }
 
 func BufferWriteMappedRange(buffer Buffer, offset uintptr, data unsafe.Pointer, size uintptr) Status {
-
-	_, _, err := bufferWriteMappedRangeProc.Call()
+	ret, _, err := bufferWriteMappedRangeProc.Call(
+		uintptr(buffer),
+		uintptr(offset), // usize
+		uintptr(data),   // c_void_data_ptr
+		uintptr(size),   // usize
+	)
 	if err != nil {
 		panic(err)
 	}
+	return Status(ret)
 }
 
 func BufferSetLabel(buffer Buffer, label StringView) {
-
-	_, _, err := bufferSetLabelProc.Call()
+	_, _, err := bufferSetLabelProc.Call(
+		uintptr(buffer),
+		uintptr(unsafe.Pointer(&label)),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func BufferGetUsage(buffer Buffer) BufferUsage {
-
-	_, _, err := bufferGetUsageProc.Call()
+	ret, _, err := bufferGetUsageProc.Call(
+		uintptr(buffer),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return BufferUsage(ret)
 }
 
 func BufferGetSize(buffer Buffer) uint64 {
-
-	_, _, err := bufferGetSizeProc.Call()
+	ret, _, err := bufferGetSizeProc.Call(
+		uintptr(buffer),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return uint64(ret)
 }
 
 func BufferGetMapState(buffer Buffer) BufferMapState {
-
-	_, _, err := bufferGetMapStateProc.Call()
+	ret, _, err := bufferGetMapStateProc.Call(
+		uintptr(buffer),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return BufferMapState(ret)
 }
 
 func BufferUnmap(buffer Buffer) {
-
-	_, _, err := bufferUnmapProc.Call()
+	_, _, err := bufferUnmapProc.Call(
+		uintptr(buffer),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func BufferDestroy(buffer Buffer) {
-
-	_, _, err := bufferDestroyProc.Call()
+	_, _, err := bufferDestroyProc.Call(
+		uintptr(buffer),
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -385,8 +434,10 @@ func BufferRelease(buffer Buffer) {
 }
 
 func CommandBufferSetLabel(commandBuffer CommandBuffer, label StringView) {
-
-	_, _, err := commandBufferSetLabelProc.Call()
+	_, _, err := commandBufferSetLabelProc.Call(
+		uintptr(commandBuffer),
+		uintptr(unsafe.Pointer(&label)),
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -401,112 +452,159 @@ func CommandBufferRelease(commandBuffer CommandBuffer) {
 }
 
 func CommandEncoderFinish(commandEncoder CommandEncoder, descriptor *CommandBufferDescriptor) CommandBuffer {
-
-	_, _, err := commandEncoderFinishProc.Call()
+	ret, _, err := commandEncoderFinishProc.Call(
+		uintptr(commandEncoder),
+		uintptr(unsafe.Pointer(descriptor)),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return CommandBuffer(ret)
 }
 
 func CommandEncoderBeginComputePass(commandEncoder CommandEncoder, descriptor *ComputePassDescriptor) ComputePassEncoder {
-
-	_, _, err := commandEncoderBeginComputePassProc.Call()
+	ret, _, err := commandEncoderBeginComputePassProc.Call(
+		uintptr(commandEncoder),
+		uintptr(unsafe.Pointer(descriptor)),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return ComputePassEncoder(ret)
 }
 
 func CommandEncoderBeginRenderPass(commandEncoder CommandEncoder, descriptor *RenderPassDescriptor) RenderPassEncoder {
-
-	_, _, err := commandEncoderBeginRenderPassProc.Call()
+	ret, _, err := commandEncoderBeginRenderPassProc.Call(
+		uintptr(commandEncoder),
+		uintptr(unsafe.Pointer(descriptor)),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return RenderPassEncoder(ret)
 }
 
 func CommandEncoderCopyBufferToBuffer(commandEncoder CommandEncoder, source Buffer, sourceOffset uint64, destination Buffer, destinationOffset uint64, size uint64) {
-
-	_, _, err := commandEncoderCopyBufferToBufferProc.Call()
+	_, _, err := commandEncoderCopyBufferToBufferProc.Call(
+		uintptr(commandEncoder),
+		uintptr(source),            // object.buffer
+		uintptr(sourceOffset),      // uint64
+		uintptr(destination),       // object.buffer
+		uintptr(destinationOffset), // uint64
+		uintptr(size),              // uint64
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func CommandEncoderCopyBufferToTexture(commandEncoder CommandEncoder, source *TexelCopyBufferInfo, destination *TexelCopyTextureInfo, copySize *Extent3D) {
-
-	_, _, err := commandEncoderCopyBufferToTextureProc.Call()
+	_, _, err := commandEncoderCopyBufferToTextureProc.Call(
+		uintptr(commandEncoder),
+		uintptr(unsafe.Pointer(source)),
+		uintptr(unsafe.Pointer(destination)),
+		uintptr(unsafe.Pointer(copySize)),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func CommandEncoderCopyTextureToBuffer(commandEncoder CommandEncoder, source *TexelCopyTextureInfo, destination *TexelCopyBufferInfo, copySize *Extent3D) {
-
-	_, _, err := commandEncoderCopyTextureToBufferProc.Call()
+	_, _, err := commandEncoderCopyTextureToBufferProc.Call(
+		uintptr(commandEncoder),
+		uintptr(unsafe.Pointer(source)),
+		uintptr(unsafe.Pointer(destination)),
+		uintptr(unsafe.Pointer(copySize)),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func CommandEncoderCopyTextureToTexture(commandEncoder CommandEncoder, source *TexelCopyTextureInfo, destination *TexelCopyTextureInfo, copySize *Extent3D) {
-
-	_, _, err := commandEncoderCopyTextureToTextureProc.Call()
+	_, _, err := commandEncoderCopyTextureToTextureProc.Call(
+		uintptr(commandEncoder),
+		uintptr(unsafe.Pointer(source)),
+		uintptr(unsafe.Pointer(destination)),
+		uintptr(unsafe.Pointer(copySize)),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func CommandEncoderClearBuffer(commandEncoder CommandEncoder, buffer Buffer, offset uint64, size uint64) {
-
-	_, _, err := commandEncoderClearBufferProc.Call()
+	_, _, err := commandEncoderClearBufferProc.Call(
+		uintptr(commandEncoder),
+		uintptr(buffer), // object.buffer
+		uintptr(offset), // uint64
+		uintptr(size),   // uint64
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func CommandEncoderInsertDebugMarker(commandEncoder CommandEncoder, markerLabel StringView) {
-
-	_, _, err := commandEncoderInsertDebugMarkerProc.Call()
+	_, _, err := commandEncoderInsertDebugMarkerProc.Call(
+		uintptr(commandEncoder),
+		uintptr(unsafe.Pointer(&markerLabel)),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func CommandEncoderPopDebugGroup(commandEncoder CommandEncoder) {
-
-	_, _, err := commandEncoderPopDebugGroupProc.Call()
+	_, _, err := commandEncoderPopDebugGroupProc.Call(
+		uintptr(commandEncoder),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func CommandEncoderPushDebugGroup(commandEncoder CommandEncoder, groupLabel StringView) {
-
-	_, _, err := commandEncoderPushDebugGroupProc.Call()
+	_, _, err := commandEncoderPushDebugGroupProc.Call(
+		uintptr(commandEncoder),
+		uintptr(unsafe.Pointer(&groupLabel)),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func CommandEncoderResolveQuerySet(commandEncoder CommandEncoder, querySet QuerySet, firstQuery uint32, queryCount uint32, destination Buffer, destinationOffset uint64) {
-
-	_, _, err := commandEncoderResolveQuerySetProc.Call()
+	_, _, err := commandEncoderResolveQuerySetProc.Call(
+		uintptr(commandEncoder),
+		uintptr(querySet),          // object.query_set
+		uintptr(firstQuery),        // uint32
+		uintptr(queryCount),        // uint32
+		uintptr(destination),       // object.buffer
+		uintptr(destinationOffset), // uint64
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func CommandEncoderWriteTimestamp(commandEncoder CommandEncoder, querySet QuerySet, queryIndex uint32) {
-
-	_, _, err := commandEncoderWriteTimestampProc.Call()
+	_, _, err := commandEncoderWriteTimestampProc.Call(
+		uintptr(commandEncoder),
+		uintptr(querySet),   // object.query_set
+		uintptr(queryIndex), // uint32
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func CommandEncoderSetLabel(commandEncoder CommandEncoder, label StringView) {
-
-	_, _, err := commandEncoderSetLabelProc.Call()
+	_, _, err := commandEncoderSetLabelProc.Call(
+		uintptr(commandEncoder),
+		uintptr(unsafe.Pointer(&label)),
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -521,80 +619,106 @@ func CommandEncoderRelease(commandEncoder CommandEncoder) {
 }
 
 func ComputePassEncoderInsertDebugMarker(computePassEncoder ComputePassEncoder, markerLabel StringView) {
-
-	_, _, err := computePassEncoderInsertDebugMarkerProc.Call()
+	_, _, err := computePassEncoderInsertDebugMarkerProc.Call(
+		uintptr(computePassEncoder),
+		uintptr(unsafe.Pointer(&markerLabel)),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func ComputePassEncoderPopDebugGroup(computePassEncoder ComputePassEncoder) {
-
-	_, _, err := computePassEncoderPopDebugGroupProc.Call()
+	_, _, err := computePassEncoderPopDebugGroupProc.Call(
+		uintptr(computePassEncoder),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func ComputePassEncoderPushDebugGroup(computePassEncoder ComputePassEncoder, groupLabel StringView) {
-
-	_, _, err := computePassEncoderPushDebugGroupProc.Call()
+	_, _, err := computePassEncoderPushDebugGroupProc.Call(
+		uintptr(computePassEncoder),
+		uintptr(unsafe.Pointer(&groupLabel)),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func ComputePassEncoderSetPipeline(computePassEncoder ComputePassEncoder, pipeline ComputePipeline) {
-
-	_, _, err := computePassEncoderSetPipelineProc.Call()
+	_, _, err := computePassEncoderSetPipelineProc.Call(
+		uintptr(computePassEncoder),
+		uintptr(pipeline), // object.compute_pipeline
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func ComputePassEncoderSetBindGroup(computePassEncoder ComputePassEncoder, groupIndex uint32, group BindGroup, dynamicOffsets []uint32) {
-
-	_, _, err := computePassEncoderSetBindGroupProc.Call()
+	_, _, err := computePassEncoderSetBindGroupProc.Call(
+		uintptr(computePassEncoder),
+		uintptr(groupIndex), // uint32
+		uintptr(group),      // object.bind_group
+		uintptr(len(dynamicOffsets)),
+		uintptr(unsafe.Pointer(unsafe.SliceData(dynamicOffsets))),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func ComputePassEncoderSetImmediates(computePassEncoder ComputePassEncoder, offset uint32, data unsafe.Pointer, size uintptr) {
-
-	_, _, err := computePassEncoderSetImmediatesProc.Call()
+	_, _, err := computePassEncoderSetImmediatesProc.Call(
+		uintptr(computePassEncoder),
+		uintptr(offset), // uint32
+		uintptr(data),   // c_void_data_ptr
+		uintptr(size),   // usize
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func ComputePassEncoderDispatchWorkgroups(computePassEncoder ComputePassEncoder, workgroupCountX uint32, workgroupCountY uint32, workgroupCountZ uint32) {
-
-	_, _, err := computePassEncoderDispatchWorkgroupsProc.Call()
+	_, _, err := computePassEncoderDispatchWorkgroupsProc.Call(
+		uintptr(computePassEncoder),
+		uintptr(workgroupCountX), // uint32
+		uintptr(workgroupCountY), // uint32
+		uintptr(workgroupCountZ), // uint32
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func ComputePassEncoderDispatchWorkgroupsIndirect(computePassEncoder ComputePassEncoder, indirectBuffer Buffer, indirectOffset uint64) {
-
-	_, _, err := computePassEncoderDispatchWorkgroupsIndirectProc.Call()
+	_, _, err := computePassEncoderDispatchWorkgroupsIndirectProc.Call(
+		uintptr(computePassEncoder),
+		uintptr(indirectBuffer), // object.buffer
+		uintptr(indirectOffset), // uint64
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func ComputePassEncoderEnd(computePassEncoder ComputePassEncoder) {
-
-	_, _, err := computePassEncoderEndProc.Call()
+	_, _, err := computePassEncoderEndProc.Call(
+		uintptr(computePassEncoder),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func ComputePassEncoderSetLabel(computePassEncoder ComputePassEncoder, label StringView) {
-
-	_, _, err := computePassEncoderSetLabelProc.Call()
+	_, _, err := computePassEncoderSetLabelProc.Call(
+		uintptr(computePassEncoder),
+		uintptr(unsafe.Pointer(&label)),
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -609,16 +733,21 @@ func ComputePassEncoderRelease(computePassEncoder ComputePassEncoder) {
 }
 
 func ComputePipelineGetBindGroupLayout(computePipeline ComputePipeline, groupIndex uint32) BindGroupLayout {
-
-	_, _, err := computePipelineGetBindGroupLayoutProc.Call()
+	ret, _, err := computePipelineGetBindGroupLayoutProc.Call(
+		uintptr(computePipeline),
+		uintptr(groupIndex), // uint32
+	)
 	if err != nil {
 		panic(err)
 	}
+	return BindGroupLayout(ret)
 }
 
 func ComputePipelineSetLabel(computePipeline ComputePipeline, label StringView) {
-
-	_, _, err := computePipelineSetLabelProc.Call()
+	_, _, err := computePipelineSetLabelProc.Call(
+		uintptr(computePipeline),
+		uintptr(unsafe.Pointer(&label)),
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -633,192 +762,253 @@ func ComputePipelineRelease(computePipeline ComputePipeline) {
 }
 
 func DeviceCreateBindGroup(device Device, descriptor *BindGroupDescriptor) BindGroup {
-
-	_, _, err := deviceCreateBindGroupProc.Call()
+	ret, _, err := deviceCreateBindGroupProc.Call(
+		uintptr(device),
+		uintptr(unsafe.Pointer(descriptor)),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return BindGroup(ret)
 }
 
 func DeviceCreateBindGroupLayout(device Device, descriptor *BindGroupLayoutDescriptor) BindGroupLayout {
-
-	_, _, err := deviceCreateBindGroupLayoutProc.Call()
+	ret, _, err := deviceCreateBindGroupLayoutProc.Call(
+		uintptr(device),
+		uintptr(unsafe.Pointer(descriptor)),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return BindGroupLayout(ret)
 }
 
 func DeviceCreateBuffer(device Device, descriptor *BufferDescriptor) Buffer {
-
-	_, _, err := deviceCreateBufferProc.Call()
+	ret, _, err := deviceCreateBufferProc.Call(
+		uintptr(device),
+		uintptr(unsafe.Pointer(descriptor)),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return Buffer(ret)
 }
 
 func DeviceCreateCommandEncoder(device Device, descriptor *CommandEncoderDescriptor) CommandEncoder {
-
-	_, _, err := deviceCreateCommandEncoderProc.Call()
+	ret, _, err := deviceCreateCommandEncoderProc.Call(
+		uintptr(device),
+		uintptr(unsafe.Pointer(descriptor)),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return CommandEncoder(ret)
 }
 
 func DeviceCreateComputePipeline(device Device, descriptor *ComputePipelineDescriptor) ComputePipeline {
-
-	_, _, err := deviceCreateComputePipelineProc.Call()
+	ret, _, err := deviceCreateComputePipelineProc.Call(
+		uintptr(device),
+		uintptr(unsafe.Pointer(descriptor)),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return ComputePipeline(ret)
 }
 
 func DeviceCreateComputePipelineAsync(device Device, descriptor *ComputePipelineDescriptor, callback CreateComputePipelineAsyncCallbackInfo) {
-
-	_, _, err := deviceCreateComputePipelineAsyncProc.Call()
+	_, _, err := deviceCreateComputePipelineAsyncProc.Call(
+		uintptr(device),
+		uintptr(unsafe.Pointer(descriptor)),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func DeviceCreatePipelineLayout(device Device, descriptor *PipelineLayoutDescriptor) PipelineLayout {
-
-	_, _, err := deviceCreatePipelineLayoutProc.Call()
+	ret, _, err := deviceCreatePipelineLayoutProc.Call(
+		uintptr(device),
+		uintptr(unsafe.Pointer(descriptor)),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return PipelineLayout(ret)
 }
 
 func DeviceCreateQuerySet(device Device, descriptor *QuerySetDescriptor) QuerySet {
-
-	_, _, err := deviceCreateQuerySetProc.Call()
+	ret, _, err := deviceCreateQuerySetProc.Call(
+		uintptr(device),
+		uintptr(unsafe.Pointer(descriptor)),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return QuerySet(ret)
 }
 
 func DeviceCreateRenderPipelineAsync(device Device, descriptor *RenderPipelineDescriptor, callback CreateRenderPipelineAsyncCallbackInfo) {
-
-	_, _, err := deviceCreateRenderPipelineAsyncProc.Call()
+	_, _, err := deviceCreateRenderPipelineAsyncProc.Call(
+		uintptr(device),
+		uintptr(unsafe.Pointer(descriptor)),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func DeviceCreateRenderBundleEncoder(device Device, descriptor *RenderBundleEncoderDescriptor) RenderBundleEncoder {
-
-	_, _, err := deviceCreateRenderBundleEncoderProc.Call()
+	ret, _, err := deviceCreateRenderBundleEncoderProc.Call(
+		uintptr(device),
+		uintptr(unsafe.Pointer(descriptor)),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return RenderBundleEncoder(ret)
 }
 
 func DeviceCreateRenderPipeline(device Device, descriptor *RenderPipelineDescriptor) RenderPipeline {
-
-	_, _, err := deviceCreateRenderPipelineProc.Call()
+	ret, _, err := deviceCreateRenderPipelineProc.Call(
+		uintptr(device),
+		uintptr(unsafe.Pointer(descriptor)),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return RenderPipeline(ret)
 }
 
 func DeviceCreateSampler(device Device, descriptor *SamplerDescriptor) Sampler {
-
-	_, _, err := deviceCreateSamplerProc.Call()
+	ret, _, err := deviceCreateSamplerProc.Call(
+		uintptr(device),
+		uintptr(unsafe.Pointer(descriptor)),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return Sampler(ret)
 }
 
 func DeviceCreateShaderModule(device Device, descriptor *ShaderModuleDescriptor) ShaderModule {
-
-	_, _, err := deviceCreateShaderModuleProc.Call()
+	ret, _, err := deviceCreateShaderModuleProc.Call(
+		uintptr(device),
+		uintptr(unsafe.Pointer(descriptor)),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return ShaderModule(ret)
 }
 
 func DeviceCreateTexture(device Device, descriptor *TextureDescriptor) Texture {
-
-	_, _, err := deviceCreateTextureProc.Call()
+	ret, _, err := deviceCreateTextureProc.Call(
+		uintptr(device),
+		uintptr(unsafe.Pointer(descriptor)),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return Texture(ret)
 }
 
 func DeviceDestroy(device Device) {
-
-	_, _, err := deviceDestroyProc.Call()
+	_, _, err := deviceDestroyProc.Call(
+		uintptr(device),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func DeviceGetLostFuture(device Device) Future {
-
-	_, _, err := deviceGetLostFutureProc.Call()
+	ret, _, err := deviceGetLostFutureProc.Call(
+		uintptr(device),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return *(*Future)(unsafe.Pointer(new(uint64(ret))))
 }
 
 func DeviceGetLimits(device Device, limits *Limits) Status {
-
-	_, _, err := deviceGetLimitsProc.Call()
+	ret, _, err := deviceGetLimitsProc.Call(
+		uintptr(device),
+		uintptr(unsafe.Pointer(limits)),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return Status(ret)
 }
 
 func DeviceHasFeature(device Device, feature FeatureName) Bool {
-
-	_, _, err := deviceHasFeatureProc.Call()
+	ret, _, err := deviceHasFeatureProc.Call(
+		uintptr(device),
+		uintptr(feature), // enum.feature_name
+	)
 	if err != nil {
 		panic(err)
 	}
+	return Bool(ret)
 }
 
 func DeviceGetFeatures(device Device, features *SupportedFeatures) {
-
-	_, _, err := deviceGetFeaturesProc.Call()
+	_, _, err := deviceGetFeaturesProc.Call(
+		uintptr(device),
+		uintptr(unsafe.Pointer(features)),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func DeviceGetAdapterInfo(device Device, adapterInfo *AdapterInfo) Status {
-
-	_, _, err := deviceGetAdapterInfoProc.Call()
+	ret, _, err := deviceGetAdapterInfoProc.Call(
+		uintptr(device),
+		uintptr(unsafe.Pointer(adapterInfo)),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return Status(ret)
 }
 
 func DeviceGetQueue(device Device) Queue {
-
-	_, _, err := deviceGetQueueProc.Call()
+	ret, _, err := deviceGetQueueProc.Call(
+		uintptr(device),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return Queue(ret)
 }
 
 func DevicePushErrorScope(device Device, filter ErrorFilter) {
-
-	_, _, err := devicePushErrorScopeProc.Call()
+	_, _, err := devicePushErrorScopeProc.Call(
+		uintptr(device),
+		uintptr(filter), // enum.error_filter
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func DevicePopErrorScope(device Device, callback PopErrorScopeCallbackInfo) {
-
-	_, _, err := devicePopErrorScopeProc.Call()
+	_, _, err := devicePopErrorScopeProc.Call(
+		uintptr(device),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func DeviceSetLabel(device Device, label StringView) {
-
-	_, _, err := deviceSetLabelProc.Call()
+	_, _, err := deviceSetLabelProc.Call(
+		uintptr(device),
+		uintptr(unsafe.Pointer(&label)),
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -833,8 +1023,10 @@ func DeviceRelease(device Device) {
 }
 
 func ExternalTextureSetLabel(externalTexture ExternalTexture, label StringView) {
-
-	_, _, err := externalTextureSetLabelProc.Call()
+	_, _, err := externalTextureSetLabelProc.Call(
+		uintptr(externalTexture),
+		uintptr(unsafe.Pointer(&label)),
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -849,51 +1041,67 @@ func ExternalTextureRelease(externalTexture ExternalTexture) {
 }
 
 func InstanceCreateSurface(instance Instance, descriptor *SurfaceDescriptor) Surface {
-
-	_, _, err := instanceCreateSurfaceProc.Call()
+	ret, _, err := instanceCreateSurfaceProc.Call(
+		uintptr(instance),
+		uintptr(unsafe.Pointer(descriptor)),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return Surface(ret)
 }
 
 func InstanceGetWGSLLanguageFeatures(instance Instance, features *SupportedWGSLLanguageFeatures) {
-
-	_, _, err := instanceGetWGSLLanguageFeaturesProc.Call()
+	_, _, err := instanceGetWGSLLanguageFeaturesProc.Call(
+		uintptr(instance),
+		uintptr(unsafe.Pointer(features)),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func InstanceHasWGSLLanguageFeature(instance Instance, feature WGSLLanguageFeatureName) Bool {
-
-	_, _, err := instanceHasWGSLLanguageFeatureProc.Call()
+	ret, _, err := instanceHasWGSLLanguageFeatureProc.Call(
+		uintptr(instance),
+		uintptr(feature), // enum.WGSL_language_feature_name
+	)
 	if err != nil {
 		panic(err)
 	}
+	return Bool(ret)
 }
 
 func InstanceProcessEvents(instance Instance) {
-
-	_, _, err := instanceProcessEventsProc.Call()
+	_, _, err := instanceProcessEventsProc.Call(
+		uintptr(instance),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func InstanceRequestAdapter(instance Instance, options *RequestAdapterOptions, callback RequestAdapterCallbackInfo) {
-
-	_, _, err := instanceRequestAdapterProc.Call()
+	_, _, err := instanceRequestAdapterProc.Call(
+		uintptr(instance),
+		uintptr(unsafe.Pointer(options)),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func InstanceWaitAny(instance Instance, futureCount uintptr, futures *FutureWaitInfo, timeoutNS uint64) WaitStatus {
-
-	_, _, err := instanceWaitAnyProc.Call()
+	ret, _, err := instanceWaitAnyProc.Call(
+		uintptr(instance),
+		uintptr(futureCount), // usize
+		uintptr(unsafe.Pointer(futures)),
+		uintptr(timeoutNS), // uint64
+	)
 	if err != nil {
 		panic(err)
 	}
+	return WaitStatus(ret)
 }
 
 func InstanceAddRef(instance Instance) {
@@ -905,8 +1113,10 @@ func InstanceRelease(instance Instance) {
 }
 
 func PipelineLayoutSetLabel(pipelineLayout PipelineLayout, label StringView) {
-
-	_, _, err := pipelineLayoutSetLabelProc.Call()
+	_, _, err := pipelineLayoutSetLabelProc.Call(
+		uintptr(pipelineLayout),
+		uintptr(unsafe.Pointer(&label)),
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -921,32 +1131,39 @@ func PipelineLayoutRelease(pipelineLayout PipelineLayout) {
 }
 
 func QuerySetSetLabel(querySet QuerySet, label StringView) {
-
-	_, _, err := querySetSetLabelProc.Call()
+	_, _, err := querySetSetLabelProc.Call(
+		uintptr(querySet),
+		uintptr(unsafe.Pointer(&label)),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func QuerySetGetType(querySet QuerySet) QueryType {
-
-	_, _, err := querySetGetTypeProc.Call()
+	ret, _, err := querySetGetTypeProc.Call(
+		uintptr(querySet),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return QueryType(ret)
 }
 
 func QuerySetGetCount(querySet QuerySet) uint32 {
-
-	_, _, err := querySetGetCountProc.Call()
+	ret, _, err := querySetGetCountProc.Call(
+		uintptr(querySet),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return uint32(ret)
 }
 
 func QuerySetDestroy(querySet QuerySet) {
-
-	_, _, err := querySetDestroyProc.Call()
+	_, _, err := querySetDestroyProc.Call(
+		uintptr(querySet),
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -961,40 +1178,57 @@ func QuerySetRelease(querySet QuerySet) {
 }
 
 func QueueSubmit(queue Queue, commands []CommandBuffer) {
-
-	_, _, err := queueSubmitProc.Call()
+	_, _, err := queueSubmitProc.Call(
+		uintptr(queue),
+		uintptr(len(commands)),
+		uintptr(unsafe.Pointer(unsafe.SliceData(commands))),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func QueueOnSubmittedWorkDone(queue Queue, callback QueueWorkDoneCallbackInfo) {
-
-	_, _, err := queueOnSubmittedWorkDoneProc.Call()
+	_, _, err := queueOnSubmittedWorkDoneProc.Call(
+		uintptr(queue),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func QueueWriteBuffer(queue Queue, buffer Buffer, bufferOffset uint64, data unsafe.Pointer, size uintptr) {
-
-	_, _, err := queueWriteBufferProc.Call()
+	_, _, err := queueWriteBufferProc.Call(
+		uintptr(queue),
+		uintptr(buffer),       // object.buffer
+		uintptr(bufferOffset), // uint64
+		uintptr(data),         // c_void_data_ptr
+		uintptr(size),         // usize
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func QueueWriteTexture(queue Queue, destination *TexelCopyTextureInfo, data unsafe.Pointer, dataSize uintptr, dataLayout *TexelCopyBufferLayout, writeSize *Extent3D) {
-
-	_, _, err := queueWriteTextureProc.Call()
+	_, _, err := queueWriteTextureProc.Call(
+		uintptr(queue),
+		uintptr(unsafe.Pointer(destination)),
+		uintptr(data),     // c_void_data_ptr
+		uintptr(dataSize), // usize
+		uintptr(unsafe.Pointer(dataLayout)),
+		uintptr(unsafe.Pointer(writeSize)),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func QueueSetLabel(queue Queue, label StringView) {
-
-	_, _, err := queueSetLabelProc.Call()
+	_, _, err := queueSetLabelProc.Call(
+		uintptr(queue),
+		uintptr(unsafe.Pointer(&label)),
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -1009,8 +1243,10 @@ func QueueRelease(queue Queue) {
 }
 
 func RenderBundleSetLabel(renderBundle RenderBundle, label StringView) {
-
-	_, _, err := renderBundleSetLabelProc.Call()
+	_, _, err := renderBundleSetLabelProc.Call(
+		uintptr(renderBundle),
+		uintptr(unsafe.Pointer(&label)),
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -1025,112 +1261,160 @@ func RenderBundleRelease(renderBundle RenderBundle) {
 }
 
 func RenderBundleEncoderSetPipeline(renderBundleEncoder RenderBundleEncoder, pipeline RenderPipeline) {
-
-	_, _, err := renderBundleEncoderSetPipelineProc.Call()
+	_, _, err := renderBundleEncoderSetPipelineProc.Call(
+		uintptr(renderBundleEncoder),
+		uintptr(pipeline), // object.render_pipeline
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func RenderBundleEncoderSetBindGroup(renderBundleEncoder RenderBundleEncoder, groupIndex uint32, group BindGroup, dynamicOffsets []uint32) {
-
-	_, _, err := renderBundleEncoderSetBindGroupProc.Call()
+	_, _, err := renderBundleEncoderSetBindGroupProc.Call(
+		uintptr(renderBundleEncoder),
+		uintptr(groupIndex), // uint32
+		uintptr(group),      // object.bind_group
+		uintptr(len(dynamicOffsets)),
+		uintptr(unsafe.Pointer(unsafe.SliceData(dynamicOffsets))),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func RenderBundleEncoderSetImmediates(renderBundleEncoder RenderBundleEncoder, offset uint32, data unsafe.Pointer, size uintptr) {
-
-	_, _, err := renderBundleEncoderSetImmediatesProc.Call()
+	_, _, err := renderBundleEncoderSetImmediatesProc.Call(
+		uintptr(renderBundleEncoder),
+		uintptr(offset), // uint32
+		uintptr(data),   // c_void_data_ptr
+		uintptr(size),   // usize
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func RenderBundleEncoderDraw(renderBundleEncoder RenderBundleEncoder, vertexCount uint32, instanceCount uint32, firstVertex uint32, firstInstance uint32) {
-
-	_, _, err := renderBundleEncoderDrawProc.Call()
+	_, _, err := renderBundleEncoderDrawProc.Call(
+		uintptr(renderBundleEncoder),
+		uintptr(vertexCount),   // uint32
+		uintptr(instanceCount), // uint32
+		uintptr(firstVertex),   // uint32
+		uintptr(firstInstance), // uint32
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func RenderBundleEncoderDrawIndexed(renderBundleEncoder RenderBundleEncoder, indexCount uint32, instanceCount uint32, firstIndex uint32, baseVertex int32, firstInstance uint32) {
-
-	_, _, err := renderBundleEncoderDrawIndexedProc.Call()
+	_, _, err := renderBundleEncoderDrawIndexedProc.Call(
+		uintptr(renderBundleEncoder),
+		uintptr(indexCount),    // uint32
+		uintptr(instanceCount), // uint32
+		uintptr(firstIndex),    // uint32
+		uintptr(baseVertex),    // int32
+		uintptr(firstInstance), // uint32
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func RenderBundleEncoderDrawIndirect(renderBundleEncoder RenderBundleEncoder, indirectBuffer Buffer, indirectOffset uint64) {
-
-	_, _, err := renderBundleEncoderDrawIndirectProc.Call()
+	_, _, err := renderBundleEncoderDrawIndirectProc.Call(
+		uintptr(renderBundleEncoder),
+		uintptr(indirectBuffer), // object.buffer
+		uintptr(indirectOffset), // uint64
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func RenderBundleEncoderDrawIndexedIndirect(renderBundleEncoder RenderBundleEncoder, indirectBuffer Buffer, indirectOffset uint64) {
-
-	_, _, err := renderBundleEncoderDrawIndexedIndirectProc.Call()
+	_, _, err := renderBundleEncoderDrawIndexedIndirectProc.Call(
+		uintptr(renderBundleEncoder),
+		uintptr(indirectBuffer), // object.buffer
+		uintptr(indirectOffset), // uint64
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func RenderBundleEncoderInsertDebugMarker(renderBundleEncoder RenderBundleEncoder, markerLabel StringView) {
-
-	_, _, err := renderBundleEncoderInsertDebugMarkerProc.Call()
+	_, _, err := renderBundleEncoderInsertDebugMarkerProc.Call(
+		uintptr(renderBundleEncoder),
+		uintptr(unsafe.Pointer(&markerLabel)),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func RenderBundleEncoderPopDebugGroup(renderBundleEncoder RenderBundleEncoder) {
-
-	_, _, err := renderBundleEncoderPopDebugGroupProc.Call()
+	_, _, err := renderBundleEncoderPopDebugGroupProc.Call(
+		uintptr(renderBundleEncoder),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func RenderBundleEncoderPushDebugGroup(renderBundleEncoder RenderBundleEncoder, groupLabel StringView) {
-
-	_, _, err := renderBundleEncoderPushDebugGroupProc.Call()
+	_, _, err := renderBundleEncoderPushDebugGroupProc.Call(
+		uintptr(renderBundleEncoder),
+		uintptr(unsafe.Pointer(&groupLabel)),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func RenderBundleEncoderSetVertexBuffer(renderBundleEncoder RenderBundleEncoder, slot uint32, buffer Buffer, offset uint64, size uint64) {
-
-	_, _, err := renderBundleEncoderSetVertexBufferProc.Call()
+	_, _, err := renderBundleEncoderSetVertexBufferProc.Call(
+		uintptr(renderBundleEncoder),
+		uintptr(slot),   // uint32
+		uintptr(buffer), // object.buffer
+		uintptr(offset), // uint64
+		uintptr(size),   // uint64
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func RenderBundleEncoderSetIndexBuffer(renderBundleEncoder RenderBundleEncoder, buffer Buffer, format IndexFormat, offset uint64, size uint64) {
-
-	_, _, err := renderBundleEncoderSetIndexBufferProc.Call()
+	_, _, err := renderBundleEncoderSetIndexBufferProc.Call(
+		uintptr(renderBundleEncoder),
+		uintptr(buffer), // object.buffer
+		uintptr(format), // enum.index_format
+		uintptr(offset), // uint64
+		uintptr(size),   // uint64
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func RenderBundleEncoderFinish(renderBundleEncoder RenderBundleEncoder, descriptor *RenderBundleDescriptor) RenderBundle {
-
-	_, _, err := renderBundleEncoderFinishProc.Call()
+	ret, _, err := renderBundleEncoderFinishProc.Call(
+		uintptr(renderBundleEncoder),
+		uintptr(unsafe.Pointer(descriptor)),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return RenderBundle(ret)
 }
 
 func RenderBundleEncoderSetLabel(renderBundleEncoder RenderBundleEncoder, label StringView) {
-
-	_, _, err := renderBundleEncoderSetLabelProc.Call()
+	_, _, err := renderBundleEncoderSetLabelProc.Call(
+		uintptr(renderBundleEncoder),
+		uintptr(unsafe.Pointer(&label)),
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -1145,168 +1429,236 @@ func RenderBundleEncoderRelease(renderBundleEncoder RenderBundleEncoder) {
 }
 
 func RenderPassEncoderSetPipeline(renderPassEncoder RenderPassEncoder, pipeline RenderPipeline) {
-
-	_, _, err := renderPassEncoderSetPipelineProc.Call()
+	_, _, err := renderPassEncoderSetPipelineProc.Call(
+		uintptr(renderPassEncoder),
+		uintptr(pipeline), // object.render_pipeline
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func RenderPassEncoderSetBindGroup(renderPassEncoder RenderPassEncoder, groupIndex uint32, group BindGroup, dynamicOffsets []uint32) {
-
-	_, _, err := renderPassEncoderSetBindGroupProc.Call()
+	_, _, err := renderPassEncoderSetBindGroupProc.Call(
+		uintptr(renderPassEncoder),
+		uintptr(groupIndex), // uint32
+		uintptr(group),      // object.bind_group
+		uintptr(len(dynamicOffsets)),
+		uintptr(unsafe.Pointer(unsafe.SliceData(dynamicOffsets))),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func RenderPassEncoderSetImmediates(renderPassEncoder RenderPassEncoder, offset uint32, data unsafe.Pointer, size uintptr) {
-
-	_, _, err := renderPassEncoderSetImmediatesProc.Call()
+	_, _, err := renderPassEncoderSetImmediatesProc.Call(
+		uintptr(renderPassEncoder),
+		uintptr(offset), // uint32
+		uintptr(data),   // c_void_data_ptr
+		uintptr(size),   // usize
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func RenderPassEncoderDraw(renderPassEncoder RenderPassEncoder, vertexCount uint32, instanceCount uint32, firstVertex uint32, firstInstance uint32) {
-
-	_, _, err := renderPassEncoderDrawProc.Call()
+	_, _, err := renderPassEncoderDrawProc.Call(
+		uintptr(renderPassEncoder),
+		uintptr(vertexCount),   // uint32
+		uintptr(instanceCount), // uint32
+		uintptr(firstVertex),   // uint32
+		uintptr(firstInstance), // uint32
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func RenderPassEncoderDrawIndexed(renderPassEncoder RenderPassEncoder, indexCount uint32, instanceCount uint32, firstIndex uint32, baseVertex int32, firstInstance uint32) {
-
-	_, _, err := renderPassEncoderDrawIndexedProc.Call()
+	_, _, err := renderPassEncoderDrawIndexedProc.Call(
+		uintptr(renderPassEncoder),
+		uintptr(indexCount),    // uint32
+		uintptr(instanceCount), // uint32
+		uintptr(firstIndex),    // uint32
+		uintptr(baseVertex),    // int32
+		uintptr(firstInstance), // uint32
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func RenderPassEncoderDrawIndirect(renderPassEncoder RenderPassEncoder, indirectBuffer Buffer, indirectOffset uint64) {
-
-	_, _, err := renderPassEncoderDrawIndirectProc.Call()
+	_, _, err := renderPassEncoderDrawIndirectProc.Call(
+		uintptr(renderPassEncoder),
+		uintptr(indirectBuffer), // object.buffer
+		uintptr(indirectOffset), // uint64
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func RenderPassEncoderDrawIndexedIndirect(renderPassEncoder RenderPassEncoder, indirectBuffer Buffer, indirectOffset uint64) {
-
-	_, _, err := renderPassEncoderDrawIndexedIndirectProc.Call()
+	_, _, err := renderPassEncoderDrawIndexedIndirectProc.Call(
+		uintptr(renderPassEncoder),
+		uintptr(indirectBuffer), // object.buffer
+		uintptr(indirectOffset), // uint64
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func RenderPassEncoderExecuteBundles(renderPassEncoder RenderPassEncoder, bundles []RenderBundle) {
-
-	_, _, err := renderPassEncoderExecuteBundlesProc.Call()
+	_, _, err := renderPassEncoderExecuteBundlesProc.Call(
+		uintptr(renderPassEncoder),
+		uintptr(len(bundles)),
+		uintptr(unsafe.Pointer(unsafe.SliceData(bundles))),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func RenderPassEncoderInsertDebugMarker(renderPassEncoder RenderPassEncoder, markerLabel StringView) {
-
-	_, _, err := renderPassEncoderInsertDebugMarkerProc.Call()
+	_, _, err := renderPassEncoderInsertDebugMarkerProc.Call(
+		uintptr(renderPassEncoder),
+		uintptr(unsafe.Pointer(&markerLabel)),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func RenderPassEncoderPopDebugGroup(renderPassEncoder RenderPassEncoder) {
-
-	_, _, err := renderPassEncoderPopDebugGroupProc.Call()
+	_, _, err := renderPassEncoderPopDebugGroupProc.Call(
+		uintptr(renderPassEncoder),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func RenderPassEncoderPushDebugGroup(renderPassEncoder RenderPassEncoder, groupLabel StringView) {
-
-	_, _, err := renderPassEncoderPushDebugGroupProc.Call()
+	_, _, err := renderPassEncoderPushDebugGroupProc.Call(
+		uintptr(renderPassEncoder),
+		uintptr(unsafe.Pointer(&groupLabel)),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func RenderPassEncoderSetStencilReference(renderPassEncoder RenderPassEncoder, reference uint32) {
-
-	_, _, err := renderPassEncoderSetStencilReferenceProc.Call()
+	_, _, err := renderPassEncoderSetStencilReferenceProc.Call(
+		uintptr(renderPassEncoder),
+		uintptr(reference), // uint32
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func RenderPassEncoderSetBlendConstant(renderPassEncoder RenderPassEncoder, color *Color) {
-
-	_, _, err := renderPassEncoderSetBlendConstantProc.Call()
+	_, _, err := renderPassEncoderSetBlendConstantProc.Call(
+		uintptr(renderPassEncoder),
+		uintptr(unsafe.Pointer(color)),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func RenderPassEncoderSetViewport(renderPassEncoder RenderPassEncoder, x float32, y float32, width float32, height float32, minDepth float32, maxDepth float32) {
-
-	_, _, err := renderPassEncoderSetViewportProc.Call()
+	_, _, err := renderPassEncoderSetViewportProc.Call(
+		uintptr(renderPassEncoder),
+		uintptr(x),        // float32
+		uintptr(y),        // float32
+		uintptr(width),    // float32
+		uintptr(height),   // float32
+		uintptr(minDepth), // float32
+		uintptr(maxDepth), // float32
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func RenderPassEncoderSetScissorRect(renderPassEncoder RenderPassEncoder, x uint32, y uint32, width uint32, height uint32) {
-
-	_, _, err := renderPassEncoderSetScissorRectProc.Call()
+	_, _, err := renderPassEncoderSetScissorRectProc.Call(
+		uintptr(renderPassEncoder),
+		uintptr(x),      // uint32
+		uintptr(y),      // uint32
+		uintptr(width),  // uint32
+		uintptr(height), // uint32
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func RenderPassEncoderSetVertexBuffer(renderPassEncoder RenderPassEncoder, slot uint32, buffer Buffer, offset uint64, size uint64) {
-
-	_, _, err := renderPassEncoderSetVertexBufferProc.Call()
+	_, _, err := renderPassEncoderSetVertexBufferProc.Call(
+		uintptr(renderPassEncoder),
+		uintptr(slot),   // uint32
+		uintptr(buffer), // object.buffer
+		uintptr(offset), // uint64
+		uintptr(size),   // uint64
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func RenderPassEncoderSetIndexBuffer(renderPassEncoder RenderPassEncoder, buffer Buffer, format IndexFormat, offset uint64, size uint64) {
-
-	_, _, err := renderPassEncoderSetIndexBufferProc.Call()
+	_, _, err := renderPassEncoderSetIndexBufferProc.Call(
+		uintptr(renderPassEncoder),
+		uintptr(buffer), // object.buffer
+		uintptr(format), // enum.index_format
+		uintptr(offset), // uint64
+		uintptr(size),   // uint64
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func RenderPassEncoderBeginOcclusionQuery(renderPassEncoder RenderPassEncoder, queryIndex uint32) {
-
-	_, _, err := renderPassEncoderBeginOcclusionQueryProc.Call()
+	_, _, err := renderPassEncoderBeginOcclusionQueryProc.Call(
+		uintptr(renderPassEncoder),
+		uintptr(queryIndex), // uint32
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func RenderPassEncoderEndOcclusionQuery(renderPassEncoder RenderPassEncoder) {
-
-	_, _, err := renderPassEncoderEndOcclusionQueryProc.Call()
+	_, _, err := renderPassEncoderEndOcclusionQueryProc.Call(
+		uintptr(renderPassEncoder),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func RenderPassEncoderEnd(renderPassEncoder RenderPassEncoder) {
-
-	_, _, err := renderPassEncoderEndProc.Call()
+	_, _, err := renderPassEncoderEndProc.Call(
+		uintptr(renderPassEncoder),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func RenderPassEncoderSetLabel(renderPassEncoder RenderPassEncoder, label StringView) {
-
-	_, _, err := renderPassEncoderSetLabelProc.Call()
+	_, _, err := renderPassEncoderSetLabelProc.Call(
+		uintptr(renderPassEncoder),
+		uintptr(unsafe.Pointer(&label)),
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -1321,16 +1673,21 @@ func RenderPassEncoderRelease(renderPassEncoder RenderPassEncoder) {
 }
 
 func RenderPipelineGetBindGroupLayout(renderPipeline RenderPipeline, groupIndex uint32) BindGroupLayout {
-
-	_, _, err := renderPipelineGetBindGroupLayoutProc.Call()
+	ret, _, err := renderPipelineGetBindGroupLayoutProc.Call(
+		uintptr(renderPipeline),
+		uintptr(groupIndex), // uint32
+	)
 	if err != nil {
 		panic(err)
 	}
+	return BindGroupLayout(ret)
 }
 
 func RenderPipelineSetLabel(renderPipeline RenderPipeline, label StringView) {
-
-	_, _, err := renderPipelineSetLabelProc.Call()
+	_, _, err := renderPipelineSetLabelProc.Call(
+		uintptr(renderPipeline),
+		uintptr(unsafe.Pointer(&label)),
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -1345,8 +1702,10 @@ func RenderPipelineRelease(renderPipeline RenderPipeline) {
 }
 
 func SamplerSetLabel(sampler Sampler, label StringView) {
-
-	_, _, err := samplerSetLabelProc.Call()
+	_, _, err := samplerSetLabelProc.Call(
+		uintptr(sampler),
+		uintptr(unsafe.Pointer(&label)),
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -1361,16 +1720,19 @@ func SamplerRelease(sampler Sampler) {
 }
 
 func ShaderModuleGetCompilationInfo(shaderModule ShaderModule, callback CompilationInfoCallbackInfo) {
-
-	_, _, err := shaderModuleGetCompilationInfoProc.Call()
+	_, _, err := shaderModuleGetCompilationInfoProc.Call(
+		uintptr(shaderModule),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func ShaderModuleSetLabel(shaderModule ShaderModule, label StringView) {
-
-	_, _, err := shaderModuleSetLabelProc.Call()
+	_, _, err := shaderModuleSetLabelProc.Call(
+		uintptr(shaderModule),
+		uintptr(unsafe.Pointer(&label)),
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -1385,48 +1747,61 @@ func ShaderModuleRelease(shaderModule ShaderModule) {
 }
 
 func SurfaceConfigure(surface Surface, config *SurfaceConfiguration) {
-
-	_, _, err := surfaceConfigureProc.Call()
+	_, _, err := surfaceConfigureProc.Call(
+		uintptr(surface),
+		uintptr(unsafe.Pointer(config)),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func SurfaceGetCapabilities(surface Surface, adapter Adapter, capabilities *SurfaceCapabilities) Status {
-
-	_, _, err := surfaceGetCapabilitiesProc.Call()
+	ret, _, err := surfaceGetCapabilitiesProc.Call(
+		uintptr(surface),
+		uintptr(adapter), // object.adapter
+		uintptr(unsafe.Pointer(capabilities)),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return Status(ret)
 }
 
 func SurfaceGetCurrentTexture(surface Surface, surfaceTexture *SurfaceTexture) {
-
-	_, _, err := surfaceGetCurrentTextureProc.Call()
+	_, _, err := surfaceGetCurrentTextureProc.Call(
+		uintptr(surface),
+		uintptr(unsafe.Pointer(surfaceTexture)),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func SurfacePresent(surface Surface) Status {
-
-	_, _, err := surfacePresentProc.Call()
+	ret, _, err := surfacePresentProc.Call(
+		uintptr(surface),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return Status(ret)
 }
 
 func SurfaceUnconfigure(surface Surface) {
-
-	_, _, err := surfaceUnconfigureProc.Call()
+	_, _, err := surfaceUnconfigureProc.Call(
+		uintptr(surface),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func SurfaceSetLabel(surface Surface, label StringView) {
-
-	_, _, err := surfaceSetLabelProc.Call()
+	_, _, err := surfaceSetLabelProc.Call(
+		uintptr(surface),
+		uintptr(unsafe.Pointer(&label)),
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -1441,96 +1816,120 @@ func SurfaceRelease(surface Surface) {
 }
 
 func TextureCreateView(texture Texture, descriptor *TextureViewDescriptor) TextureView {
-
-	_, _, err := textureCreateViewProc.Call()
+	ret, _, err := textureCreateViewProc.Call(
+		uintptr(texture),
+		uintptr(unsafe.Pointer(descriptor)),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return TextureView(ret)
 }
 
 func TextureSetLabel(texture Texture, label StringView) {
-
-	_, _, err := textureSetLabelProc.Call()
+	_, _, err := textureSetLabelProc.Call(
+		uintptr(texture),
+		uintptr(unsafe.Pointer(&label)),
+	)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func TextureGetWidth(texture Texture) uint32 {
-
-	_, _, err := textureGetWidthProc.Call()
+	ret, _, err := textureGetWidthProc.Call(
+		uintptr(texture),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return uint32(ret)
 }
 
 func TextureGetHeight(texture Texture) uint32 {
-
-	_, _, err := textureGetHeightProc.Call()
+	ret, _, err := textureGetHeightProc.Call(
+		uintptr(texture),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return uint32(ret)
 }
 
 func TextureGetDepthOrArrayLayers(texture Texture) uint32 {
-
-	_, _, err := textureGetDepthOrArrayLayersProc.Call()
+	ret, _, err := textureGetDepthOrArrayLayersProc.Call(
+		uintptr(texture),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return uint32(ret)
 }
 
 func TextureGetMipLevelCount(texture Texture) uint32 {
-
-	_, _, err := textureGetMipLevelCountProc.Call()
+	ret, _, err := textureGetMipLevelCountProc.Call(
+		uintptr(texture),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return uint32(ret)
 }
 
 func TextureGetSampleCount(texture Texture) uint32 {
-
-	_, _, err := textureGetSampleCountProc.Call()
+	ret, _, err := textureGetSampleCountProc.Call(
+		uintptr(texture),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return uint32(ret)
 }
 
 func TextureGetDimension(texture Texture) TextureDimension {
-
-	_, _, err := textureGetDimensionProc.Call()
+	ret, _, err := textureGetDimensionProc.Call(
+		uintptr(texture),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return TextureDimension(ret)
 }
 
 func TextureGetTextureBindingViewDimension(texture Texture) TextureViewDimension {
-
-	_, _, err := textureGetTextureBindingViewDimensionProc.Call()
+	ret, _, err := textureGetTextureBindingViewDimensionProc.Call(
+		uintptr(texture),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return TextureViewDimension(ret)
 }
 
 func TextureGetFormat(texture Texture) TextureFormat {
-
-	_, _, err := textureGetFormatProc.Call()
+	ret, _, err := textureGetFormatProc.Call(
+		uintptr(texture),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return TextureFormat(ret)
 }
 
 func TextureGetUsage(texture Texture) TextureUsage {
-
-	_, _, err := textureGetUsageProc.Call()
+	ret, _, err := textureGetUsageProc.Call(
+		uintptr(texture),
+	)
 	if err != nil {
 		panic(err)
 	}
+	return TextureUsage(ret)
 }
 
 func TextureDestroy(texture Texture) {
-
-	_, _, err := textureDestroyProc.Call()
+	_, _, err := textureDestroyProc.Call(
+		uintptr(texture),
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -1545,8 +1944,10 @@ func TextureRelease(texture Texture) {
 }
 
 func TextureViewSetLabel(textureView TextureView, label StringView) {
-
-	_, _, err := textureViewSetLabelProc.Call()
+	_, _, err := textureViewSetLabelProc.Call(
+		uintptr(textureView),
+		uintptr(unsafe.Pointer(&label)),
+	)
 	if err != nil {
 		panic(err)
 	}

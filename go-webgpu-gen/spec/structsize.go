@@ -11,9 +11,9 @@ func (s *Spec) SizeOf(typ string) (size int) {
 		size = 1
 	case "uint16", "int16":
 		size = 2
-	case "uint32", "int32", "float":
+	case "uint32", "int32", "float32", "nullable_float32", "bool":
 		size = 4
-	case "uint64", "int64", "double":
+	case "uint64", "int64", "float64", "float64_supertype":
 		size = 8
 	case "usize":
 		size = int(unsafe.Sizeof(uintptr(0)))
@@ -29,6 +29,8 @@ func (s *Spec) SizeOf(typ string) (size int) {
 		"c_void_x11_display",
 		"c_void_xcb_connection":
 		size = int(unsafe.Sizeof(unsafe.Pointer(nil)))
+	case "out_string", "string_with_default_empty", "nullable_string":
+		size = 16
 	default:
 		if strings.HasPrefix(typ, "bitflag.") {
 			size = 8
@@ -49,6 +51,17 @@ func (s *Spec) SizeOf(typ string) (size int) {
 			if padding := size % biggestField; padding != 0 {
 				size += padding
 			}
+		} else if strings.HasPrefix(typ, "callback.") {
+			switch s.GetDef(typ).(*Callback).Style {
+			case "callback_mode":
+				size = 40
+			case "immediate":
+				size = 32
+			}
+		} else if strings.HasPrefix(typ, "object.") {
+			size = int(unsafe.Sizeof(unsafe.Pointer(nil)))
+		} else if strings.HasPrefix(typ, "array<") && strings.HasSuffix(typ, ">") {
+			size = int(unsafe.Sizeof(unsafe.Pointer(nil))) * 2
 		} else {
 			panic("Unknown type: " + typ)
 		}

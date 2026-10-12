@@ -1,0 +1,34 @@
+// Code generated; DO NOT EDIT.
+{{ goDoc .Copyright "" }}
+//go:build !cgo && amd64
+
+package {{ .PackageName }}
+
+import "unsafe"
+
+var ({{ range .Functions }}
+	{{ camelCase .Name }}Proc = webgpuDLL.NewProc("wgpu{{ pascalCase .Name }}")
+{{- end }}
+)
+{{ range .Functions }}
+{{ goDoc .Doc "" -}}
+func {{ pascalCase .Name }}({{ range $index, $arg := .Args -}}
+{{ camelCase .Name }} {{ if .Pointer }}*{{ end }}{{ goType .Type -}}
+{{ end }}) {{ if .Returns }}{{ goType .Returns.Type }} {{ end -}} {
+	{{ if .Returns }}ret{{ else }}_{{ end }}, _, err := {{ camelCase .Name }}Proc.Call(
+	{{- range .Args }}
+		{{- if .Pointer }}
+		uintptr(unsafe.Pointer({{ camelCase .Name }})),
+		{{- else }}
+		uintptr({{ camelCase .Name }}),
+		{{- end }}
+	{{- end }}
+	)
+	if err != nil {
+		panic(err)
+	}
+	{{ if .Returns -}}
+	return {{ goType .Returns.Type }}(ret)
+	{{- end }}
+}
+{{ end }}
