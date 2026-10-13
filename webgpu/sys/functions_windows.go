@@ -18,44 +18,32 @@ var (
 
 // Create a WGPUInstance
 func CreateInstance(descriptor *InstanceDescriptor) Instance {
-	ret, _, err := createInstanceProc.Call(
+	ret, _, _ := createInstanceProc.Call(
 		uintptr(unsafe.Pointer(descriptor)),
 	)
-	if err != nil {
-		panic(err)
-	}
 	return Instance(ret)
 }
 
 // Get the list of @ref WGPUInstanceFeatureName values supported by the instance.
 func GetInstanceFeatures(features *SupportedInstanceFeatures) {
-	_, _, err := getInstanceFeaturesProc.Call(
+	_, _, _ = getInstanceFeaturesProc.Call(
 		uintptr(unsafe.Pointer(features)),
 	)
-	if err != nil {
-		panic(err)
-	}
 
 }
 
 // Get the limits supported by the instance.
 func GetInstanceLimits(limits *InstanceLimits) Status {
-	ret, _, err := getInstanceLimitsProc.Call(
+	ret, _, _ := getInstanceLimitsProc.Call(
 		uintptr(unsafe.Pointer(limits)),
 	)
-	if err != nil {
-		panic(err)
-	}
 	return Status(ret)
 }
 
 // Check whether a particular @ref WGPUInstanceFeatureName is supported by the instance.
 func HasInstanceFeature(feature InstanceFeatureName) Bool {
-	ret, _, err := hasInstanceFeatureProc.Call(
+	ret, _, _ := hasInstanceFeatureProc.Call(
 		uintptr(feature),
 	)
-	if err != nil {
-		panic(err)
-	}
 	return Bool(ret)
 }

@@ -10,12 +10,12 @@ import (
 )
 
 var (
-	webgpuDLL = syscall.NewLazyDLL("wgpu-native.dll")
+	webgpuDLL = syscall.NewLazyDLL("wgpu_native.dll")
 	{{- range .Objects }}{{ $object := . }}{{ range .Methods }}
-	{{ camelCase $object.Name }}{{ pascalCase .Name}}Proc = webgpuDLL.NewProc("{{ pascalCase $object.Name }}{{ pascalCase .Name }}")
+	{{ camelCase $object.Name }}{{ pascalCase .Name}}Proc = webgpuDLL.NewProc("wgpu{{ pascalCase $object.Name }}{{ pascalCase .Name }}")
 	{{- end }}
-	{{ camelCase $object.Name }}AddRefProc = webgpuDLL.NewProc("{{ pascalCase $object.Name }}AddRef")
-	{{ camelCase $object.Name }}ReleaseProc = webgpuDLL.NewProc("{{ pascalCase $object.Name }}Release")
+	{{ camelCase $object.Name }}AddRefProc = webgpuDLL.NewProc("wgpu{{ pascalCase $object.Name }}AddRef")
+	{{ camelCase $object.Name }}ReleaseProc = webgpuDLL.NewProc("wgpu{{ pascalCase $object.Name }}Release")
 	{{- end }}
 )
 {{ range .Objects }}{{ $object := . }}{{ $objectName := pascalCase .Name }}{{ range .Methods }}
@@ -32,7 +32,7 @@ func {{ $objectName }}{{ pascalCase .Name }}(
 		, callback {{ goType .Callback }}
 	{{- end -}}
 ) {{ if .Returns }}{{ goType .Returns.Type }} {{ end }}{
-	{{ if .Returns }}ret{{ else }}_{{ end }}, _, err := {{ camelCase $object.Name }}{{ pascalCase .Name }}Proc.Call(
+	{{ if .Returns }}ret{{ else }}_{{ end }}, _, _ {{ if .Returns }}:{{ end }}= {{ camelCase $object.Name }}{{ pascalCase .Name }}Proc.Call(
 		uintptr({{ camelCase $object.Name }}),
 	{{- range .Args }}{{ $argName := camelCase .Name }}{{ $arrayElem := arrayElem .Type }}
 	{{- if $arrayElem }}
@@ -55,10 +55,10 @@ func {{ $objectName }}{{ pascalCase .Name }}(
 		uintptr({{ $argName }}), // {{ .Type }}
 	{{- end }}
 	{{- end }}
+	{{- if and .Callback (hasPrefix .Callback "callback.") }}
+		uintptr(unsafe.Pointer(&callback)),{{/* A CallbackInfo struct is always larger than 8 bytes --pass as ref in amd64 decl */}}
+	{{- end }}
 	)
-	if err != nil {
-		panic(err)
-	}
 	{{- if .Returns }}{{ if hasPrefix .Returns.Type "struct." }}{{ $size := $.SizeOf .Returns.Type }}
 	{{- if eq $size 8 }}
 	return *(*{{ goType .Returns.Type }})(unsafe.Pointer(new(uint64(ret))))

@@ -1,0 +1,59 @@
+// Code generated; DO NOT EDIT.
+{{ goDoc .Copyright "" }}
+//go:build !cgo && amd64
+
+package {{ .PackageName }}
+
+import (
+	"runtime"
+	"strings"
+	"syscall"
+	"unsafe"
+
+	{{ $importPath := .ImportPath }}{{ printf "%q" (printf "%s/sys" $importPath) }}
+)
+{{ range .Callbacks }}{{ $callbackName := pascalCase .Name }}
+{{- if ne .Style "callback_mode" }}{{ continue }}{{ end }}
+var gowebgpu{{ $callbackName }}Callback = syscall.NewCallback(func({{ range $index, $arg := .Args }}
+	{{- if ne $index 0 }}, {{ end }}{{ $argType := goType .Type -}}
+	{{ goIdent .Name .Type }} {{ if or .Pointer (eq $argType "StringView") }}*{{ end }}sys.{{ $argType }}
+{{- end }}, userdata1, userdata2 unsafe.Pointer) uintptr {
+	*(*chan<- {{ camelCase .Name }}CallbackResult)(userdata1) <- {{ camelCase .Name }}CallbackResult{
+		{{- range .Args }}{{ $argName := goIdent .Name .Type }}
+		{{ $argName }}: {{ if hasPrefix .Type "struct." -}}
+			({{ if .Pointer }}*{{ end }}{{ goType .Type }})(unsafe.Pointer({{ $argName }}))
+		{{- else if hasPrefix .Type "object." -}}
+			new({{ goType .Type }}{ inner: sys.{{ goType .Type }}({{ $argName }}) }).owned()
+		{{- else if eq .Type "out_string" -}}
+			strings.Clone(unsafe.String({{ $argName }}.Data, {{ $argName }}.Length))
+		{{- else -}}
+			{{ goType .Type }}({{ $argName }})
+		{{- end }},
+		{{- end }}
+	}
+	return 0
+})
+
+func new{{ $callbackName }}Callback(done chan<- {{ camelCase .Name }}CallbackResult) (callbackInfo sys.{{ $callbackName }}CallbackInfo, delete func()) {
+	var pinner runtime.Pinner
+	pinner.Pin(&done)
+	info := sys.{{ $callbackName }}CallbackInfo {
+		Mode:      CallbackModeAllowProcessEvents,
+		Callback:  unsafe.Pointer(gowebgpu{{ $callbackName }}Callback),
+		Userdata1: unsafe.Pointer(&done),
+	}
+	return info, pinner.Unpin
+}
+{{ end }}
+var gowebgpuUncapturedErrorCallback = syscall.NewCallback(func(device *Device, errorType ErrorType, message *sys.StringView, userdata1, userdata2 unsafe.Pointer) uintptr {
+	panic("TODO")
+	return 0
+})
+
+func NewUncapturedErrorCallback(callback func(device sys.Device, errorType ErrorType, message string, userdata2 unsafe.Pointer), userdata2 unsafe.Pointer) sys.UncapturedErrorCallbackInfo {
+	return sys.UncapturedErrorCallbackInfo {
+		Callback:  unsafe.Pointer(gowebgpuUncapturedErrorCallback),
+		Userdata1: unsafe.Pointer(nil),
+		Userdata2: userdata2,
+	}
+}
