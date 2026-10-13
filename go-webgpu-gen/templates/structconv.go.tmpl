@@ -95,7 +95,9 @@ func ({{ $r }} *{{ $structName }}) wrap(in *sys.{{ $structName }}) {
 	_{{ $targetArray }} := unsafe.Slice(in.{{ $fieldName }}, in.{{ $fieldName }}Count)
 	{{ $targetArray }} := make([]*{{ goType $arrayElem }}, in.{{ $fieldName }}Count)
 	for i := uint(0); i < in.{{ $fieldName }}Count; i++ {
-		{{ $targetArray }}[i] = new({{ goType $arrayElem }}{ inner: _{{ $targetArray }}[i] }).owned()
+		if _{{ $targetArray }}[i] != nil {
+			{{ $targetArray }}[i] = new({{ goType $arrayElem }}{ inner: _{{ $targetArray }}[i] }).owned()
+		}
 	}
 	{{ $r }}.{{ $fieldName }} = {{ $targetArray }}
 	{{- end }}
@@ -121,7 +123,9 @@ func ({{ $r }} *{{ $structName }}) wrap(in *sys.{{ $structName }}) {
 	{{ $r }}.{{ $fieldName }}.wrap(&in.{{ $fieldName }})
 	{{- end }}
 	{{- else if hasPrefix .Type "object." }}
-	{{ $r }}.{{ $fieldName }} = new({{ goType .Type }}{ inner: in.{{ $fieldName }} }).owned()
+	if in.{{ $fieldName }} != nil {
+		{{ $r }}.{{ $fieldName }} = new({{ goType .Type }}{ inner: in.{{ $fieldName }} }).owned()
+	}
 	{{- else }}
 	{{ $r }}.{{ $fieldName }} = in.{{ $fieldName }}
 	{{- end -}}

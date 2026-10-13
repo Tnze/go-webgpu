@@ -91,7 +91,9 @@ func (b *BindGroupDescriptor) wrap(in *sys.BindGroupDescriptor) {
 		in.Label.Data,
 		in.Label.Length,
 	))
-	b.Layout = new(BindGroupLayout{inner: in.Layout}).owned()
+	if in.Layout != nil {
+		b.Layout = new(BindGroupLayout{inner: in.Layout}).owned()
+	}
 	_entries := unsafe.Slice(in.Entries, in.EntriesCount)
 	entries := make([]BindGroupEntry, in.EntriesCount)
 	for i := uint(0); i < in.EntriesCount; i++ {
@@ -121,11 +123,17 @@ func (b *BindGroupEntry) unwrap() (out sys.BindGroupEntry) {
 func (b *BindGroupEntry) wrap(in *sys.BindGroupEntry) {
 	b.Chain = in.Chain
 	b.Binding = in.Binding
-	b.Buffer = new(Buffer{inner: in.Buffer}).owned()
+	if in.Buffer != nil {
+		b.Buffer = new(Buffer{inner: in.Buffer}).owned()
+	}
 	b.Offset = in.Offset
 	b.Size = in.Size
-	b.Sampler = new(Sampler{inner: in.Sampler}).owned()
-	b.TextureView = new(TextureView{inner: in.TextureView}).owned()
+	if in.Sampler != nil {
+		b.Sampler = new(Sampler{inner: in.Sampler}).owned()
+	}
+	if in.TextureView != nil {
+		b.TextureView = new(TextureView{inner: in.TextureView}).owned()
+	}
 }
 
 func (b *BindGroupLayoutDescriptor) unwrap() (out sys.BindGroupLayoutDescriptor) {
@@ -297,7 +305,9 @@ func (c *ComputePipelineDescriptor) wrap(in *sys.ComputePipelineDescriptor) {
 		in.Label.Data,
 		in.Label.Length,
 	))
-	c.Layout = new(PipelineLayout{inner: in.Layout}).owned()
+	if in.Layout != nil {
+		c.Layout = new(PipelineLayout{inner: in.Layout}).owned()
+	}
 	c.Compute.wrap(&in.Compute)
 }
 
@@ -323,7 +333,9 @@ func (c *ComputeState) unwrap() (out sys.ComputeState) {
 
 func (c *ComputeState) wrap(in *sys.ComputeState) {
 	c.Chain = in.Chain
-	c.Module = new(ShaderModule{inner: in.Module}).owned()
+	if in.Module != nil {
+		c.Module = new(ShaderModule{inner: in.Module}).owned()
+	}
 	c.EntryPoint = strings.Clone(unsafe.String(
 		in.EntryPoint.Data,
 		in.EntryPoint.Length,
@@ -397,7 +409,9 @@ func (e *ExternalTextureBindingEntry) unwrap() (out sys.ExternalTextureBindingEn
 }
 
 func (e *ExternalTextureBindingEntry) wrap(in *sys.ExternalTextureBindingEntry) {
-	e.ExternalTexture = new(ExternalTexture{inner: in.ExternalTexture}).owned()
+	if in.ExternalTexture != nil {
+		e.ExternalTexture = new(ExternalTexture{inner: in.ExternalTexture}).owned()
+	}
 }
 
 func (f *FragmentState) unwrap() (out sys.FragmentState) {
@@ -426,7 +440,9 @@ func (f *FragmentState) unwrap() (out sys.FragmentState) {
 
 func (f *FragmentState) wrap(in *sys.FragmentState) {
 	f.Chain = in.Chain
-	f.Module = new(ShaderModule{inner: in.Module}).owned()
+	if in.Module != nil {
+		f.Module = new(ShaderModule{inner: in.Module}).owned()
+	}
 	f.EntryPoint = strings.Clone(unsafe.String(
 		in.EntryPoint.Data,
 		in.EntryPoint.Length,
@@ -472,7 +488,9 @@ func (p *PassTimestampWrites) unwrap() (out sys.PassTimestampWrites) {
 
 func (p *PassTimestampWrites) wrap(in *sys.PassTimestampWrites) {
 	p.Chain = in.Chain
-	p.QuerySet = new(QuerySet{inner: in.QuerySet}).owned()
+	if in.QuerySet != nil {
+		p.QuerySet = new(QuerySet{inner: in.QuerySet}).owned()
+	}
 	p.BeginningOfPassWriteIndex = in.BeginningOfPassWriteIndex
 	p.EndOfPassWriteIndex = in.EndOfPassWriteIndex
 }
@@ -504,7 +522,9 @@ func (p *PipelineLayoutDescriptor) wrap(in *sys.PipelineLayoutDescriptor) {
 	_bindGroupLayouts := unsafe.Slice(in.BindGroupLayouts, in.BindGroupLayoutsCount)
 	bindGroupLayouts := make([]*BindGroupLayout, in.BindGroupLayoutsCount)
 	for i := uint(0); i < in.BindGroupLayoutsCount; i++ {
-		bindGroupLayouts[i] = new(BindGroupLayout{inner: _bindGroupLayouts[i]}).owned()
+		if _bindGroupLayouts[i] != nil {
+			bindGroupLayouts[i] = new(BindGroupLayout{inner: _bindGroupLayouts[i]}).owned()
+		}
 	}
 	p.BindGroupLayouts = bindGroupLayouts
 	p.ImmediateSize = in.ImmediateSize
@@ -611,9 +631,13 @@ func (r *RenderPassColorAttachment) unwrap() (out sys.RenderPassColorAttachment)
 
 func (r *RenderPassColorAttachment) wrap(in *sys.RenderPassColorAttachment) {
 	r.Chain = in.Chain
-	r.View = new(TextureView{inner: in.View}).owned()
+	if in.View != nil {
+		r.View = new(TextureView{inner: in.View}).owned()
+	}
 	r.DepthSlice = in.DepthSlice
-	r.ResolveTarget = new(TextureView{inner: in.ResolveTarget}).owned()
+	if in.ResolveTarget != nil {
+		r.ResolveTarget = new(TextureView{inner: in.ResolveTarget}).owned()
+	}
 	r.LoadOp = in.LoadOp
 	r.StoreOp = in.StoreOp
 	r.ClearValue = in.ClearValue
@@ -637,7 +661,9 @@ func (r *RenderPassDepthStencilAttachment) unwrap() (out sys.RenderPassDepthSten
 
 func (r *RenderPassDepthStencilAttachment) wrap(in *sys.RenderPassDepthStencilAttachment) {
 	r.Chain = in.Chain
-	r.View = new(TextureView{inner: in.View}).owned()
+	if in.View != nil {
+		r.View = new(TextureView{inner: in.View}).owned()
+	}
 	r.DepthLoadOp = in.DepthLoadOp
 	r.DepthStoreOp = in.DepthStoreOp
 	r.DepthClearValue = in.DepthClearValue
@@ -691,7 +717,9 @@ func (r *RenderPassDescriptor) wrap(in *sys.RenderPassDescriptor) {
 		r.DepthStencilAttachment = new(RenderPassDepthStencilAttachment)
 		r.DepthStencilAttachment.wrap(in.DepthStencilAttachment)
 	}
-	r.OcclusionQuerySet = new(QuerySet{inner: in.OcclusionQuerySet}).owned()
+	if in.OcclusionQuerySet != nil {
+		r.OcclusionQuerySet = new(QuerySet{inner: in.OcclusionQuerySet}).owned()
+	}
 	if in.TimestampWrites != nil {
 		r.TimestampWrites = new(PassTimestampWrites)
 		r.TimestampWrites.wrap(in.TimestampWrites)
@@ -725,7 +753,9 @@ func (r *RenderPipelineDescriptor) wrap(in *sys.RenderPipelineDescriptor) {
 		in.Label.Data,
 		in.Label.Length,
 	))
-	r.Layout = new(PipelineLayout{inner: in.Layout}).owned()
+	if in.Layout != nil {
+		r.Layout = new(PipelineLayout{inner: in.Layout}).owned()
+	}
 	r.Vertex.wrap(&in.Vertex)
 	r.Primitive = in.Primitive
 	if in.DepthStencil != nil {
@@ -756,7 +786,9 @@ func (r *RequestAdapterOptions) wrap(in *sys.RequestAdapterOptions) {
 	r.PowerPreference = in.PowerPreference
 	r.ForceFallbackAdapter = in.ForceFallbackAdapter
 	r.BackendType = in.BackendType
-	r.CompatibleSurface = new(Surface{inner: in.CompatibleSurface}).owned()
+	if in.CompatibleSurface != nil {
+		r.CompatibleSurface = new(Surface{inner: in.CompatibleSurface}).owned()
+	}
 }
 
 func (s *SamplerDescriptor) unwrap() (out sys.SamplerDescriptor) {
@@ -904,7 +936,9 @@ func (s *SurfaceConfiguration) unwrap() (out sys.SurfaceConfiguration) {
 
 func (s *SurfaceConfiguration) wrap(in *sys.SurfaceConfiguration) {
 	s.Chain = in.Chain
-	s.Device = new(Device{inner: in.Device}).owned()
+	if in.Device != nil {
+		s.Device = new(Device{inner: in.Device}).owned()
+	}
 	s.Format = in.Format
 	s.Usage = in.Usage
 	s.Width = in.Width
@@ -941,7 +975,9 @@ func (s *SurfaceTexture) unwrap() (out sys.SurfaceTexture) {
 
 func (s *SurfaceTexture) wrap(in *sys.SurfaceTexture) {
 	s.Chain = in.Chain
-	s.Texture = new(Texture{inner: in.Texture}).owned()
+	if in.Texture != nil {
+		s.Texture = new(Texture{inner: in.Texture}).owned()
+	}
 	s.Status = in.Status
 }
 
@@ -955,7 +991,9 @@ func (t *TexelCopyBufferInfo) unwrap() (out sys.TexelCopyBufferInfo) {
 
 func (t *TexelCopyBufferInfo) wrap(in *sys.TexelCopyBufferInfo) {
 	t.Layout = in.Layout
-	t.Buffer = new(Buffer{inner: in.Buffer}).owned()
+	if in.Buffer != nil {
+		t.Buffer = new(Buffer{inner: in.Buffer}).owned()
+	}
 }
 
 func (t *TexelCopyTextureInfo) unwrap() (out sys.TexelCopyTextureInfo) {
@@ -969,7 +1007,9 @@ func (t *TexelCopyTextureInfo) unwrap() (out sys.TexelCopyTextureInfo) {
 }
 
 func (t *TexelCopyTextureInfo) wrap(in *sys.TexelCopyTextureInfo) {
-	t.Texture = new(Texture{inner: in.Texture}).owned()
+	if in.Texture != nil {
+		t.Texture = new(Texture{inner: in.Texture}).owned()
+	}
 	t.MipLevel = in.MipLevel
 	t.Origin = in.Origin
 	t.Aspect = in.Aspect
@@ -1089,7 +1129,9 @@ func (v *VertexState) unwrap() (out sys.VertexState) {
 
 func (v *VertexState) wrap(in *sys.VertexState) {
 	v.Chain = in.Chain
-	v.Module = new(ShaderModule{inner: in.Module}).owned()
+	if in.Module != nil {
+		v.Module = new(ShaderModule{inner: in.Module}).owned()
+	}
 	v.EntryPoint = strings.Clone(unsafe.String(
 		in.EntryPoint.Data,
 		in.EntryPoint.Length,
